@@ -28,7 +28,7 @@ A stage is not complete merely because draft documents or code exist. Closure re
 - Do not reuse another project's foundation, identity, data model, code, or branding without explicit authorization.
 - Do not introduce production features, production data migrations, deployment, signing, or publication during A1.
 - Do not replace or overwrite existing EKHC UI or project work before discovery and reconciliation.
-- Do not introduce the prohibited organizational terms `ወረዳ` or `District` anywhere in product or project artifacts.
+- Do not introduce either prohibited legacy organizational label anywhere in product or project artifacts.
 
 ## 4. Foundational product direction
 
