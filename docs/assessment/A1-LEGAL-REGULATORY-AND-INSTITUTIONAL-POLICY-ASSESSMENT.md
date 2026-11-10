@@ -25,6 +25,10 @@ This document is a requirements and evidence map, not a legal opinion. A qualifi
 8. **No real data during unresolved assessment:** use synthetic-only information in development and validation.
 9. **Separation of approval gates:** documenting a dependency does not approve a policy, legal interpretation, production schema, implementation, or deployment.
 
+### Terminology preservation
+
+The Amharic terms `ቀጣና` and `ኅብረት` are distinct source-defined terms and must remain distinct. No English label, equivalence, or hierarchy relationship is to be inferred for either term without authoritative constitutional or policy evidence.
+
 ## 3. Authority and source hierarchy
 
 Use the following evidence order when validating requirements:
