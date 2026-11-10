@@ -126,7 +126,8 @@ The contents page lists the following topics. Exact wording and sub-article requ
 - 101 — ተጨማሪ ደንቦች እና መመሪያዎች
 - 102 — ስለ ሕግ ክፍል
 - 103 — መተዳደሪያ ደንቡን ስለ ማሻሻል
-- 104–105 — The contents extraction must be checked against the final pages of the source; do not infer or invent the headings or effect of these articles from numbering alone.
+- 104 — የመተዳደሪያ ደንብ ተፈጻሚነት
+- 105 — መተዳደሪያ ደንቡ ስለሚጸናበት እና ተግባራዊ ስለሚሆንበት ጊዜ
 
 ## What this index does and does not establish
 
