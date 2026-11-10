@@ -49,6 +49,7 @@
 5. Candidate workflows and evidence questions documented for later stakeholder validation.
 6. Candidate architecture and security concerns documented without freezing technology or data models.
 7. Initial risk and dependency register created; ratings remain preliminary and unaccepted.
+8. Requirements-to-evidence traceability matrix created for all 12 functional and 8 non-functional requirements, with nine open elicitation gaps; all validation and test coverage remains outstanding.
 
 ## Exit gate
 
