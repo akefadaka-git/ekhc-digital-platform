@@ -29,10 +29,10 @@ This is a recovered Owner-provided chain, not yet a verified constitutional sche
 ## 3. Binding terminology constraints
 
 - `ቀጣና` is a genuine organizational level above `ኅብረት`; do not collapse the two.
-- Retain `ኅብረት` as the EKHC term. Do not translate or relabel it as “Union”.
-- Do not create a `ChurchUnion` or `Union` domain entity.
+- Retain `ኅብረት` as the established EKHC term. Do not substitute an unapproved English organizational label.
+- Do not create a parallel English-named organizational domain for this level.
 - Two prohibited legacy organizational labels are excluded throughout the repository and product: documentation, source code, database schemas, APIs, UI, reporting, analytics, and tests.
-- Do not substitute generic labels such as “zone/union/local church” unless the mapping is explicitly supported by an authoritative EKHC source and approved.
+- Do not substitute generic administrative labels unless the mapping is explicitly supported by an authoritative EKHC source and approved.
 - Office labels and seal-name composition do not, by themselves, prove organizational parentage or authority.
 
 ## 4. Required source reconciliation
