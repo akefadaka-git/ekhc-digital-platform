@@ -28,7 +28,7 @@ No production features, production data migrations, deployment, signing, or publ
 - Offline-first behavior with controlled synchronization is a design requirement to validate.
 - Organization-scoped authorization, role/permission controls, and auditable actions are mandatory design concerns.
 - The authoritative church hierarchy and terminology must be verified against official EKHC constitutional and governance documents before being encoded.
-- The terms **ወረዳ** and **District** are prohibited in the application, documentation, code, database schemas, APIs, UI, reports, and analytics.
+- Two prohibited legacy organizational labels must not appear in the application, documentation, code, database schemas, APIs, UI, reports, or analytics.
 - Existing EKHC UI and related work must be discovered and assessed before any replacement or integration; do not overwrite it blindly.
 
 ## Initial documentation
