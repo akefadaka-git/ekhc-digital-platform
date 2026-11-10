@@ -31,7 +31,7 @@ This is a recovered Owner-provided chain, not yet a verified constitutional sche
 - `ቀጣና` is a genuine organizational level above `ኅብረት`; do not collapse the two.
 - Retain `ኅብረት` as the EKHC term. Do not translate or relabel it as “Union”.
 - Do not create a `ChurchUnion` or `Union` domain entity.
-- The terms `ወረዳ` and `District` are prohibited throughout the repository and product: documentation, source code, database schemas, APIs, UI, reporting, analytics, and tests.
+- Two prohibited legacy organizational labels are excluded throughout the repository and product: documentation, source code, database schemas, APIs, UI, reporting, analytics, and tests.
 - Do not substitute generic labels such as “zone/union/local church” unless the mapping is explicitly supported by an authoritative EKHC source and approved.
 - Office labels and seal-name composition do not, by themselves, prove organizational parentage or authority.
 
