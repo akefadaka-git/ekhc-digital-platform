@@ -21,14 +21,16 @@
 
 ## 2. Non-functional requirements
 
-- **Security:** deny by default; server-side authorization; least privilege; organization-scoped data access.
-- **Privacy:** data minimization, purpose limitation, retention rules, and protected handling of sensitive personal and pastoral information.
-- **Reliability:** recoverable operations, backup/restore procedures, and defined service objectives.
-- **Performance:** measurable response-time and synchronization targets to be established from field conditions.
-- **Accessibility:** target WCAG 2.2 AA for applicable web interfaces, subject to validation.
-- **Localization:** Amharic-first content, Unicode correctness, locale-aware dates/numbers, and reviewed translations.
-- **Interoperability:** documented APIs and controlled integrations; no implicit trust across systems.
-- **Maintainability:** modular boundaries, automated tests, documented operations, and supported upgrade paths.
+| ID | Quality attribute | Requirement | Acceptance direction |
+|---|---|---|---|
+| NFR-001 | Security | Deny by default; server-side authorization; least privilege; organization-scoped data access | Every protected request is authorized server-side against the verified actor, action, resource and scope; negative tests demonstrate denial |
+| NFR-002 | Privacy | Data minimization, purpose limitation, retention rules, and protected handling of sensitive personal and pastoral information | Approved data inventory, purpose/basis, access, retention and deletion rules exist before live sensitive data is processed |
+| NFR-003 | Reliability | Recoverable operations, backup/restore procedures, and defined service objectives | Approved service objectives and tested backup/restore and recovery procedures |
+| NFR-004 | Performance | Measurable response-time and synchronization targets to be established from field conditions | Baselines and percentile targets agreed after representative field/device/connectivity measurement |
+| NFR-005 | Accessibility | Target WCAG 2.2 AA for applicable web interfaces, subject to validation | Accessibility review and automated/manual test evidence for agreed critical journeys |
+| NFR-006 | Localization | Amharic-first content, Unicode correctness, locale-aware dates/numbers, and reviewed translations | Reviewed language glossary and test coverage for input, display, search, sort, notifications and exports |
+| NFR-007 | Interoperability | Documented APIs and controlled integrations; no implicit trust across systems | Approved interface contracts, authentication, authorization, data-sharing and error-handling rules |
+| NFR-008 | Maintainability | Modular boundaries, automated tests, documented operations, and supported upgrade paths | Approved architecture boundaries, CI/test strategy, operational runbooks and dependency lifecycle policy |
 
 ## 3. Authorization model — proposal for evaluation
 
@@ -38,16 +40,24 @@ This is an architecture proposal, not an approved schema. Its relationship to EK
 
 ## 4. Requirements still to elicit
 
-- Detailed workflows and role catalogues by verified organizational level.
-- Membership lifecycle, family/household relationships, transfers and duplicate resolution.
-- Governance and meeting approval paths.
-- Ministry-specific workflows and safeguarding boundaries.
-- Document classification, retention, archival and access rules.
-- Communication consent and audience rules.
-- Offline use cases, device sharing, conflict resolution and data expiry.
-- Reporting definitions, data ownership and permitted aggregation.
-- Integration, migration, hosting, support and sustainability requirements.
+The following are discovery gaps, not approved functional requirements:
+
+| Gap ID | Topic requiring elicitation | Evidence needed |
+|---|---|---|
+| GAP-001 | Detailed workflows and role catalogues by verified organizational level | Constitution/bylaws, process-owner interviews, approved process documents |
+| GAP-002 | Membership lifecycle, household relationships, transfers and duplicate resolution | Approved registers, data dictionary, process-owner validation and privacy review |
+| GAP-003 | Governance and meeting approval paths | Constitutional clauses, bylaws, approved meeting rules, minutes templates |
+| GAP-004 | Ministry-specific workflows and safeguarding boundaries | Ministry mandates, safeguarding policies and authorized stakeholder validation |
+| GAP-005 | Document classification, retention, archival and access rules | Records policy, legal requirements, approved retention schedule |
+| GAP-006 | Communication consent and audience rules | Communication policy, consent basis, approved audience and publication rules |
+| GAP-007 | Offline use cases, device sharing, conflict resolution and data expiry | Field studies, device/connectivity profile, workflow-level sync decisions |
+| GAP-008 | Reporting definitions, data ownership and permitted aggregation | Approved report templates, metric definitions, data owners and disclosure rules |
+| GAP-009 | Integration, migration, hosting, support and sustainability requirements | System inventory, interface owners, data quality review, hosting and operating-cost assessment |
 
 ## 5. Out of scope for A1
 
 Production code, live member data, production migrations, payment processing, autonomous decisions, deployment, signing and publication.
+
+## 6. Baseline control
+
+Requirement IDs are stable traceability identifiers. Changes to requirement wording, priority or acceptance direction must be recorded in the decision log and reflected in `docs/assessment/REQUIREMENTS-TRACEABILITY-MATRIX.md`. A requirement is not approved merely because it has an ID or appears in the matrix.
