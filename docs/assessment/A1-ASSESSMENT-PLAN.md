@@ -22,7 +22,7 @@
 
 - EKHC-only product identity: `የኢትዮጵያ ቃለ ሕይወት ቤተ ክርስቲያን`.
 - `ቀጣና` is a distinct organizational level above `ኅብረት`.
-- `ኅብረት` is the established EKHC term; do not relabel it as “Union”.
+- Retain `ኅብረት` as the established EKHC term; do not substitute an unapproved English organizational label.
 - The Owner-provided hierarchy chain is recorded in `docs/organization/HIERARCHY-AND-TERMINOLOGY.md`; it is a discovery baseline only and is not constitutionally verified.
 - Two prohibited legacy organizational labels are excluded from all project artifacts and product surfaces.
 - Do not infer office parentage, governance powers, or data scope from seal wording or display composition alone.
