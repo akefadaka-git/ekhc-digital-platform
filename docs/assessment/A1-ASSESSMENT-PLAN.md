@@ -48,6 +48,7 @@
 4. Existing UI references recovered from prior project history and recorded without assuming the files are present in the current default branch.
 5. Candidate workflows and evidence questions documented for later stakeholder validation.
 6. Candidate architecture and security concerns documented without freezing technology or data models.
+7. Initial risk and dependency register created; ratings remain preliminary and unaccepted.
 
 ## Exit gate
 
