@@ -11,15 +11,20 @@
 | SRC-002 | Current EKHC bylaws / መተዳደሪያ ደንብ | Verify current edition, amendments, legal status and relationship to Constitution | MISSING — REQUIRED |
 | SRC-003 | Official organizational chart / approved structure | Confirm current administrative implementation against constitutional authority | NOT VERIFIED |
 | SRC-004 | Official office/department mandate documents | Confirm names, responsibilities, reporting lines and delegated authority | NOT VERIFIED |
+| SRC-005 | Existing UI source and design records | Identify authoritative repository, branches, commits, design files and ownership | PARTIAL — historical references recovered; current source location not established |
 
 ## 2. Public institutional corroboration (not constitutional proof)
 
 | ID | Public source | What it can corroborate | Limitation |
 |---|---|---|---|
-| PUB-001 | [EKHC official Amharic website](https://ekhc.et/amh/) | Institutional identity, publicly described ministry/department labels and public-facing terminology | Does not establish constitutional hierarchy or delegated authority |
-| PUB-002 | [EKHC official English website](https://ekhc.et/) | Institutional identity and public-facing ministry/department context | Does not establish constitutional hierarchy or delegated authority |
-| PUB-003 | [EKHC website](https://www.ekhc.net/) | Historical and institutional context, public descriptions and leadership information | Must be checked for currency; not a substitute for the Constitution |
-| PUB-004 | [EKHC Literature and Communication page](https://ekhc.net/literature_and_communication) | Describes publication/circulation of church legal documents and archival work | Does not itself provide the required seventh-edition Constitution |
+| PUB-001 | [EKHC official Amharic website](https://ekhc.et/amh/) | Public-facing institutional identity, ministry/service labels and Amharic terminology | Does not establish constitutional hierarchy or delegated authority |
+| PUB-002 | [EKHC official website](https://ekhc.et/) | Public-facing ministry/service areas and institutional context | Does not establish constitutional hierarchy or delegated authority |
+| PUB-003 | [EKHC website](https://www.ekhc.net/) | Public institutional context and ministry descriptions | Must be checked for currency; not a substitute for the Constitution |
+| PUB-004 | [EKHC Literature and Communication page](https://ekhc.net/literature_and_communication) | Public description of publication/circulation of church legal documents and archive work | Does not itself provide the required seventh-edition Constitution |
+
+The public pages currently expose ministry/service labels including missions, theological education, finance, human resources/properties/logistics, communication/literature, discipleship/church education, women, youth, children, social security, professionals, leadership training, community empowerment, and marriage/prayer services. These labels are discovery inputs only. They are not approved application domains, a complete inventory, or proof of reporting lines.
+
+Public pages on different EKHC web properties do not always present identical descriptions or counts. Treat such differences as a source-freshness and reconciliation issue; do not choose one page as the definitive organizational record.
 
 ## 3. Historical material — not governing evidence
 
@@ -40,10 +45,24 @@ For every constitutional or bylaw claim, record:
 
 Do not infer constitutional parentage, powers, or office hierarchy from website layout, leadership lists, seals, social posts, or historical editions.
 
-## 5. Current A1 findings
+## 5. Existing UI evidence
+
+Prior project history identifies an existing EKHC UI foundation with references to:
+
+- `resources/js/layouts/Header.vue`
+- `resources/js/styles/tokens.css`
+- `tailwind.config.js`
+
+The earlier UI work described an Amharic-first, Ethiopian-calendar-first, mobile-first shell and shared elements such as header, active context, sidebar, footer, layouts and reusable interface components. A prior implementation note specifically referred to a header-surface token and a Header component adjustment.
+
+**Current verification result:** attempts to fetch those exact paths from the current repository `main` branch returned GitHub 404 responses. This does not prove the work never existed; it means its current branch, commit, repository location and file contents are not established by the available remote evidence. Do not recreate, overwrite, or declare this work reconciled until its source is located and compared.
+
+## 6. Current A1 findings
 
 - The Owner-provided eight-step organizational chain is preserved as a discovery baseline only.
 - The chain is **not verified** against the required seventh-edition Constitution.
-- The public EKHC websites are useful corroborative references, not authority for constitutional structure.
+- Public EKHC websites are useful corroborative references, not authority for constitutional structure.
+- Public ministry/service labels can guide stakeholder discovery but do not prove internal organizational structure or approved software domains.
+- Existing UI work is acknowledged and protected; its exact current source location remains unresolved.
 - No hierarchy schema, authorization scope, database enum, API contract, or navigation tree is approved.
-- A1 remains OPEN. A2 read-only reconciliation cannot be declared complete until the governing source and applicable supporting instruments are reconciled.
+- A1 remains OPEN. A2 read-only reconciliation cannot be declared complete until governing sources and existing artifacts are located and reconciled.
