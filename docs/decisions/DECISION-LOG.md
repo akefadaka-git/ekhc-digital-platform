@@ -7,7 +7,7 @@
 | D-003 | Amharic-first, multilingual product direction | CONFIRMED | Owner project constraint |
 | D-004 | Ethiopian calendar is the default | CONFIRMED | Owner project constraint |
 | D-005 | Exclude the two prohibited legacy organizational labels from all project/product artifacts | CONFIRMED | Explicit Owner constraint |
-| D-006 | `ቀጣና` is above `ኅብረት`; do not call `ኅብረት` “Union” | CONFIRMED | Prior Owner decisions; constitutional source reconciliation still required |
+| D-006 | `ቀጣና` is above `ኅብረት`; retain the established Amharic term without substituting an unapproved English organizational label | CONFIRMED | Prior Owner decisions; constitutional source reconciliation still required |
 | D-007 | Recovered eight-step hierarchy chain is a source-reconciliation baseline only | RECOVERED — NOT FROZEN | Prior Owner-supplied chain; exact constitutional clauses still to verify |
 | D-008 | A1 before A2; A3 implementation only after required approvals | CONFIRMED | Owner stage-gate instruction |
 | D-009 | No production implementation, deployment, signing or publication authorized in A1 | CONFIRMED | Owner stage-gate instruction |
