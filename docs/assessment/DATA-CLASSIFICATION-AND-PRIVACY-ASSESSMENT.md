@@ -15,6 +15,8 @@ The classification levels and handling rules below are proposals for review. The
 
 No production database schema, role catalogue, permission scope, retention period, data export entitlement, or offline synchronization policy is approved by this document.
 
+Where organizational scope is referenced in future assessment records, preserve ቀጣና and ኅብረት as distinct source-defined terms. Do not collapse them, infer a parent-child relationship beyond verified constitutional provisions, or introduce unverified translations.
+
 ## 2. Assessment principles
 
 1. **Purpose limitation:** collect information only for a defined, authorized church or operational purpose.
