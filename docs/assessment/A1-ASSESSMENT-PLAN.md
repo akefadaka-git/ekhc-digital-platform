@@ -24,7 +24,7 @@
 - `ቀጣና` is a distinct organizational level above `ኅብረት`.
 - `ኅብረት` is the established EKHC term; do not relabel it as “Union”.
 - The user's prescribed hierarchy chain is recorded in `docs/organization/HIERARCHY-AND-TERMINOLOGY.md`; official source reconciliation remains required.
-- The terms `ወረዳ` and `District` are prohibited in all project artifacts and product surfaces.
+- Two prohibited legacy organizational labels are excluded from all project artifacts and product surfaces.
 - Do not infer office parentage, governance powers, or data scope from seal wording or display composition alone.
 - Preserve existing EKHC UI/work until it has been inventoried and assessed.
 
