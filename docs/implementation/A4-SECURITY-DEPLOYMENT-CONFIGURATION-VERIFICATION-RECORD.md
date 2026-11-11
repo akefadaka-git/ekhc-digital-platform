@@ -1,6 +1,8 @@
 # EKHC OS — A4 Security Headers and Deployment Configuration Verification Record
 
-**Verification status:** TECHNICAL PASS — Owner acceptance pending  
+**Verification status:** OWNER-ACCEPTED — VERIFIED-CLOSED  
+**Technical result:** PASS  
+**Owner acceptance:** Explicitly granted in the project conversation on 2026-11-11 (“Yes”)  
 **Date:** 2026-11-11  
 **Repository:** akefadaka-git/ekhc-digital-platform  
 **Implementation branch:** a3/security-deployment-configuration  
@@ -49,7 +51,7 @@ Verified steps:
 | Ruff format | PASS |
 | pip-audit | PASS |
 
-Earlier attempts exposed a missing X-frame middleware assertion and import/format issues. Those were corrected. Earlier failed/cancelled attempts are not treated as passing evidence; run #80 is the final exact implementation-head evidence.
+All workflow job steps completed successfully. Earlier attempts exposed a missing X-frame middleware assertion and import/format issues. Those were corrected. Earlier failed/cancelled attempts are not treated as passing evidence; run #80 is the final exact implementation-head evidence.
 
 ## 4. Security boundaries and limitations
 
@@ -65,6 +67,13 @@ Earlier attempts exposed a missing X-frame middleware assertion and import/forma
 
 **A4 technical conclusion: PASS for the restricted security headers and deployment configuration increment.**
 
-The final implementation SHA passed the exact-head quality workflow, including 31 tests, Django system check, Ruff lint/format, and dependency audit. The implementation remains isolated from main.
+**Owner acceptance: GRANTED.** The Owner explicitly accepted the A4 verification record on 2026-11-11. This increment is therefore **VERIFIED-CLOSED** within the restricted scope stated in this record.
 
-**Owner acceptance remains pending.** This technical PASS does not close A2, validate institutional authority or legal requirements, authorize production proxy trust, or authorize A5. A5 remains NOT STARTED and separately gated.
+This closure does not close A2, validate institutional authority or legal requirements, authorize production proxy trust, or authorize A5. The security limitations above remain binding. A5 remains NOT STARTED and separately gated.
+
+## 6. Change-control disposition
+
+- This closure update changes this A4 verification record only, on `a4/security-deployment-configuration-verification`.
+- The tested implementation SHA `6ae339305641ace35232981f175d6fe416a12df7` is unchanged.
+- No application source or workflow code was changed by this acceptance record.
+- No merge to `main`, deployment, signing, or publication is authorized or performed.
