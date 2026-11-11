@@ -50,7 +50,7 @@ def parse_lockfile(text: str) -> list[dict[str, str]]:
 
 
 def parse_utc(value: str) -> datetime:
-    if not value.endswith("Z"):
+    if not isinstance(value, str) or not value.endswith("Z"):
         raise ValueError("expires_at_utc must use an explicit UTC Z suffix")
     parsed = datetime.fromisoformat(value[:-1] + "+00:00")
     if parsed.utcoffset() != timedelta(0):
@@ -59,6 +59,8 @@ def parse_utc(value: str) -> datetime:
 
 
 def evaluate_exceptions(document: dict, now: datetime) -> list[dict[str, object]]:
+    if not isinstance(document, dict):
+        raise ValueError("Exception register must be a JSON object")
     if document.get("schema_version") != 1 or not isinstance(
         document.get("exceptions"), list
     ):
@@ -123,7 +125,10 @@ def evaluate_exceptions(document: dict, now: datetime) -> list[dict[str, object]
 def query_osv(packages: list[dict[str, str]]) -> list[dict]:
     queries = [
         {
-            "package": {"name": package["name"], "ecosystem": "PyPI"},
+            "package": {
+                "name": re.sub(r"[-_.]+", "-", package["name"]).lower(),
+                "ecosystem": "PyPI",
+            },
             "version": package["version"],
         }
         for package in packages
@@ -141,12 +146,21 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
     )
     with urlopen(request, timeout=20) as response:
         data = json.loads(response.read().decode("utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("OSV returned a non-object response")
     results = data.get("results")
     if not isinstance(results, list) or len(results) != len(packages):
         raise ValueError("OSV returned an incomplete or malformed batch response")
     findings = []
     for package, result in zip(packages, results, strict=True):
-        for advisory in result.get("vulns", []):
+        if not isinstance(result, dict):
+            raise ValueError("OSV returned a malformed package result")
+        advisories = result.get("vulns", [])
+        if not isinstance(advisories, list):
+            raise ValueError("OSV returned a malformed advisory list")
+        for advisory in advisories:
+            if not isinstance(advisory, dict):
+                raise ValueError("OSV returned a malformed advisory entry")
             findings.append(
                 {
                     "package": package["name"],
