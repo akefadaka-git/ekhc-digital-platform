@@ -16,7 +16,7 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 OSV_QUERYBATCH_URL = "https://api.osv.dev/v1/querybatch"
-PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)(?:\s|$)")
+PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\\s;\\\\]+)(?:\\s|$)")
 REMINDER_DAYS = (30, 14, 7, 3, 1)
 VALID_SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
 VALID_STATUSES = {"PROPOSED", "APPROVED", "REJECTED", "REVOKED", "EXPIRED"}
@@ -32,11 +32,15 @@ def parse_lockfile(text: str) -> list[dict[str, str]]:
             continue
         match = PINNED_REQUIREMENT.match(line)
         if not match:
-            raise ValueError(f"Unsupported lock entry at line {number}; expected name==version")
+            raise ValueError(
+                f"Unsupported lock entry at line {number}; expected name==version"
+            )
         name, version = match.groups()
         normalized = re.sub(r"[-_.]+", "-", name).lower()
         if normalized in seen:
-            raise ValueError(f"Duplicate normalized package name at line {number}: {name}")
+            raise ValueError(
+                f"Duplicate normalized package name at line {number}: {name}"
+            )
         seen.add(normalized)
         packages.append({"name": name, "version": version})
     if not packages:
@@ -54,8 +58,12 @@ def parse_utc(value: str) -> datetime:
 
 
 def evaluate_exceptions(document: dict, now: datetime) -> list[dict[str, object]]:
-    if document.get("schema_version") != 1 or not isinstance(document.get("exceptions"), list):
-        raise ValueError("Exception register must use schema_version 1 and an exceptions array")
+    if document.get("schema_version") != 1 or not isinstance(
+        document.get("exceptions"), list
+    ):
+        raise ValueError(
+            "Exception register must use schema_version 1 and an exceptions array"
+        )
     if now.tzinfo is None or now.utcoffset() != timedelta(0):
         raise ValueError("Evaluation time must be timezone-aware UTC")
     reminders: list[dict[str, object]] = []
@@ -63,38 +71,71 @@ def evaluate_exceptions(document: dict, now: datetime) -> list[dict[str, object]
     for entry in document["exceptions"]:
         if not isinstance(entry, dict):
             raise ValueError("Each exception register entry must be an object")
-        required = {"exception_id", "severity", "status", "expires_at_utc", "record_reference"}
+        required = {
+            "exception_id",
+            "severity",
+            "status",
+            "expires_at_utc",
+            "record_reference",
+        }
         if not required.issubset(entry):
             raise ValueError("Exception register entry is missing required metadata")
         identifier = entry["exception_id"]
-        if not isinstance(identifier, str) or not identifier.strip() or identifier in identifiers:
+        if (
+            not isinstance(identifier, str)
+            or not identifier.strip()
+            or identifier in identifiers
+        ):
             raise ValueError("Exception IDs must be non-empty and unique")
         identifiers.add(identifier)
-        if entry["severity"] not in VALID_SEVERITIES or entry["status"] not in VALID_STATUSES:
+        severity = entry["severity"]
+        status = entry["status"]
+        if (
+            not isinstance(severity, str)
+            or severity not in VALID_SEVERITIES
+            or not isinstance(status, str)
+            or status not in VALID_STATUSES
+        ):
             raise ValueError(f"Invalid severity or status for {identifier}")
-        if not isinstance(entry["record_reference"], str) or not entry["record_reference"].strip():
+        reference = entry["record_reference"]
+        if not isinstance(reference, str) or not reference.strip():
             raise ValueError(f"Missing non-sensitive record reference for {identifier}")
         expiry = parse_utc(entry["expires_at_utc"])
-        if entry["status"] != "APPROVED":
+        if status != "APPROVED":
             continue
         days_left = (expiry.date() - now.date()).days
         if days_left < 0:
-            reminders.append({"id": identifier, "kind": "EXPIRED", "days_left": days_left})
+            reminders.append(
+                {"id": identifier, "kind": "EXPIRED", "days_left": days_left}
+            )
         elif days_left in REMINDER_DAYS or days_left == 0:
-            reminders.append({"id": identifier, "kind": "EXPIRY_REMINDER", "days_left": days_left})
+            reminders.append(
+                {
+                    "id": identifier,
+                    "kind": "EXPIRY_REMINDER",
+                    "days_left": days_left,
+                }
+            )
     return reminders
 
 
 def query_osv(packages: list[dict[str, str]]) -> list[dict]:
     queries = [
-        {"package": {"name": package["name"], "ecosystem": "PyPI"}, "version": package["version"]}
+        {
+            "package": {"name": package["name"], "ecosystem": "PyPI"},
+            "version": package["version"],
+        }
         for package in packages
     ]
     payload = json.dumps({"queries": queries}).encode("utf-8")
     request = Request(
         OSV_QUERYBATCH_URL,
         data=payload,
-        headers={"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "ekhc-security-monitor/1.0"},
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "ekhc-security-monitor/1.0",
+        },
         method="POST",
     )
     with urlopen(request, timeout=20) as response:
@@ -105,13 +146,15 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
     findings = []
     for package, result in zip(packages, results, strict=True):
         for advisory in result.get("vulns", []):
-            findings.append({
-                "package": package["name"],
-                "version": package["version"],
-                "id": advisory.get("id", "UNKNOWN-ID"),
-                "modified": advisory.get("modified", "UNKNOWN"),
-                "summary": advisory.get("summary", "No summary supplied"),
-            })
+            findings.append(
+                {
+                    "package": package["name"],
+                    "version": package["version"],
+                    "id": advisory.get("id", "UNKNOWN-ID"),
+                    "modified": advisory.get("modified", "UNKNOWN"),
+                    "summary": advisory.get("summary", "No summary supplied"),
+                }
+            )
     return findings
 
 
@@ -119,7 +162,7 @@ def write_summary(markdown: str) -> None:
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as summary:
-            summary.write(markdown + "\n")
+            summary.write(markdown + "\\n")
     print(markdown)
 
 
@@ -135,7 +178,11 @@ def main() -> int:
         reminders = evaluate_exceptions(register, now)
         findings = query_osv(packages)
     except (OSError, ValueError, json.JSONDecodeError, URLError, TimeoutError) as error:
-        write_summary(f"## Security monitoring — INCOMPLETE\n\nMonitoring could not complete: `{type(error).__name__}`. See job logs.")
+        message = (
+            "## Security monitoring — INCOMPLETE\\n\\n"
+            f"Monitoring could not complete: `{type(error).__name__}`. See job logs."
+        )
+        write_summary(message)
         return 2
 
     lines = [
@@ -147,23 +194,52 @@ def main() -> int:
         "",
     ]
     if findings:
-        lines.extend(["### Advisory findings", "| Package | Locked version | Advisory | Modified | Summary |", "|---|---:|---|---|---|"])
+        lines.extend(
+            [
+                "### Advisory findings",
+                "| Package | Locked version | Advisory | Modified | Summary |",
+                "|---|---:|---|---|---|",
+            ]
+        )
         for item in findings:
-            summary = str(item["summary"]).replace("|", "\\|").replace("\n", " ")
-            lines.append(f"| {item['package']} | {item['version']} | {item['id']} | {item['modified']} | {summary} |")
+            summary = str(item["summary"]).replace("|", "\\\\|").replace("\\n", " ")
+            lines.append(
+                f"| {item['package']} | {item['version']} | {item['id']} | "
+                f"{item['modified']} | {summary} |"
+            )
     else:
-        lines.append("No matching OSV advisories were returned for the locked PyPI package versions.")
+        lines.append(
+            "No matching OSV advisories were returned for the locked PyPI package versions."
+        )
     if reminders:
-        lines.extend(["", "### Exception expiry signals", "| Exception | Signal | Days remaining |", "|---|---|---:|"])
+        lines.extend(
+            [
+                "",
+                "### Exception expiry signals",
+                "| Exception | Signal | Days remaining |",
+                "|---|---|---:|",
+            ]
+        )
         for item in reminders:
-            lines.append(f"| {item['id']} | {item['kind']} | {item['days_left']} |")
+            lines.append(
+                f"| {item['id']} | {item['kind']} | {item['days_left']} |"
+            )
     else:
-        lines.extend(["", "No approved exception is at a configured reminder threshold or past expiry."])
-    lines.extend([
-        "",
-        "> This workflow reports signals only. It does not assign severity, create tickets, modify dependencies, approve/revoke/expire exceptions, or deliver a guaranteed out-of-band notification.",
-    ])
-    write_summary("\n".join(lines))
+        lines.extend(
+            [
+                "",
+                "No approved exception is at a configured reminder threshold or past expiry.",
+            ]
+        )
+    lines.extend(
+        [
+            "",
+            "> This workflow reports signals only. It does not assign severity, create "
+            "tickets, modify dependencies, approve/revoke/expire exceptions, or deliver "
+            "a guaranteed out-of-band notification.",
+        ]
+    )
+    write_summary("\\n".join(lines))
     return 1 if findings or reminders else 0
 
 
