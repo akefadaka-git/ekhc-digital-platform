@@ -139,7 +139,7 @@ Create and activate a Python 3.14.10 virtual environment, then install the pinne
 python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
 # PowerShell: .venv\\Scripts\\Activate.ps1
-python -m pip install -r requirements-dev.txt
+python -m pip install --require-hashes -r requirements-lock.txt
 ```
 
 Set a local-only secret key before Django commands; never commit or reuse it:
@@ -160,10 +160,10 @@ python manage.py check
 python manage.py test
 ruff check .
 ruff format --check .
-pip-audit -r requirements-dev.txt
+pip-audit -r requirements-lock.txt
 ```
 
-The requirements files pin direct dependencies only. A complete transitive lockfile and hash-locked installation are not yet established; full dependency reproducibility remains an open verification item. A passing dependency audit is not security certification.
+`requirements-dev.txt` records the reviewed direct development inputs. `requirements-lock.txt` records the resolved transitive dependency set with SHA-256 hashes for every published release file for each pinned package version. Install it with `--require-hashes`; regenerate and review it whenever a direct dependency changes. The current lock was resolved on Python 3.14.10 / Ubuntu 24.04 x86_64 and contains 32 packages and 402 SHA-256 hashes. A passing dependency audit is not security certification.
 
 The health endpoint reports process responsiveness only and does not probe databases, networks, storage, or external services. It returns no organizational or personal data.
 
