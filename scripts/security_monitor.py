@@ -6,12 +6,12 @@ issues, changes dependencies, approves exceptions, or changes exception status.
 from __future__ import annotations
 
 import argparse
-from html import escape as escape_html
 import json
 import os
 import re
 import sys
 from datetime import UTC, datetime, timedelta
+from html import escape as escape_html
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -260,9 +260,11 @@ def main() -> int:
     lines.extend(
         [
             "",
-            "> This workflow reports signals only. It does not assign severity, create "
-            "tickets, modify dependencies, approve/revoke/expire exceptions, or deliver "
-            "a guaranteed out-of-band notification.",
+            (
+                "> This workflow reports signals only. It does not assign severity, "
+                "create tickets, modify dependencies, approve/revoke/expire exceptions, "
+                "or deliver a guaranteed out-of-band notification."
+            ),
         ]
     )
     write_summary("\n".join(lines))
