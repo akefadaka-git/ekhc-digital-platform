@@ -136,7 +136,9 @@ Earlier failed/cancelled attempts are not counted as successful evidence: run #9
 
 **A4 technical verification: PASS.** The A3 increment meets its narrowly stated purpose: an executable guard for the current absence of authentication and protected-data routes, plus a clearly separated future access-control test strategy. The test code itself does not add a protected-data access path.
 
-**Closure status:** Owner acceptance pending. This record does not self-authorize a VERIFIED-CLOSED governance disposition. Upon Owner acceptance, this A4 increment may be recorded as VERIFIED-CLOSED within the limited scope above.
+**Owner acceptance:** GRANTED on 2026-11-11. The Owner approved this A4 independent verification record.
+
+**Closure status:** VERIFIED-CLOSED — Owner acceptance received. Closure is limited to the A3 current-boundary regression guard and test strategy at the exact reviewed SHA. Future AC-01–AC-16 tests, authentication implementation, production penetration testing, external security review, and production authorization correctness remain NOT RUN / NOT ESTABLISHED as stated above.
 
 ## 7. Governance and deployment boundaries
 
