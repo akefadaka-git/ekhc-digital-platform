@@ -98,10 +98,14 @@ Created on `a3/restricted-foundation-scope`:
 - Tests and lint configuration: `tests/__init__.py`, `tests/test_health.py`, `pyproject.toml`.
 - CI and developer instructions: `.github/workflows/quality.yml`, `README.md` (existing README content preserved and updated to use the hash lock).
 
-**Exact-head hash-lock verification evidence:**
-- Workflow: **A3 quality checks**, run **#22**.
-- Exact tested commit: `628dccda9d12fa78a29cecfe9520452f930b5df3`.
+**A3 lock-integration verification evidence (historical):
+- Workflow: **A3 quality checks**, run **#22**; commit `628dccda9d12fa78a29cecfe9520452f930b5df3`.
 - Run URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968364171
+
+**Final A3 exact-head verification evidence:**
+- Workflow: **A3 quality checks**, run **#26**; exact tested commit `bf3443b288bcc78d7479630ffa92f0af7c88cd77`.
+- Run URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968545687.
+- All 10 job steps succeeded: required files, Python 3.14.10, hash-locked install, Django check, 3 tests, Ruff lint/format, and pip-audit. Audit: no known vulnerabilities found.
 - Event: push on `a3/restricted-foundation-scope`.
 - Overall workflow conclusion: **SUCCESS**.
 - Required-file check, including `requirements-lock.txt`: PASS.
