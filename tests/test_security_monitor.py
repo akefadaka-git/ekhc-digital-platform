@@ -1,7 +1,6 @@
 import unittest
-from io import BytesIO
-from unittest.mock import patch
 from datetime import UTC, datetime
+from unittest.mock import patch
 
 from scripts.security_monitor import (
     escape_table_cell,
