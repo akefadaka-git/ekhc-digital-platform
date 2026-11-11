@@ -246,3 +246,22 @@ The Owner may consider closing the *read-only evidence-review activity* as **VER
 **Current stage status pending Owner decision:** A1 = OWNER APPROVED; A2 = PARTIAL / OPEN, closure recommendation prepared; A3 = NOT AUTHORIZED / NOT STARTED; A4 = NOT STARTED; A5 = NOT STARTED.
 
 If the Owner accepts the bounded evidence-review closure, the next permitted activity remains separately gated. Any A3 proposal must first be based on authenticated current governing sources and explicit scope approval. No automatic transition is implied by this recommendation.
+
+
+## 13. Additional public bylaw candidate located — 2026-11-11
+
+A further public-source search located a Scribd-hosted scan/transcription titled in Amharic as the EKHC bylaw, marked as a sixth revision and dated 2012 E.C. The page also contains a separate EKHC Constitution title/copyright notice dated 2020 and identifies the Communication and Literature Department as publisher. Its table of contents includes sections for local churches, አጥቢያ ቤተ ክርስቲያናት ኅብረት, ቀጣና, national church structures, and the national head office. The page states that it was uploaded by an individual Scribd account and displays an all-rights-reserved notice.
+
+**Source locator:** https://www.scribd.com/document/943135783/የቃለ-ህይወት-መተዳደሪያ-ደንብ
+
+**Evidence quality and limitations:**
+- This is a third-party user-uploaded copy, not a verified EKHC-controlled publication endpoint.
+- The page metadata and extracted contents do not authenticate the scan against an original signed/approved edition.
+- The displayed sixth-revision date does not establish that it remains current or unamended.
+- The co-present Constitution copyright notice dated 2020 does not establish a seventh edition, adoption date, or constitutional approval.
+- The document's table of contents is a useful source-discovery lead, not authority to freeze the hierarchy or office mandates.
+- Copyright is expressly reserved; no source text has been copied into project files.
+
+**Updated disposition:** A potential historical/current-at-publication sixth-revision bylaw candidate is now LOCATED, but current bylaws remain MISSING / UNVERIFIED for A2 exit purposes. The seventh-edition Constitution remains MISSING / BLOCKING. The hierarchy remains unapproved. The candidate may be authenticated by comparing a complete copy against an official EKHC-issued original, adoption record, amendments, and confirmation of current force.
+
+This finding updates G-02 from “no candidate located” to “historical sixth-revision candidate located; current authoritative edition and amendments not verified.” It does not remove the blocker.
