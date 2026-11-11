@@ -1,6 +1,7 @@
 # EKHC OS — A4 Localization Foundation Verification Record
 
-**Verification status:** TECHNICAL PASS — Owner acceptance pending  
+**Verification status:** TECHNICAL PASS — OWNER ACCEPTED / VERIFIED-CLOSED  
+**Owner acceptance date:** 2026-11-11  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Implementation branch:** `a3/localization-foundation`  
@@ -68,6 +69,8 @@ These are explicit scope boundaries or later verification needs, not silently ac
 
 **A4 technical conclusion: PASS for the restricted localization increment.**
 
+**Owner acceptance: APPROVED.** The Owner explicitly approved A4 closure in the project conversation on 2026-11-11. This increment is therefore **VERIFIED-CLOSED** at A4 for its restricted technical scope.
+
 The cache correctness finding was fixed and the final implementation head passed the complete existing quality workflow. The implementation remains isolated from `main`; no PR merge, deployment, signing, publication, or production-data access occurred.
 
-**Owner acceptance of A4 closure remains pending.** This record does not close A2, satisfy missing constitutional/bylaw/UI-provenance dependencies, or authorize A5. A5 remains NOT STARTED and separately gated.
+This closure does not close A2, satisfy missing constitutional/bylaw/UI-provenance dependencies, or authorize A5. A5 remains **NOT STARTED** and separately gated.
