@@ -1,6 +1,6 @@
 # EKHC OS — A3 Technical Baseline Decision Proposal
 
-**Status:** PARTIALLY APPROVED — backend and database deferral decisions recorded; remaining baseline decisions pending  
+**Status:** PARTIALLY APPROVED — backend, database deferral, API approach, and runtime version decisions recorded; remaining baseline decisions pending  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/restricted-foundation-scope`  
@@ -76,7 +76,7 @@ Each item needs a separate acceptance criterion and focused tests before impleme
 2. API approach: resolved by Owner Decision 3 below; no general API surface is approved.
 3. Test, lint, static-analysis, and dependency-audit tools.
 4. CI approach constrained to public/free execution and local fallback.
-5. Supported Python and Django versions, pinned only after compatibility and support-lifecycle review.
+5. Test, lint, static-analysis, and dependency-audit tools; Python/Django version decision is recorded below.
 6. Whether the proposed first increment is the intended A3 implementation sequence.
 7. File-level scope and measurable acceptance criteria for each included item.
 
@@ -108,6 +108,14 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 
 **Decision scope:** Django-native routing/views may be used only to implement and test the minimal health/readiness check described in Section 5. The endpoint must not expose secrets, personal data, organizational data, or internal configuration values. This decision does not approve a general REST API, resource endpoints, authentication API, data endpoints, API contracts, or DRF dependency. Any broader API surface requires a separate Owner decision.
 
+### Decision 4 — Python and Django runtime versions
+
+**Decision:** APPROVED — Python 3.14.x with Django 5.2 LTS for the first increment, with exact patch versions pinned in project files.
+
+**Verified patch baseline on 2026-11-11:** Python **3.14.10** and Django **5.2.19**. Python.org lists 3.14.10 as the latest 3.14 maintenance release and Python 3.14 remains in bugfix support through October 2030. Django's official download page lists 5.2.19 as the latest 5.2 LTS patch and extended support through April 2028. Django 5.2 supports Python 3.14 from 5.2.8 onward. Sources: https://www.python.org/downloads/release/python-31410/ ; https://www.djangoproject.com/download/ ; https://docs.djangoproject.com/en/5.2/releases/5.2/
+
+**Decision scope:** Pin Python 3.14.10 and Django 5.2.19 when the first-increment project files are created. This does not approve additional runtime packages, database integration, production hosting, or deployment. Re-check upstream security releases immediately before implementation and use a newer compatible patch if one has superseded these versions; record the exact change and evidence.
+
 **Implementation authorization:** These decisions record technical direction only. Executable implementation remains NOT STARTED pending the remaining technical decisions and a file-level acceptance checklist.
 
 **Constraints retained:** synthetic data only; preserve existing UI; no invented organizational hierarchy, offices, mandates, roles, permissions, or governance workflows; no paid services; no main-branch changes; no merge, deployment, signing, or publication without separate approval.
@@ -118,7 +126,7 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 - First-increment API: **OWNER-APPROVED — Django-native health/readiness endpoint only; DRF DEFERRED**.
 - First-increment database/schema work: **OWNER-APPROVED — DEFERRED**.
 - Complete technical baseline: PARTIAL / OPEN.
-- Exact runtime and dependencies: NOT SELECTED.
+- Runtime baseline: **OWNER-APPROVED — Python 3.14.10 + Django 5.2.19**, subject to a final upstream patch check before project-file pinning.\n- Additional dependencies: NOT SELECTED.
 - Executable application implementation: NOT STARTED.
 - Existing UI: PRESERVE; provenance unresolved.
 - Main branch: MUST REMAIN UNCHANGED.
