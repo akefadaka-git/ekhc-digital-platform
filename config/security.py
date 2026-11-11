@@ -4,8 +4,6 @@ Proxy TLS termination is deliberately unsupported until the actual proxy chain,
 header-stripping behavior, and network trust boundary are verified.
 """
 
-
-
 _TRUE_VALUES = {"1", "true"}
 _FALSE_VALUES = {"0", "false"}
 _MAX_HSTS_SECONDS = 63_072_000
