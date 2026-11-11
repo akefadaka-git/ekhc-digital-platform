@@ -10,9 +10,9 @@
 ## 1. Verification disposition
 
 **Technical result: PASS WITH LIMITATIONS.**  
-**Owner acceptance: PENDING.**  
+**Owner acceptance: GRANTED — the Owner explicitly approved closure as VERIFIED-CLOSED WITH LIMITATIONS on 2026-11-11.**  
 **Exact-head CI: NOT CONFIRMED.**  
-**Closure status: NOT YET OWNER-CLOSED.**
+**Closure status: VERIFIED-CLOSED WITH LIMITATIONS.**
 
 The A3 increment is narrowly scoped and the inspected source supports the claim that it does not add runtime dependencies or alter application behavior. The static guard is useful for the current lock/workflow conventions, but it is not a semantic YAML policy engine or independent package provenance verifier. No CI success is claimed because the available commit-run lookup did not return push-triggered runs for the exact A3 head.
 
@@ -159,4 +159,4 @@ This record verifies the A3 increment as a technical baseline with limitations. 
 - Production-data access: **NOT PERFORMED**.
 - Owner acceptance: **PENDING**.
 
-**Final technical disposition: PASS WITH LIMITATIONS; exact-head CI NOT CONFIRMED; Owner acceptance pending.**
+**Final disposition: VERIFIED-CLOSED WITH LIMITATIONS.** The exact-head CI status remains NOT CONFIRMED; this limitation is retained. No CI pass or failure is claimed. Outstanding provenance, vulnerability-governance, repository-protection, runner-isolation, and artifact-provenance work remains open. This closure does not authorize merge, deployment, signing, publication, or A5.
