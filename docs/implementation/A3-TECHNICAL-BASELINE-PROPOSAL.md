@@ -128,6 +128,35 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 
 **Decision scope:** These tools are approved for the narrowly scoped first increment. Their configuration must be reproducible and usable locally without paid services. Dependency-audit results must be recorded; a clean audit is not a security certification. Do not add unrelated quality platforms or paid services. Any additional tool or materially broader check requires a separate justification and approval.
 
+
+
+## 11. CI and local verification proposal — pending Owner decision
+
+**Recommendation:** Use one minimal GitHub Actions workflow on the public repository, on standard GitHub-hosted Linux runners only (for example, `ubuntu-24.04`). Do not use larger runners, paid hosted services, deployment jobs, or workflows that require secrets.
+
+**Cost evidence checked 2026-11-11:** GitHub's current documentation states that standard GitHub-hosted runners are free and unlimited for public repositories. Larger runners are billed even for public repositories. This proposal therefore excludes larger runners and any service that could incur a charge. Sources:
+- https://docs.github.com/en/actions/concepts/billing-and-usage
+- https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+
+**Proposed workflow behavior (not yet authorized for creation):**
+- Trigger on pull requests and pushes to the authorized A3 working branch; optionally support manual dispatch.
+- Use least-privilege workflow permissions; no write permissions unless a later, separately approved job requires them.
+- Set up the approved Python patch version, install only pinned project dependencies, then run Django tests, Ruff checks, and pip-audit.
+- Do not run on `main` as a development target or change branch protection/settings.
+- Do not upload artifacts, publish packages, deploy, sign releases, or access production credentials.
+- Pin third-party actions to immutable commit SHAs when the workflow is eventually authored; document the reviewed action versions.
+
+**Local fallback:** Provide a documented, reproducible sequence using the same Python version and dependency lock:
+1. Create/activate a virtual environment.
+2. Install the pinned development requirements.
+3. Run `python manage.py test`.
+4. Run `ruff check .` and `ruff format --check .`.
+5. Run `pip-audit`.
+
+The local commands are illustrative until the project files and dependency lock exist. Do not claim the commands pass before implementation and execution evidence exists.
+
+**Owner decision required:** Approve or revise this CI/local-verification proposal before creating workflow files. Until approved, CI configuration remains NOT CREATED and no CI run is claimed.
+
 ## 10. Current disposition
 
 - Backend preference: **OWNER-APPROVED — Django/Python**.
