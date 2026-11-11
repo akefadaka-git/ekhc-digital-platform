@@ -84,7 +84,7 @@ Keep all deferred or unresolved items out of executable scope until separately a
 
 ## 8. Acceptance and governance
 
-The file-level checklist has been created and Owner-approved. The first-increment files and transitive hash lock have been implemented on the authorized A3 branch. Final A3 exact-head workflow run #26 passed hash-locked installation, Django checks/tests, Ruff lint/format, and pip-audit. Run #22 remains historical lock-integration evidence. The A3 first-increment closure recommendation is recorded in the checklist and awaits Owner acceptance. Broader product requirements and A4 independent verification remain separate.
+The file-level checklist has been created and Owner-approved. The first-increment files and transitive hash lock have been implemented on the authorized A3 branch. Final A3 exact-head workflow run #26 passed hash-locked installation, Django checks/tests, Ruff lint/format, and pip-audit. Run #22 remains historical lock-integration evidence. The Owner accepted A3 first-increment closure before separately authorizing A4 verification. Broader product requirements and A4 independent verification remain separate.
 
 A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evidence and closure conditions are separately reconciled and accepted. Merge, deployment, signing, publication, and production data remain separately gated.
 
@@ -195,6 +195,6 @@ The Owner-approved checklist at `docs/implementation/A3-FIRST-INCREMENT-ACCEPTAN
 
 **Dependency reproducibility:** direct pins remain in `requirements.txt` and `requirements-dev.txt`. The committed `requirements-lock.txt` pins 32 resolved runtime/development packages and carries 402 SHA-256 hashes for the published release files of those exact versions. It is installed with pip `--require-hashes`.
 
-**Exact verification:** A3 quality workflow run #22, commit `628dccda9d12fa78a29cecfe9520452f930b5df3`, succeeded: hash-locked installation, Django system check, three Django tests, Ruff lint, Ruff format, and pip-audit. The audit reported no known vulnerabilities. Run: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968364171
+**Historical lock-integration verification:** A3 quality workflow run #22 at commit `628dccda9d12fa78a29cecfe9520452f930b5df3` succeeded. **Final A3 exact-head verification:** run #26 at `bf3443b288bcc78d7479630ffa92f0af7c88cd77` succeeded, including hash-locked installation, Django check, three tests, Ruff lint/format, and pip-audit. The audit reported no known vulnerabilities. Run #26: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968545687
 
 The A3 first-increment closure was accepted by the Owner before A4 authorization. This does not imply and does not authorize merge, deployment, signing, publication, production data, or any A2-dependent feature. No database, UI, organizational authority model, or product workflow is included.
