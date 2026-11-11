@@ -2,27 +2,14 @@
 
 import os
 
-from django.core.exceptions import ImproperlyConfigured
-
+from config.runtime import load_runtime_settings
 from config.security import load_security_settings
-
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "").strip()
-if not SECRET_KEY:
-    raise ImproperlyConfigured(
-        "DJANGO_SECRET_KEY must be set; do not commit or log its value."
-    )
-
-_raw_allowed_hosts = os.environ.get(
-    "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver"
-)
-ALLOWED_HOSTS = [host.strip() for host in _raw_allowed_hosts.split(",") if host.strip()]
-if not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS:
-    raise ImproperlyConfigured(
-        "DJANGO_ALLOWED_HOSTS must contain explicit hostnames; wildcards are forbidden."
-    )
 
 SECURITY = load_security_settings(os.environ)
 DJANGO_ENVIRONMENT = SECURITY["environment"]
+RUNTIME = load_runtime_settings(os.environ, DJANGO_ENVIRONMENT)
+SECRET_KEY = RUNTIME["secret_key"]
+ALLOWED_HOSTS = RUNTIME["allowed_hosts"]
 
 DEBUG = False
 ROOT_URLCONF = "config.urls"
