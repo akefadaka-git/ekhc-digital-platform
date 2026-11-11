@@ -4,6 +4,8 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 
+from config.security import load_security_settings
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "").strip()
 if not SECRET_KEY:
     raise ImproperlyConfigured(
@@ -19,6 +21,9 @@ if not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS:
         "DJANGO_ALLOWED_HOSTS must contain explicit hostnames; wildcards are forbidden."
     )
 
+SECURITY = load_security_settings(os.environ)
+DJANGO_ENVIRONMENT = SECURITY["environment"]
+
 DEBUG = False
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -27,6 +32,7 @@ ASGI_APPLICATION = "config.asgi.application"
 # No product apps, database, ORM persistence, or migrations are enabled.
 INSTALLED_APPS = []
 MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
     "config.observability.RequestCorrelationLoggingMiddleware",
     "config.localization.PlatformLanguageMiddleware",
 ]
@@ -43,8 +49,25 @@ USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Response hardening is safe without assuming a deployment hostname or proxy.
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+SECURE_REFERRER_POLICY = "same-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+
+# HTTPS/HSTS are explicit deployment settings. Production startup validation
+# requires both; development/test do not redirect or emit HSTS.
+SECURE_SSL_REDIRECT = SECURITY["ssl_redirect"]
+SECURE_HSTS_SECONDS = SECURITY["hsts_seconds"]
+SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURITY["hsts_include_subdomains"]
+SECURE_HSTS_PRELOAD = False
+SESSION_COOKIE_SECURE = SECURITY["session_cookie_secure"]
+CSRF_COOKIE_SECURE = SECURITY["csrf_cookie_secure"]
+
+# Do not trust X-Forwarded-* headers until the real proxy chain and its
+# header-sanitization behavior have been independently verified.
+SECURE_PROXY_SSL_HEADER = None
+USE_X_FORWARDED_HOST = False
 
 # Operational logs are structured and deliberately exclude paths, query strings,
 # headers, bodies, user identifiers, and arbitrary log messages/extra fields.
