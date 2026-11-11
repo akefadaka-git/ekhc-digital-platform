@@ -11,8 +11,10 @@ class NoAuthenticationOrProtectedDataSurfaceTests(SimpleTestCase):
     def test_no_product_or_authentication_apps_are_installed(self):
         self.assertEqual(settings.INSTALLED_APPS, [])
 
-    def test_no_database_is_configured(self):
-        self.assertFalse(settings.DATABASES)
+    def test_no_usable_database_is_configured(self):
+        database = settings.DATABASES["default"]
+        self.assertEqual(database["ENGINE"], "django.db.backends.dummy")
+        self.assertEqual(database["NAME"], "")
 
     def test_health_is_the_only_registered_route(self):
         patterns = get_resolver().url_patterns
