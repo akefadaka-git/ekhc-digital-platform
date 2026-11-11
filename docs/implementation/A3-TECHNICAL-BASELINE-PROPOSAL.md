@@ -1,6 +1,6 @@
 # EKHC OS — A3 Technical Baseline Decision Proposal
 
-**Status:** PARTIALLY APPROVED — backend, database deferral, API approach, and runtime version decisions recorded; remaining baseline decisions pending  
+**Status:** PARTIALLY APPROVED — technical choices 1–6 and the first-increment checklist are Owner-approved; broader product and frontend baseline decisions remain open  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/restricted-foundation-scope`  
@@ -130,7 +130,7 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 
 
 
-## 11. CI and local verification proposal — pending Owner decision
+## 11. CI and local verification approach — Owner-approved
 
 **Recommendation:** Use one minimal GitHub Actions workflow on the public repository, on standard GitHub-hosted Linux runners only (for example, `ubuntu-24.04`). Do not use larger runners, paid hosted services, deployment jobs, or workflows that require secrets.
 
@@ -138,7 +138,7 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 - https://docs.github.com/en/actions/concepts/billing-and-usage
 - https://docs.github.com/en/actions/reference/runners/github-hosted-runners
 
-**Proposed workflow behavior (not yet authorized for creation):**
+**Approved workflow behavior:**
 - Trigger on pull requests and pushes to the authorized A3 working branch; optionally support manual dispatch.
 - Use least-privilege workflow permissions; no write permissions unless a later, separately approved job requires them.
 - Set up the approved Python patch version, install only pinned project dependencies, then run Django tests, Ruff checks, and pip-audit.
@@ -155,7 +155,7 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 
 The local commands are illustrative until the project files and dependency lock exist. Do not claim the commands pass before implementation and execution evidence exists.
 
-**Owner decision required:** Approve or revise this CI/local-verification proposal before creating workflow files. Until approved, CI configuration remains NOT CREATED and no CI run is claimed.
+**Owner decision:** APPROVED on 2026-11-11. The workflow file has been created on the authorized A3 branch. A passing CI run is not claimed until its exact run and commit status are observed.
 
 
 
@@ -180,3 +180,8 @@ The local commands are illustrative until the project files and dependency lock 
 - Main branch: MUST REMAIN UNCHANGED.
 - Paid services: NOT ASSUMED.
 - Organizational authority and hierarchy: EXCLUDED / BLOCKED.
+
+
+## 12. First-increment checklist approval and implementation record — 2026-11-11
+
+The Owner approved the exact file-level checklist at `docs/implementation/A3-FIRST-INCREMENT-ACCEPTANCE-CHECKLIST.md`. The listed Django foundation, minimal health endpoint, tests, Ruff configuration, public-runner CI workflow, and developer setup documentation have been created on `a3/restricted-foundation-scope`. This is implementation progress only: no test, lint, dependency-audit, or CI success is claimed until the exact branch head is verified. The direct dependency pins are recorded in the requirements files; complete transitive lockfile and hash-locked installation remain open. No database, UI, organizational authority model, live data, or product workflow is included.
