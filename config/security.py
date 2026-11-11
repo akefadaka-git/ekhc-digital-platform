@@ -36,12 +36,12 @@ def _hsts_seconds(environ):
     try:
         seconds = int(raw_value)
     except ValueError as exc:
-        raise ImproperlyConfigured(
+        raise _improperly_configured(
             "DJANGO_SECURE_HSTS_SECONDS must be a whole number."
         ) from exc
 
     if not 0 <= seconds <= _MAX_HSTS_SECONDS:
-        raise ImproperlyConfigured(
+        raise _improperly_configured(
             "DJANGO_SECURE_HSTS_SECONDS must be between 0 and 63072000."
         )
     return seconds
@@ -51,7 +51,7 @@ def load_security_settings(environ):
     """Return validated security settings without guessing deployment topology."""
     environment = environ.get("DJANGO_ENVIRONMENT", "development").strip().lower()
     if environment not in {"development", "test", "production"}:
-        raise ImproperlyConfigured(
+        raise _improperly_configured(
             "DJANGO_ENVIRONMENT must be development, test, or production."
         )
 
@@ -62,21 +62,21 @@ def load_security_settings(environ):
     )
 
     if hsts_include_subdomains and hsts_seconds == 0:
-        raise ImproperlyConfigured(
+        raise _improperly_configured(
             "HSTS subdomains require a positive HSTS duration."
         )
 
     if environment == "production":
         if not environ.get("DJANGO_ALLOWED_HOSTS", "").strip():
-            raise ImproperlyConfigured(
+            raise _improperly_configured(
                 "Production requires explicit DJANGO_ALLOWED_HOSTS."
             )
         if not ssl_redirect:
-            raise ImproperlyConfigured(
+            raise _improperly_configured(
                 "Production requires DJANGO_SECURE_SSL_REDIRECT=true."
             )
         if hsts_seconds == 0:
-            raise ImproperlyConfigured(
+            raise _improperly_configured(
                 "Production requires a positive DJANGO_SECURE_HSTS_SECONDS."
             )
 
