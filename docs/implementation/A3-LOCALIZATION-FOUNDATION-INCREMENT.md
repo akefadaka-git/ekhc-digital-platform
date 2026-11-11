@@ -62,3 +62,6 @@ No dependency or lockfile changes are required.
 Initial run #41 failed at Django system checks because the framework's built-in locale catalogue does not include Amharic. The implementation was corrected to use a dedicated platform negotiation middleware rather than falsely treating Amharic as a Django translation catalogue. Corrective exact-head CI evidence will be added after the workflow completes.
 
 This increment remains on its own A3 branch. The accepted prior A3/A4 baseline remains unchanged; `main` remains unchanged. A4 verification for this increment is not yet claimed. A2 remains PARTIAL / OPEN. A5, merge, deployment, signing, and publication remain separately gated.
+
+
+Corrective implementation commit: `2fb8e5d07afc7b0db90c7e484e9e1c7253f9c83d`. The failed initial check is retained above as evidence of the catalogue compatibility issue and its resolution.
