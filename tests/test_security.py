@@ -65,9 +65,7 @@ class SecurityConfigurationTests(SimpleTestCase):
         with self.assertRaisesMessage(
             ImproperlyConfigured, "HSTS subdomains require a positive HSTS duration"
         ):
-            load_security_settings(
-                {"DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS": "true"}
-            )
+            load_security_settings({"DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS": "true"})
 
     def test_unknown_environment_fails_closed(self):
         with self.assertRaisesMessage(
