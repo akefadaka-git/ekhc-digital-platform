@@ -30,8 +30,8 @@ class SecurityMonitorTests(unittest.TestCase):
     def test_escapes_untrusted_advisory_text_for_markdown_tables(self):
         escaped = escape_table_cell('<img>|[link](javascript:alert(1))')
         self.assertIn("&lt;img&gt;", escaped)
-        self.assertIn('\\|', escaped)
-        self.assertIn('\\[link\\]', escaped)
+        self.assertIn("\\|", escaped)
+        self.assertIn("\\[link\\]", escaped)
 
     def test_rejects_unpinned_and_duplicate_normalized_entries(self):
         with self.assertRaises(ValueError):
