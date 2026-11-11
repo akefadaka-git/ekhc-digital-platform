@@ -80,8 +80,32 @@ The approved CI approach is standard GitHub-hosted runners for the public reposi
 
 - Checklist: OWNER APPROVED.
 - Executable implementation: AUTHORIZED within this checklist.
-- CI workflow file: AUTHORIZED for creation within this checklist.
+- CI workflow file: CREATED on the authorized A3 branch; run verification pending.
 - CI run: NOT RUN.
 - A2: PARTIAL / OPEN.
 - A4/A5: NOT STARTED.
 - Merge/deployment/signing/publication: NOT AUTHORIZED.
+
+
+## 7. Implementation progress record — 2026-11-11
+
+**Implementation state:** FILES CREATED; ACCEPTANCE VERIFICATION PENDING.
+
+Created on `a3/restricted-foundation-scope`:
+- Runtime and direct dependency declarations: `.python-version`, `requirements.txt`, `requirements-dev.txt`.
+- Django entry point and configuration: `manage.py`, `config/__init__.py`, `config/settings.py`, `config/urls.py`, `config/wsgi.py`, `config/asgi.py`.
+- Minimal endpoint: `health/__init__.py`, `health/views.py`.
+- Tests and lint configuration: `tests/__init__.py`, `tests/test_health.py`, `pyproject.toml`.
+- CI and developer instructions: `.github/workflows/quality.yml`, `README.md` (existing README content preserved and updated).
+
+**Verification disposition:**
+- Required files: PRESENT on the branch (read-back checked).
+- Django system check: NOT RUN / NOT VERIFIED.
+- Django tests: NOT RUN / NOT VERIFIED.
+- Ruff lint: NOT RUN / NOT VERIFIED.
+- Ruff format: NOT RUN / NOT VERIFIED.
+- pip-audit: NOT RUN / NOT VERIFIED.
+- GitHub Actions exact-head run: NOT VERIFIED; the available commit-status query returned no status entries and does not establish a successful workflow run.
+- Dependency reproducibility: PARTIAL. Direct dependencies are pinned; a complete transitive lockfile and hash-locked installation are not yet present, so this acceptance criterion remains OPEN.
+
+No PASS or VERIFIED-CLOSED claim is made. Resolve the dependency-lock gap and obtain exact-head local/CI verification evidence before A3 first-increment acceptance can close.
