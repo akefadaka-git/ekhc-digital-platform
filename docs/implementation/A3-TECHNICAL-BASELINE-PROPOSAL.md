@@ -34,12 +34,12 @@ The A1 architecture document explicitly leaves framework, database, API, authent
 
 | Concern | Candidate options | Current disposition |
 |---|---|---|
-| Backend | Laravel/PHP; Django/Python; FastAPI/Python | Django/Python selected as preferred backend by Owner; runtime version and exact dependency set remain to be specified. |
+| Backend | Laravel/PHP; Django/Python; FastAPI/Python | Django/Python approved; Python 3.14.10, Django 5.2.19, direct development pins, and the transitive hash lock are recorded. |
 | Frontend | Existing UI if recovered; otherwise Vue/TypeScript or React/TypeScript | No selection. Existing UI provenance must be resolved before any replacement or new shell is considered. |
 | Persistence | PostgreSQL; SQLite for isolated local tests only if compatible with chosen runtime | Owner approved deferring database and schema implementation from the first A3 increment. No database dependency, migration, schema, or persistence layer is to be added in that increment. Revisit persistence only when an approved requirement demonstrates the need. |
 | API | Django-native minimal endpoint for the first increment; Django REST Framework (DRF) deferred | Owner approved Django-native endpoints only for the minimal health/readiness check in the first increment. No general REST API or resource endpoints are approved. DRF is deferred. |
-| Tests | Framework-native unit/integration tests; static analysis; dependency audit; accessibility checks where UI exists | Tooling depends on approved runtimes. Tests must include negative authorization cases before any access-control feature is accepted. |
-| CI | Public-repository GitHub Actions or documented local commands | Candidate only. Verify actual free-tier availability and workflow permissions; no billing/top-up assumptions. |
+| Tests | Framework-native unit/integration tests; static analysis; dependency audit; accessibility checks where UI exists | First-increment tooling approved and verified: Django test runner, Ruff, and pip-audit. Product/access-control tests remain deferred until those features are separately approved. |
+| CI | Public-repository GitHub Actions or documented local commands | Owner-approved and implemented on standard public GitHub-hosted Linux runners with read-only permissions, immutable action SHAs, and a local hash-locked fallback. |
 | Delivery | Local development and CI verification only | No hosting, deployment, release signing, or publication in this increment. |
 
 ## 5. Proposed first implementation increment (after technical approval)
@@ -78,13 +78,13 @@ Each item needs a separate acceptance criterion and focused tests before impleme
 4. **CI approach — RESOLVED:** standard public GitHub Actions runner with local fallback and least privilege.
 5. **Runtime — RESOLVED:** Python 3.14.10 and Django 5.2.19, subject to future upstream security re-checks.
 6. **First-increment sequence and file-level acceptance checklist — OWNER APPROVED:** exact checklist approved on 2026-11-11 and implementation started on the authorized branch.
-7. **Verification and complete dependency reproducibility — OPEN:** exact-head CI evidence, test/lint/audit results, and transitive lock/hash strategy remain to be completed.
+7. **First-increment verification and dependency reproducibility — PASS:** exact-head CI, tests, Ruff, pip-audit, and a transitive SHA-256 hash lock are verified in run #22. Broader product and independent A4 acceptance remain open.
 
 Keep all deferred or unresolved items out of executable scope until separately approved.
 
 ## 8. Acceptance and governance
 
-The file-level checklist has been created and Owner-approved. The listed first-increment files have been implemented on the authorized A3 branch. Acceptance remains open until dependency reproducibility is addressed and exact-head test, lint, audit, and CI evidence is reconciled. Record exact dependency versions, changed files, commit SHAs, test commands/results, CI run links, and limitations.
+The file-level checklist has been created and Owner-approved. The first-increment files and transitive hash lock have been implemented on the authorized A3 branch. Exact-head workflow run #22 passed hash-locked installation, Django checks/tests, Ruff lint/format, and pip-audit. The A3 first-increment closure recommendation is recorded in the checklist and awaits Owner acceptance. Broader product requirements and A4 independent verification remain separate.
 
 A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evidence and closure conditions are separately reconciled and accepted. Merge, deployment, signing, publication, and production data remain separately gated.
 
@@ -170,18 +170,30 @@ The local commands are illustrative until the project files and dependency lock 
 
 ## 10. Current disposition
 
-- Backend preference: **OWNER-APPROVED — Django/Python**.
+- Backend: **OWNER-APPROVED — Django/Python**.
+- Runtime: **OWNER-APPROVED — Python 3.14.10 + Django 5.2.19**.
 - First-increment API: **OWNER-APPROVED — Django-native health/readiness endpoint only; DRF DEFERRED**.
-- First-increment database/schema work: **OWNER-APPROVED — DEFERRED**.
-- Complete technical baseline: PARTIAL / OPEN.
-- Runtime baseline: **OWNER-APPROVED — Python 3.14.10 + Django 5.2.19**, subject to a final upstream patch check before project-file pinning.\n- Test runner: **OWNER-APPROVED — Django built-in test runner**.\n- Lint/format: **OWNER-APPROVED — Ruff**.\n- Dependency audit: **OWNER-APPROVED — pip-audit**.\n- Additional static type checking: **DEFERRED** until meaningful interfaces exist.\n- Additional dependencies: NOT SELECTED.
-- Executable application implementation: NOT STARTED.
-- Existing UI: PRESERVE; provenance unresolved.
-- Main branch: MUST REMAIN UNCHANGED.
-- Paid services: NOT ASSUMED.
-- Organizational authority and hierarchy: EXCLUDED / BLOCKED.
-
+- Database/schema: **OWNER-APPROVED — DEFERRED**.
+- Test runner: **OWNER-APPROVED — Django built-in test runner**.
+- Lint/format: **OWNER-APPROVED — Ruff 0.17.4**.
+- Dependency audit: **OWNER-APPROVED — pip-audit 2.10.1**.
+- Direct dependency inputs: `requirements.txt` and `requirements-dev.txt`.
+- Transitive dependency lock: `requirements-lock.txt`, 32 exact package versions and 402 SHA-256 hashes.
+- Exact-head hash-locked CI: **PASS — run #22**, including `pip install --require-hashes`, Django check/tests, Ruff, and pip-audit; no known vulnerabilities found in that audit.
+- First-increment A3 closure recommendation: **READY FOR OWNER REVIEW**; not automatically closed.
+- Frontend: **UNRESOLVED / DEFERRED**; preserve existing UI and do not replace it.
+- Database, authentication, authorization, hierarchy, roles, governance workflows, production data, hosting, deployment: **DEFERRED / EXCLUDED**.
+- A2: **PARTIAL / OPEN**.
+- A4/A5: **NOT STARTED**.
+- Main branch: **MUST REMAIN UNCHANGED**.
+- Merge/deployment/signing/publication: **NOT AUTHORIZED**.
 
 ## 12. First-increment checklist approval and implementation record — 2026-11-11
 
-The Owner approved the exact file-level checklist at `docs/implementation/A3-FIRST-INCREMENT-ACCEPTANCE-CHECKLIST.md`. The listed Django foundation, minimal health endpoint, tests, Ruff configuration, public-runner CI workflow, and developer setup documentation have been created on `a3/restricted-foundation-scope`. This is implementation progress only: no test, lint, dependency-audit, or CI success is claimed until the exact branch head is verified. The direct dependency pins are recorded in the requirements files; complete transitive lockfile and hash-locked installation remain open. No database, UI, organizational authority model, live data, or product workflow is included.
+The Owner-approved checklist at `docs/implementation/A3-FIRST-INCREMENT-ACCEPTANCE-CHECKLIST.md` governs the restricted first increment. The Django foundation, minimal health endpoint, tests, Ruff configuration, public-runner CI workflow, local setup instructions, and transitive hash lock have been created on `a3/restricted-foundation-scope`.
+
+**Dependency reproducibility:** direct pins remain in `requirements.txt` and `requirements-dev.txt`. The committed `requirements-lock.txt` pins 32 resolved runtime/development packages and carries 402 SHA-256 hashes for the published release files of those exact versions. It is installed with pip `--require-hashes`.
+
+**Exact verification:** A3 quality workflow run #22, commit `628dccda9d12fa78a29cecfe9520452f930b5df3`, succeeded: hash-locked installation, Django system check, three Django tests, Ruff lint, Ruff format, and pip-audit. The audit reported no known vulnerabilities. Run: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968364171
+
+The A3 first-increment closure recommendation is ready for Owner review. This does not close A3 automatically and does not authorize merge, deployment, signing, publication, production data, or any A2-dependent feature. No database, UI, organizational authority model, or product workflow is included.
