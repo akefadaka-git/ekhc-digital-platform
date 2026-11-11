@@ -1,0 +1,40 @@
+name: Read-only security advisory and exception monitor
+
+on:
+  schedule:
+    - cron: "15 6 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - 'a3/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-monitor-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  monitor:
+    name: OSV advisories and exception expiry signals
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up approved Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+
+      - name: Run read-only monitoring
+        run: python scripts/security_monitor.py --lock requirements-lock.txt --exceptions docs/security/exception-register.json
