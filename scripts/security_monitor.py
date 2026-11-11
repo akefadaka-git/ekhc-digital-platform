@@ -3,6 +3,7 @@
 Uses only the Python standard library. It never edits repository files, creates
 issues, changes dependencies, approves exceptions, or changes exception status.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -248,9 +249,7 @@ def main() -> int:
             ]
         )
         for item in reminders:
-            lines.append(
-                f"| {item['id']} | {item['kind']} | {item['days_left']} |"
-            )
+            lines.append(f"| {item['id']} | {item['kind']} | {item['days_left']} |")
     else:
         lines.extend(
             [
