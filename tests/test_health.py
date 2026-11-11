@@ -97,9 +97,7 @@ class LocalizationNegotiationTests(SimpleTestCase):
         self.assertEqual(response["Content-Language"], "am")
 
     def test_first_supported_language_by_quality_is_selected(self):
-        response = self.client.get(
-            "/health/", HTTP_ACCEPT_LANGUAGE="fr;q=1.0,en;q=0.8"
-        )
+        response = self.client.get("/health/", HTTP_ACCEPT_LANGUAGE="fr;q=1.0,en;q=0.8")
         self.assertEqual(response["Content-Language"], "en")
 
     def test_zero_quality_language_is_ignored(self):
