@@ -12,8 +12,8 @@ Establish conservative Django security response headers, explicit and validated 
 
 ## 2. Scope
 
-- Enable Django `SecurityMiddleware` before application middleware.
-- Preserve `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY`.
+- Enable Django `SecurityMiddleware` and `XFrameOptionsMiddleware` before application middleware.
+- Preserve `X-Content-Type-Options: nosniff` and enforce `X-Frame-Options: DENY` through Django's clickjacking middleware.
 - Set a restrictive same-origin referrer policy and cross-origin opener policy.
 - Validate environment mode, HTTPS redirect, HSTS duration, and HSTS subdomain configuration.
 - Require explicit allowed hosts, HTTPS redirect, and positive HSTS duration in production mode.
