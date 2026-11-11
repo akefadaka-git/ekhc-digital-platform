@@ -7,10 +7,10 @@ from scripts.security_monitor import evaluate_exceptions, parse_lockfile, parse_
 class SecurityMonitorTests(unittest.TestCase):
     def test_parses_pinned_lock_entries_and_ignores_hash_options(self):
         lock_text = (
-            "# lock\\n"
+            "# lock\n"
             + "Django==5.2.19 --hash=sha256:"
             + "a" * 64
-            + "\\nruff==0.17.4 --hash=sha256:"
+            + "\nruff==0.17.4 --hash=sha256:"
             + "b" * 64
         )
         packages = parse_lockfile(lock_text)
@@ -26,7 +26,7 @@ class SecurityMonitorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_lockfile("Django>=5.2")
         with self.assertRaises(ValueError):
-            parse_lockfile("some_pkg==1.0\\nsome-pkg==2.0")
+            parse_lockfile("some_pkg==1.0\nsome-pkg==2.0")
 
     def test_rejects_empty_lock(self):
         with self.assertRaises(ValueError):
