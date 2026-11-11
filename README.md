@@ -4,7 +4,7 @@ A national, Amharic-first, multilingual digital platform intended to support chu
 
 ## Project status
 
-**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — OWNER-ACCEPTED restricted first increment; A4 — INDEPENDENT VERIFICATION IN PROGRESS; A5 — NOT STARTED.
+**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — incremental implementation IN PROGRESS; A4 — prior increment VERIFIED-CLOSED; current increment verification PENDING; A5 — NOT STARTED.
 
 This repository is the independent home of EKHC OS. It is not part of ARNA, MASES, MaaleNex, or IROKA.
 
@@ -118,7 +118,7 @@ This repository starts with governance, assessment, and specification. Do not in
 
 ## Current status
 
-**A1 — OWNER APPROVED. A2 — PARTIAL / OPEN.** The first A3 technical increment is restricted to a non-persistent Django foundation and a non-sensitive health endpoint. No production feature, live member data, real officeholder record, migration, deployment, or external integration has been implemented.
+**A1 — OWNER APPROVED. A2 — PARTIAL / OPEN.** The accepted first A3 increment established a non-persistent Django foundation and non-sensitive health endpoint. Further authority-independent increments are being implemented on separate A3 branches. No production data, institutional authority model, migration, deployment, or external integration is enabled.
 
 ## A3 first-increment technical foundation — 2026-11-11
 
@@ -167,10 +167,17 @@ The health endpoint reports process responsiveness only and does not probe datab
 
 ### A3 restrictions
 
-Synthetic data only. No UI creation or replacement, database, authentication, authorization, role/office/hierarchy model, membership or governance workflow, live data, paid service, production credential, deployment, signing, or publication. The work branch is `a3/restricted-foundation-scope`; `main` remains unchanged. A4 verification is in progress; A5, merge, and deployment remain separately gated.
+Synthetic data only. No UI creation or replacement, database, authentication, authorization, role/office/hierarchy model, membership or governance workflow, live data, paid service, production credential, deployment, signing, or publication. The accepted baseline is `a3/restricted-foundation-scope`; the current localization increment is on `a3/localization-foundation`. `main` remains unchanged. A4 verification of this new increment is pending; A5, merge, and deployment remain separately gated.
 
 ## A4 verification status — 2026-11-11
 
-A3 first-increment closure was accepted by the Owner. Independent A4 verification is underway against the approved implementation branch. The A4 corrective work adds negative tests for missing secret configuration and empty/wildcard allowed-host configuration, reconciles the exact-head CI evidence, and corrects stage-status documentation. A4 closure is not yet claimed. See the A4 verification record in `docs/implementation/A4-INDEPENDENT-VERIFICATION-RECORD.md`.
+A3 first-increment closure and its A4 independent verification were accepted and closed on 2026-11-11. A new authority-independent localization increment is now in progress on `a3/localization-foundation`; its A4 verification will be a separate gate after exact-head CI passes. See `docs/implementation/A4-INDEPENDENT-VERIFICATION-RECORD.md` for the prior increment's evidence.
 
 A2 remains PARTIAL / OPEN. A5 remains NOT STARTED. No merge, deployment, signing, publication, or production-data use is authorized.
+
+
+## A3 localization foundation increment — 2026-11-11
+
+The current A3 increment adds request-scoped Amharic-first language negotiation using Django's built-in internationalization support. Amharic (`am`) is the default; English (`en`) can be selected by an explicit supported language preference. Unsupported preferences fall back to Amharic. The setting is request-scoped only: no account preference, user profile, session store, database, translation catalogue, translated product copy, UI, or persistence layer is introduced. Existing UI provenance remains unresolved and untouched.
+
+The increment adds regression tests for default Amharic, English selection, and unsupported-language fallback. It does not create or assert institutional terminology or translations. Branch: `a3/localization-foundation`; `main` remains unchanged.

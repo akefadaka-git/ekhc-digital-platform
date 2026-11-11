@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - a3/restricted-foundation-scope
+      - 'a3/**'
   pull_request:
     branches:
       - main

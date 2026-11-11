@@ -81,3 +81,17 @@ class SettingsFailClosedTests(SimpleTestCase):
             allowed_hosts="*",
             message="DJANGO_ALLOWED_HOSTS must contain explicit hostnames",
         )
+
+
+class LocalizationNegotiationTests(SimpleTestCase):
+    def test_amharic_is_the_default_language(self):
+        response = self.client.get("/health/")
+        self.assertEqual(response["Content-Language"], "am")
+
+    def test_supported_english_preference_is_respected(self):
+        response = self.client.get("/health/", HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(response["Content-Language"], "en")
+
+    def test_unsupported_language_falls_back_to_amharic(self):
+        response = self.client.get("/health/", HTTP_ACCEPT_LANGUAGE="fr")
+        self.assertEqual(response["Content-Language"], "am")

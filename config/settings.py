@@ -1,4 +1,4 @@
-"""Minimal, non-persistent settings for the first EKHC OS increment."""
+"""Minimal, non-persistent settings for the EKHC OS foundation."""
 
 import os
 
@@ -24,12 +24,20 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-# No product apps, middleware, database, ORM persistence, or migrations are enabled.
+# No product apps, database, ORM persistence, or migrations are enabled.
 INSTALLED_APPS = []
-MIDDLEWARE = []
+MIDDLEWARE = [
+    "django.middleware.locale.LocaleMiddleware",
+]
 TEMPLATES = []
 
-LANGUAGE_CODE = "en-us"
+# Request-scoped language negotiation: Amharic is the default; English is
+# available as a supported preference. No user preference is persisted.
+LANGUAGE_CODE = "am"
+LANGUAGES = [
+    ("am", "አማርኛ"),
+    ("en", "English"),
+]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
