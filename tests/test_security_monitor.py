@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from scripts.security_monitor import (
     escape_table_cell,
@@ -52,7 +52,7 @@ class SecurityMonitorTests(unittest.TestCase):
         )
 
     def test_reports_due_and_expired_approved_exceptions_only(self):
-        now = datetime(2026, 11, 11, 12, tzinfo=timezone.utc)
+        now = datetime(2026, 11, 11, 12, tzinfo=UTC)
         register = {
             "schema_version": 1,
             "exceptions": [
