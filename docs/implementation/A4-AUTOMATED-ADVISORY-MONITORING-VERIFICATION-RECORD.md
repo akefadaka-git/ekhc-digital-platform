@@ -136,6 +136,6 @@ The last two findings are in a file outside the seven paths changed by this A3 i
 **Exact-head CI: CONFIRMED — MIXED, NOT GREEN.**  
 **Operational adoption: PARTIAL / NOT VERIFIED.**  
 **Owner acceptance: PENDING.**  
-**Closure: NOT YET OWNER-CLOSED; A3 lint corrections and a green exact-head quality run remain required.
+**Closure: NOT YET OWNER-CLOSED; A3 lint corrections and a green exact-head quality run remain required.**
 
 This A4 record does not authorize merge, deployment, publication, signing, automatic dependency changes, exception approval, or A5.
