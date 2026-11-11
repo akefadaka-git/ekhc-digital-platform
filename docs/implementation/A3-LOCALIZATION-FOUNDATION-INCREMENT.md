@@ -67,3 +67,5 @@ This increment remains on its own A3 branch. The accepted prior A3/A4 baseline r
 Corrective implementation commit: `2fb8e5d07afc7b0db90c7e484e9e1c7253f9c83d`. The failed initial check is retained above as evidence of the catalogue compatibility issue and its resolution.
 
 Formatting correction: Ruff's exact formatting changes were applied to `config/localization.py` and `tests/test_health.py` after run #42 identified those two style-only issues. The next exact-head workflow must verify the corrected tree.
+
+Final style correction: run #46 confirmed Django checks, all tests, and Ruff lint passed; Ruff format identified one remaining long test line, which was formatted in the following commit. Exact-head verification is pending.
