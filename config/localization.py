@@ -44,9 +44,7 @@ class PlatformLanguageMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        language = resolve_platform_language(
-            request.headers.get("Accept-Language", "")
-        )
+        language = resolve_platform_language(request.headers.get("Accept-Language", ""))
         request.LANGUAGE_CODE = language
         response = self.get_response(request)
         response.headers["Content-Language"] = language
