@@ -1,6 +1,6 @@
 # EKHC OS — A3 First-Increment File-Level Acceptance Checklist
 
-**Status:** PREPARED — pending Owner approval before executable implementation  
+**Status:** OWNER APPROVED — implementation authorized within this exact checklist  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/restricted-foundation-scope`  
@@ -8,7 +8,7 @@
 
 ## 1. Scope boundary
 
-This checklist defines only the first authority-independent technical foundation. It does not authorize implementation until the Owner approves this checklist.
+This checklist defines only the first authority-independent technical foundation. The Owner approved this exact checklist on 2026-11-11; implementation is authorized only within the listed files and acceptance criteria.
 
 - Preserve any existing UI; do not create, replace, or redesign UI.
 - Synthetic data only; no live member, pastoral, child, governance, or financial data.
@@ -72,14 +72,15 @@ Any item in this exclusion list requires separate evidence, scope definition, an
 
 The approved CI approach is standard GitHub-hosted runners for the public repository, with local execution as fallback. The workflow file must be authored only after this checklist is approved and its action dependencies are reviewed and pinned to immutable SHAs. No workflow run or passing status is claimed at checklist-preparation time.
 
-## 6. Approval gate
+## 6. Owner approval record
 
-**Requested Owner decision:** Approve this exact file-level checklist for the first A3 implementation increment, or return it for revision.
+**Decision:** APPROVED on 2026-11-11.
 
-Until approval:
-- Checklist: PREPARED / NOT APPROVED.
-- Executable implementation: NOT STARTED.
-- CI workflow file: NOT CREATED.
+**Approval scope:** Implement only the exact first-increment files and acceptance criteria in Section 2. All exclusions in Sections 1 and 4 remain binding. No merge, deployment, signing, publication, or production-data authorization is implied.
+
+- Checklist: OWNER APPROVED.
+- Executable implementation: AUTHORIZED within this checklist.
+- CI workflow file: AUTHORIZED for creation within this checklist.
 - CI run: NOT RUN.
 - A2: PARTIAL / OPEN.
 - A4/A5: NOT STARTED.
