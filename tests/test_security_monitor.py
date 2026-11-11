@@ -1,4 +1,6 @@
 import unittest
+from io import BytesIO
+from unittest.mock import patch
 from datetime import UTC, datetime
 
 from scripts.security_monitor import (
@@ -6,6 +8,8 @@ from scripts.security_monitor import (
     evaluate_exceptions,
     parse_lockfile,
     parse_utc,
+    query_osv,
+    MAX_OSV_RESPONSE_BYTES,
 )
 
 
@@ -86,6 +90,30 @@ class SecurityMonitorTests(unittest.TestCase):
                 {"id": "EX-2", "kind": "EXPIRED", "days_left": -1},
             ],
         )
+
+    @patch("scripts.security_monitor.urlopen")
+    def test_osv_rejects_oversized_response(self, mocked_urlopen):
+        mocked_urlopen.return_value.__enter__.return_value.read.return_value = (
+            b"x" * (MAX_OSV_RESPONSE_BYTES + 1)
+        )
+        with self.assertRaisesRegex(ValueError, "2 MiB safety limit"):
+            query_osv([{"name": "Django", "version": "5.2.19"}])
+
+    @patch("scripts.security_monitor.urlopen")
+    def test_osv_rejects_incomplete_batch_response(self, mocked_urlopen):
+        mocked_urlopen.return_value.__enter__.return_value.read.return_value = (
+            b'{"results":[]}'
+        )
+        with self.assertRaisesRegex(ValueError, "incomplete or malformed"):
+            query_osv([{"name": "Django", "version": "5.2.19"}])
+
+    @patch("scripts.security_monitor.urlopen")
+    def test_osv_parses_matching_advisory(self, mocked_urlopen):
+        payload = b'{"results":[{"vulns":[{"id":"GHSA-test","modified":"2026-01-01T00:00:00Z","summary":"test"}]}]}'
+        mocked_urlopen.return_value.__enter__.return_value.read.return_value = payload
+        result = query_osv([{"name": "Django", "version": "5.2.19"}])
+        self.assertEqual(result[0]["id"], "GHSA-test")
+        self.assertEqual(result[0]["package"], "Django")
 
     def test_rejects_duplicate_exception_ids_and_non_utc_time(self):
         now = datetime(2026, 11, 11, tzinfo=UTC)
