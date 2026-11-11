@@ -1,12 +1,11 @@
 """Static guards for dependency and CI supply-chain invariants."""
 
+import pathlib
 import re
 import unittest
 
-from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 def read_text(path):
