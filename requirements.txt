@@ -1,0 +1,2 @@
+# Runtime dependencies for the authority-independent first increment.
+Django==5.2.19
