@@ -5,10 +5,10 @@
 **A3 implementation head reviewed:** `b4ed07262b1366e49f566cfadc9af3f892abfa14`  
 **A3 base:** `974ca3c05af5cb024ee7ed45e099a9461a9a69b8`  
 **A4 review date:** 2026-11-12  
-**Owner acceptance:** PENDING  
+**Owner acceptance:** GRANTED — explicit approval received 2026-11-12  
 **Exact-head CI:** QUALITY RUN #147 SUCCESS; MONITOR RUN #32 SUCCESS  
-**Technical disposition:** A4 TECHNICAL VERIFICATION PASS WITH LIMITATIONS; AWAITING OWNER ACCEPTANCE  
-**Closure status:** NOT YET OWNER-CLOSED
+**Technical disposition:** A4 TECHNICAL VERIFICATION PASS WITH LIMITATIONS; OWNER-ACCEPTED  
+**Closure status:** VERIFIED-CLOSED — A4 ONLY; LIMITATIONS RETAINED
 
 ## 1. Scope and method
 
@@ -142,7 +142,29 @@ The final exact-head run must complete and its test, Ruff lint, Ruff format, and
 **Final-head security monitor: PASS — run #32; 32 packages queried, zero advisories returned, zero exception signals, empty register.**  
 **Exact-head CI: PASS — quality run #147 and monitor run #32 both succeeded on the same A3 head.**  
 **Operational adoption: PARTIAL / NOT VERIFIED.**  
-**Owner acceptance: PENDING.**  
-**Closure: NOT YET OWNER-CLOSED; technical evidence is complete with limitations, and explicit Owner acceptance remains pending.**
+**Owner acceptance: GRANTED — Owner explicitly accepted A4 WITH LIMITATIONS on 2026-11-12.**  
+**A4 technical verification: VERIFIED-CLOSED WITH LIMITATIONS.**  
+**Operational adoption: remains PARTIAL / NOT VERIFIED; no operational readiness claim is made.**  
+**A5, merge, deployment, publication, signing, and activation of scheduled production monitoring: NOT AUTHORIZED.**
 
 This A4 record does not authorize merge, deployment, publication, signing, automatic dependency changes, exception approval, or A5.
+
+## 11. Owner acceptance and closure
+
+**Owner decision:** ACCEPTED WITH LIMITATIONS.  
+**Decision date:** 2026-11-12.  
+**Owner comments:** None.
+
+The Owner explicitly approved and accepted the EKHC OS A4 automated advisory monitoring and exception-expiry verification WITH LIMITATIONS and instructed that the A4 technical verification record be closed while preserving all operational limitations.
+
+The Owner's authorization is limited to closure of this A4 technical verification record. It does not authorize:
+- merge or integration into the default branch;
+- deployment, publication, signing, or production operation;
+- activation of scheduled production monitoring;
+- notification delivery claims or operational adoption;
+- automatic dependency changes or exception approval;
+- commencement of A5.
+
+All limitations and unresolved operational follow-ups in this record remain in force. The successful exact-head CI evidence establishes the recorded technical checks only; it does not establish production readiness.
+
+**Final A4 status: VERIFIED-CLOSED WITH LIMITATIONS — OWNER ACCEPTED.**
