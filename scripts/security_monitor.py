@@ -11,7 +11,7 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -193,7 +193,7 @@ def main() -> int:
     parser.add_argument("--lock", default="requirements-lock.txt")
     parser.add_argument("--exceptions", default="docs/security/exception-register.json")
     args = parser.parse_args()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     try:
         packages = parse_lockfile(Path(args.lock).read_text(encoding="utf-8"))
         register = json.loads(Path(args.exceptions).read_text(encoding="utf-8"))
