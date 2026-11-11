@@ -1,6 +1,7 @@
 """Minimal, non-persistent settings for the first EKHC OS increment."""
 
 import os
+
 from django.core.exceptions import ImproperlyConfigured
 
 
