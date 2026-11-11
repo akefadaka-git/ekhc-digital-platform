@@ -101,7 +101,5 @@ class LocalizationNegotiationTests(SimpleTestCase):
         self.assertEqual(response["Content-Language"], "en")
 
     def test_zero_quality_language_is_ignored(self):
-        response = self.client.get(
-            "/health/", HTTP_ACCEPT_LANGUAGE="en;q=0,am;q=1"
-        )
+        response = self.client.get("/health/", HTTP_ACCEPT_LANGUAGE="en;q=0,am;q=1")
         self.assertEqual(response["Content-Language"], "am")
