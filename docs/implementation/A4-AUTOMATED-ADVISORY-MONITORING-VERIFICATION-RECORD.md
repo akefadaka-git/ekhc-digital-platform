@@ -2,12 +2,12 @@
 
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **A3 branch:** `a3/security-monitor-corrections` (correction branch for `a3/automated-security-advisory-monitoring`)  
-**A3 implementation head reviewed:** `32812969c1ad13eccc681721d58c79a1d58dfa36`  
+**A3 implementation head reviewed:** `23f4b3efba9cca99179eae14445ea1138e35b3aa`  
 **A3 base:** `974ca3c05af5cb024ee7ed45e099a9461a9a69b8`  
 **A4 review date:** 2026-11-11  
 **Owner acceptance:** PENDING  
-**Exact-head CI:** CONFIRMED — MIXED (monitor SUCCESS; quality FAILURE)  
-**Technical disposition:** PASS WITH MATERIAL LIMITATIONS; quality gate remains failed  
+**Exact-head CI:** RUNS QUEUED — quality and monitor workflows triggered, results pending  
+**Technical disposition:** A4 RE-REVIEW IN PROGRESS; no closure until exact-head quality evidence is complete  
 **Closure status:** NOT YET OWNER-CLOSED
 
 ## 1. Scope and method
@@ -20,9 +20,9 @@ Read-only independent review of the exact A3 head and these files:
 - `docs/security/exception-register.json`
 - `.github/workflows/quality.yml`
 
-The A3 compare from base `974ca3c05af5cb024ee7ed45e099a9461a9a69b8` to corrected head `32812969c1ad13eccc681721d58c79a1d58dfa36` reports **22 commits ahead, 0 behind, and seven changed paths**: `.github/workflows/quality.yml` modified and six files added. The correction sub-compare from initial implementation head `585555868fc3fcea8a925cd8148e9b859401f122` to corrected head reports **4 commits ahead, 0 behind, exactly two changed code paths**: `scripts/security_monitor.py` and `tests/test_security_monitor.py`.
+The A3 correction branch has advanced to `23f4b3efba9cca99179eae14445ea1138e35b3aa`. The comparison from prior corrected head `32812969c1ad13eccc681721d58c79a1d58dfa36` reports **4 commits ahead, 0 behind, exactly four changed paths**: the A3 correction report added, `scripts/security_monitor.py` modified, `tests/test_security_monitor.py` modified, and pre-existing `tests/test_supply_chain_baseline.py` modified to resolve two repository-wide lint findings. The lockfile, dependency manifests, workflow, runtime application configuration, and application behavior were not changed in this correction increment.
 
-The A4 review inspected the corrected script and test source, exact-head Actions run metadata, job steps, and job logs. Only this A4 verification record is changed by the present A4 update; no A3 source, workflow, test, lockfile, dependency, or runtime file is modified.
+The A3-owned files received import-order and line-length corrections; the existing supply-chain test file received its two lint corrections. Ruff rules and the full-repository `ruff check .` command remain unchanged. This is a source-level correction only until the exact-head workflow finishes.
 
 ## 2. Monitoring workflow review
 
@@ -38,7 +38,9 @@ The A4 review inspected the corrected script and test source, exact-head Actions
 - GitHub scheduled workflows run only from the default branch. Since this workflow is on a non-default A3 branch and has not been merged, scheduled execution is not active. Manual dispatch or branch-triggered validation is distinct from scheduled operation.
 - The PR workflow executes repository code with read-only token permissions and no configured secrets in this job. This reduces credential impact but is not a sandbox or network-egress isolation control.
 
-**Exact-head execution evidence:** the security monitor workflow ran on corrected head `32812969c1ad13eccc681721d58c79a1d58dfa36`, run #19 / ID `43074972062`, job ID `130712305036`, and completed SUCCESS. It ran at `2026-11-11T18:09:05Z` on Ubuntu 24.04 / Python 3.14.10. The job log records 32 locked PyPI packages queried, zero OSV advisories returned, and zero approved-exception reminders/expiries (the committed register is empty). This confirms one live run, not continuous scheduled operation or complete advisory-source coverage.
+**Prior exact-head execution evidence:** security monitor run #19 / ID `43074972062` on prior corrected head `32812969c1ad13eccc681721d58c79a1d58dfa36` completed SUCCESS (32 packages queried; zero advisories; empty exception register). This is historical evidence for that prior SHA, not evidence for the new head.
+
+**Current exact-head execution:** security monitor run #23 / ID `43099104462` on `23f4b3efba9cca99179eae14445ea1138e35b3aa` is **QUEUED**. No current-head monitoring result is claimed.
 
 ## 3. Lock parser review
 
@@ -82,18 +84,18 @@ Limitations:
 
 ## 6. Test review and concrete defect
 
-**Result: SOURCE DEFECT CORRECTED; TESTS PASS; LINT FAILS**
+**Prior-head result: SOURCE DEFECT CORRECTED; 64 TESTS PASS; LINT FAILS. Current-head validation pending.**
 
 The prior undefined `timezone.utc` reference is corrected to the imported `UTC`. The corrected test module contains ten test methods, including mocked tests for oversized OSV responses, incomplete batch responses, and a valid matching advisory. The prior deterministic NameError is no longer present in the fetched exact-head source.
 
-Exact-head A3 quality run #134 / ID `43074971731` (job `130712307471`) completed FAILURE on the corrected SHA. The Django system check passed and the complete Django suite passed: **64 tests, 0 failures**. Ruff lint then failed with **8 findings**:
+Prior exact-head A3 quality run #134 / ID `43074971731` (job `130712307471`) completed FAILURE on SHA `32812969c1ad13eccc681721d58c79a1d58dfa36`. The Django system check passed and the complete Django suite passed: **64 tests, 0 failures**. Ruff lint then failed with **8 findings**:
 - `scripts/security_monitor.py`: one import-order finding and three line-length findings;
 - `tests/test_security_monitor.py`: one import-order finding and one line-length finding;
 - existing `tests/test_supply_chain_baseline.py`: one import-order finding and one line-length finding.
 
 The last two findings are in a file outside the seven paths changed by this A3 increment; they are existing repository-wide lint debt surfaced by the full-repository Ruff command, not changes introduced by this branch. Ruff format check and dependency vulnerability audit were skipped because the lint step failed.
 
-**Required correction before A4 closure:** fix all six findings in the two A3-owned files, decide separately whether to repair or explicitly scope the two pre-existing findings without weakening lint coverage, then rerun the exact-head quality workflow. Do not treat the passing test step as a passing quality gate.
+Those eight findings were corrected in the current increment: six in the two A3-owned files and two in the pre-existing supply-chain test file. The full lint command and configured Ruff rule set were retained. **Current-head test and lint results are pending** the exact-head quality run.
 
 ## 7. Notification and operational limitations
 
@@ -110,32 +112,33 @@ The last two findings are in a file outside the seven paths changed by this A3 i
 
 ## 8. CI and repository evidence
 
-- Direct GitHub Actions API lookup confirmed two push-triggered runs on exact head `32812969c1ad13eccc681721d58c79a1d58dfa36`:
-  - Security monitor run #19, ID `43074972062`, job `130712305036`: **SUCCESS**. [Run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43074972062)
-  - A3 quality run #134, ID `43074971731`, job `130712307471`: **FAILURE** at Ruff lint. [Run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43074971731)
-- Quality steps: checkout, required-file gate, Python 3.14.10 setup, hash-locked requirements install, Django system check, and Django tests all PASS; Ruff lint FAIL; Ruff format and pip-audit SKIPPED.
-- The security monitor log confirms the live OSV query outcome and empty exception register as recorded in Section 2.
-- **Exact-head CI: CONFIRMED — MIXED.** No claim of overall CI success is made.
+- Prior-head workflow evidence is retained above for audit history. Current exact-head push runs are:
+  - A3 quality run #138, ID `43099104469`, exact SHA `23f4b3efba9cca99179eae14445ea1138e35b3aa`: **QUEUED**. [Run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43099104469)
+  - Security monitor run #23, ID `43099104462`, same exact SHA: **QUEUED**. [Run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43099104462)
+- Three intermediate push commits also generated queued runs (#136/#137 and #137/#22); these are not substitutes for the final exact-head run. The latest exact-head quality job ID is `130784772500` and has not started (no steps reported).
+- **Current exact-head CI: QUEUED / NOT YET VERIFIED.** The earlier test/lint outcome applies only to the prior SHA and is not projected onto this head.
 - `main` was fetched at `adfa62eccda93c8b261e5abd3cbdb22cf28c8823` and remains unchanged in this review.
 - No merge, deployment, signing, publication, dependency update, production-data access, or exception approval was performed.
 
 ## 9. Required follow-up
 
-1. Correct the six Ruff findings in the two A3-owned files and rerun the exact-head quality workflow; address the two pre-existing repository-wide Ruff findings without weakening lint enforcement.
-2. Add coverage for OSV HTTP/network failures, all reminder boundaries, missed-run behavior, and end-to-end exit-code/reporting semantics.
-3. Validate notification delivery and escalation with a controlled, non-sensitive test before operational adoption.
-4. Keep the daily schedule inactive until the workflow is present on the default branch following separate approval and integration.
-5. Preserve the empty exception register as an honest state; no exception approval or risk acceptance is implied.
+1. Obtain completion evidence for quality run #138 at exact head `23f4b3efba9cca99179eae14445ea1138e35b3aa`; inspect test, Ruff lint, Ruff format, and pip-audit steps/logs. If any fail, correct and rerun on the new exact head.
+2. Obtain completion evidence for security-monitor run #23 at the same exact head.
+3. Add coverage for OSV HTTP/network failures, all reminder boundaries, missed-run behavior, and end-to-end exit-code/reporting semantics.
+4. Validate notification delivery and escalation with a controlled, non-sensitive test before operational adoption.
+5. Keep the daily schedule inactive until the workflow is present on the default branch following separate approval and integration.
+6. Preserve the empty exception register as an honest state; no exception approval or risk acceptance is implied.
 
 ## 10. Disposition
 
-**Technical result: PASS WITH MATERIAL LIMITATIONS; source defect corrected, but repository quality gate remains failed.**  
-**Test execution: PASS — 64 tests.**  
-**Ruff lint: FAIL — 8 findings; format and dependency audit SKIPPED.**  
-**Security monitor execution: PASS — exact-head run confirmed; 32 packages queried, zero advisories returned, empty exception register.**  
-**Exact-head CI: CONFIRMED — MIXED, NOT GREEN.**  
+**Source correction: COMMITTED — six A3-owned Ruff findings and two pre-existing repository-wide Ruff findings addressed; no lint rules or coverage weakened.**  
+**Current-head test execution: NOT YET RUN — quality run queued.**  
+**Current-head Ruff lint/format: NOT YET RUN — quality run queued.**  
+**Current-head dependency audit: NOT YET RUN — quality run queued.**  
+**Current-head security monitor: QUEUED.**  
+**Exact-head CI: QUEUED / NOT YET VERIFIED.**  
 **Operational adoption: PARTIAL / NOT VERIFIED.**  
 **Owner acceptance: PENDING.**  
-**Closure: NOT YET OWNER-CLOSED; A3 lint corrections and a green exact-head quality run remain required.**
+**Closure: NOT YET OWNER-CLOSED; await exact-head workflow evidence before A4 closure.
 
 This A4 record does not authorize merge, deployment, publication, signing, automatic dependency changes, exception approval, or A5.
