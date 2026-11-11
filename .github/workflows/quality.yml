@@ -24,7 +24,7 @@ jobs:
     permissions:
       contents: read
     env:
-      DJANGO_SECRET_KEY: ci-only-not-for-production-do-not-reuse
+      DJANGO_SECRET_KEY: ci-only-not-for-production-do-not-reuse-000000000000000000000000000000000000
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
     steps:
       - name: Check out source
