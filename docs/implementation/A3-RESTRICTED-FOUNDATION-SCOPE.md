@@ -17,7 +17,7 @@ This authorization is narrow. It does not approve the constitutional hierarchy, 
 - A1 remains OWNER APPROVED.
 - A2 remains PARTIAL / OPEN. This record does not declare A2 closed or represent that its formal roadmap exit condition has been met.
 - A3 restricted scope is OWNER-AUTHORIZED. The approved technical baseline and file-level checklist have been implemented; exact-head hash-locked CI has passed. The first-increment closure recommendation is ready for Owner review.
-- A4 and A5 remain NOT STARTED.
+- A4 independent verification is IN PROGRESS; A5 remains NOT STARTED.
 - Work stays on this branch. Do not modify `main`, merge, deploy, sign, or publish.
 - Preserve existing UI and unrelated repository work. No UI recreation or replacement is authorized.
 - Use synthetic fixtures only; do not introduce production data.
@@ -63,7 +63,7 @@ The Owner-approved first-increment technical baseline is:
 - CI: standard public GitHub Actions Linux runner, least-privilege read-only permissions, immutable action SHAs, and local fallback.
 - Dependencies: direct pins in `requirements.txt` and `requirements-dev.txt`; transitive lock in `requirements-lock.txt` with 32 exact package versions and 402 SHA-256 hashes.
 
-The approved first-increment files are implemented on `a3/restricted-foundation-scope`. Exact-head workflow run #22 passed hash-locked installation, Django system check, three tests, Ruff lint/format, and pip-audit. The audit reported no known vulnerabilities at the time of the run. Evidence: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968364171
+The approved first-increment files are implemented on `a3/restricted-foundation-scope`. Earlier run #22 verified hash-lock integration at its own commit. Final A3 exact-head workflow run #26 passed hash-locked installation, Django system check, three tests, Ruff lint/format, and pip-audit. The audit reported no known vulnerabilities at the time of the run. Exact tested SHA: `bf3443b288bcc78d7479630ffa92f0af7c88cd77`. Evidence: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968545687
 
 This technical baseline is limited to the authority-independent foundation. Frontend selection, database/persistence architecture, authentication/authorization, identity, institutional hierarchy, office mandates, governance workflows, localization product behavior, hosting, and deployment remain unselected, deferred, or blocked. Preserve existing UI; do not replace it.
 
@@ -99,9 +99,9 @@ A3 completion requires a reconciled change inventory and review evidence. A4 ver
 
 **A3 scope authorization: VERIFIED.**  
 **Restricted first-increment implementation: COMPLETE.**  
-**Exact-head hash-locked CI: PASS — run #22.**  
+**Final A3 exact-head hash-locked CI: PASS — run #26, SHA `bf3443b288bcc78d7479630ffa92f0af7c88cd77`.**  
 **A3 first-increment closure recommendation: READY FOR OWNER REVIEW; not automatically closed.**  
 **A2: PARTIAL / OPEN.**  
-**A4/A5: NOT STARTED.**  
+**A4: IN PROGRESS. A5: NOT STARTED.**  
 **Main branch: UNCHANGED.**  
 **Merge/deployment/signing/publication: NOT AUTHORIZED.**
