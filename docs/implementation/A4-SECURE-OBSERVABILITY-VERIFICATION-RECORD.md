@@ -1,6 +1,8 @@
 # EKHC OS — A4 Secure Request Observability Verification Record
 
-**Verification status:** TECHNICAL PASS — Owner acceptance pending  
+**Verification status:** OWNER-APPROVED — VERIFIED-CLOSED  
+**Technical verification:** PASS  
+**Owner acceptance:** Approved in ChatGPT conversation on 2026-11-11  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Implementation branch:** `a3/secure-observability-foundation`  
@@ -80,6 +82,8 @@ These are explicit boundaries, not silently accepted production capabilities.
 
 **A4 technical conclusion: PASS for the restricted secure observability increment.**
 
+**Owner decision: APPROVED. A4 status: VERIFIED-CLOSED.** Owner acceptance was recorded on 2026-11-11. Closure applies only to the restricted secure request observability increment and the evidence documented above.
+
 The final implementation head passed all automated quality checks, including 18 tests, Ruff lint/format, and dependency audit. The implementation remains isolated from `main`; no PR merge, deployment, signing, publication, external log shipping, or production-data access occurred.
 
-**Owner acceptance of A4 closure remains pending.** This record does not close A2, satisfy the missing constitutional/bylaw/UI-provenance dependencies, authorize production log retention or external monitoring, or authorize A5. A5 remains **NOT STARTED** and separately gated.
+This closure does not close A2, satisfy the missing constitutional/bylaw/UI-provenance dependencies, authorize production log retention or external monitoring, or authorize A5. A5 remains **NOT STARTED** and separately gated.
