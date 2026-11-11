@@ -1,7 +1,8 @@
 """Regression tests for security headers and deployment boundary validation."""
 
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.test import SimpleTestCase
+from django.test import RequestFactory, SimpleTestCase
 
 from config.security import load_security_settings
 
@@ -18,6 +19,19 @@ class SecurityHeaderTests(SimpleTestCase):
     def test_hsts_is_not_emitted_for_plain_http_development_requests(self):
         response = self.client.get("/health/")
         self.assertNotIn("Strict-Transport-Security", response)
+
+    def test_forwarded_proxy_headers_are_not_trusted(self):
+        request = RequestFactory().get(
+            "/health/",
+            HTTP_HOST="testserver",
+            HTTP_X_FORWARDED_HOST="attacker.invalid",
+            HTTP_X_FORWARDED_PROTO="https",
+        )
+
+        self.assertIsNone(settings.SECURE_PROXY_SSL_HEADER)
+        self.assertFalse(settings.USE_X_FORWARDED_HOST)
+        self.assertFalse(request.is_secure())
+        self.assertEqual(request.get_host(), "testserver")
 
 
 class SecurityConfigurationTests(SimpleTestCase):
