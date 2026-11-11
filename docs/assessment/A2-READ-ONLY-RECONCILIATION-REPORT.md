@@ -164,3 +164,85 @@ Public official EKHC pages were checked as corroborative evidence only on 2026-1
 
 **Status:** CORROBORATIVE EVIDENCE RECORDED; GOVERNANCE AUTHORITY UNRESOLVED.
 
+
+
+## 12. Final provenance and authority reconciliation — 2026-11-11
+
+### 12.1 UI provenance search — expanded
+
+The search was extended beyond the initial main-branch inspection:
+
+- Re-fetched the three historical paths from main; all three returned 404:
+  - resources/js/layouts/Header.vue
+  - resources/js/styles/tokens.css
+  - tailwind.config.js
+- Rechecked the visible branch inventory. It contains the A1 documentation branches, the A2 report branch, and main; no UI-specific branch is present.
+- Searched the EKHC repository's default-branch code index for the historical file names and references. No matching files were returned.
+- Searched the accessible current Owner GitHub repository inventory and the accessible legacy-account repository inventory for a separate EKHC UI repository. No separately identifiable Owner-controlled EKHC UI repository was surfaced.
+- Rechecked prior project records. They preserve the same three paths and describe the former UI as an Amharic-first, Ethiopian-calendar-first, mobile-first shell, but do not identify a verifiable repository, branch, commit, or source artifact.
+
+**Result:** UI provenance remains UNRESOLVED. The search is exhaustive only across the accessible Owner repository inventories, visible branches, available indexed code results, and retained project records. It cannot establish absence from private, unindexed, deleted, transferred, or otherwise inaccessible repositories. No candidate was found that can safely be declared the source of truth. No UI code was copied, recreated, replaced, or changed.
+
+### 12.2 Hierarchy and authority reconciliation
+
+The Owner-provided eight-entry sequence is retained exactly as a discovery input:
+
+| Sequence | Owner-provided label | Evidence currently available | A2 disposition |
+|---:|---|---|---|
+| 1 | Church | Official EKHC public pages confirm institutional identity; the main README also quotes a historical constitutional source | Identity corroborated; constitutional authority and full hierarchy unresolved |
+| 2 | ዋ/ጽ/ቤት | A historical transcription in the repository includes a main-office label | Exact current name, scope, authority, and relationship unresolved |
+| 3 | ቀጣና | The historical transcription contains a corresponding assembly/office category; official public pages do not establish its constitutional authority | Preserve as distinct Owner term; current powers and parentage unresolved |
+| 4 | ቀጣና ጽ/ቤት | Historical transcription includes a corresponding office label | Current mandate, reporting line, and relationship unresolved |
+| 5 | አጥቢያ ቤተ ክርስቲያናት ኅብረት | Historical transcription includes a corresponding assembly/office category | Preserve ኅብረት as a distinct term; current scope and parentage unresolved |
+| 6 | ኅብረት ጽ/ቤት | Historical transcription includes a corresponding office label | Current mandate, reporting line, and relationship unresolved |
+| 7 | አጥቢያ ቃለ ሕይወት ቤተ ክርስቲያን | Historical transcription contains local-church provisions and categories | Current legal/organizational definition and relationship unresolved |
+| 8 | አጥቢያ ጽ/ቤት | Historical transcription includes a local-church office label | Current mandate, reporting line, and relationship unresolved |
+
+The historical material above is the sixth-revision text identified in the main README and a third-party-hosted copy. It is not the required seventh-edition governing source, and its authenticity, completeness, amendment status, and continued effect have not been established. It may be used only as historical comparison material. The official public websites provide corroborative institutional and ministry information, not constitutional proof of parentage or delegated authority.
+
+**Binding reconciliation controls:**
+- Keep ቀጣና and ኅብረት distinct; do not merge, rename, or translate one into the other.
+- Preserve the eight labels as Owner-provided discovery terminology only.
+- Do not infer that the numbered list proves a complete parent-child path, reporting line, jurisdiction, delegation, or authority chain.
+- Do not infer that an office is the parent of the corresponding assembly or entity from a shared name.
+- Do not derive current roles, permissions, hierarchy enums, database relationships, API scopes, or navigation from the historical sixth-revision material or public website structure.
+- The seventh-edition Constitution and current bylaws remain blocking sources for authority reconciliation.
+
+**Result:** The terminology constraints are reconciled as binding design constraints. The current constitutional hierarchy and every unsupported relationship remain UNRESOLVED.
+
+### 12.3 Final A2 gap matrix
+
+| Gap | Evidence / current state | Severity | Required disposition before hierarchy or implementation approval |
+|---|---|---|---|
+| G-01 — Seventh-edition Constitution | Complete authoritative edition, adoption evidence, amendment history, and relevant clauses not obtained or verified | BLOCKING / CRITICAL | Obtain and authenticate the complete current edition; record exact articles, clauses, and pages |
+| G-02 — Current bylaws | Current edition, amendments, legal status, and relationship to the Constitution not verified | BLOCKING / CRITICAL | Obtain and verify the current bylaws and all effective amendments |
+| G-03 — Constitutional source conflict | Main README describes the sixth revision as the current baseline; A1 source register requires the seventh edition | BLOCKING / MATERIAL | Resolve through authoritative source evidence and a separately approved correction; main remains unchanged in A2 |
+| G-04 — Eight-entry hierarchy | Owner-provided labels preserved; historical sixth-revision text offers limited comparison only | BLOCKING / CRITICAL | Validate exact labels, entity types, scope, authority, exceptions, and every parent-child edge against current sources |
+| G-05 — Office mandates and reporting | Current organizational chart and approved office/department mandate records not verified | BLOCKING / HIGH | Obtain dated, authorized structure and mandate evidence; reconcile conflicts with constitutional text |
+| G-06 — UI provenance | Historical paths known; no source repository, branch, commit, or recoverable artifact established | UNRESOLVED / HIGH | Identify the authoritative source location and ownership, then perform file-by-file read-only comparison |
+| G-07 — Stakeholder validation | Authorized process-owner and stakeholder evidence unavailable | OPEN / HIGH | Validate workflows, roles, acceptance criteria, and exceptions with authorized owners |
+| G-08 — Legal and policy review | Applicability and current institutional policy not reviewed by qualified reviewers | OPEN / HIGH | Obtain qualified legal/institutional review before compliance claims or sensitive workflows |
+| G-09 — Privacy and safeguarding requirements | A1 risks and data classes are proposals; no authorized operational validation | OPEN / HIGH | Validate purpose, lawful basis, minimization, access, retention, safeguarding, and incident procedures |
+| G-10 — Technical acceptance evidence | No measured security, accessibility, performance, offline/sync, recovery, or operational results | NOT TESTED | Define approved acceptance criteria and test only after the relevant implementation gate |
+| G-11 — Requirements validation | 12/12 functional and 8/8 non-functional requirements have references; 0/12 functional requirements fully validated; 0/8 non-functional requirements measured/tested | OPEN / HIGH | Keep requirements provisional until authoritative and stakeholder evidence plus acceptance evidence exists |
+| G-12 — A1 stage register | A1 approval and A2 authorization statements in the master register are stale | VERIFIED / DOCUMENTATION | Carry the 2026-11-11 Owner decision in this controlled A2 record; do not rewrite the A1 source register during read-only reconciliation |
+| G-13 — Branch topology | Cumulative A1 branch history verified; master-register topology description inaccurate | VERIFIED / DOCUMENTATION | Correct only through a separately controlled documentation update; do not merge branches as a shortcut |
+| G-14 — Main-branch terminology conflict | Main README conflicts with Owner terminology constraints | VERIFIED / MATERIAL | Preserve exact Owner constraints; defer any main correction to a separately authorized change |
+| G-15 — Public-source limitations | Official public pages provide institutional/ministry corroboration but do not prove current constitutional hierarchy or office authority | VERIFIED / LIMITATION | Use only for discovery/corroboration; never substitute for the governing source |
+
+### 12.4 A2 closure recommendation
+
+**Recommendation to the Owner: do not declare a clean or fully reconciled A2 closure.** The read-only repository, branch, historical-reference, and public-source searches available to this review are complete to the extent accessible. The remaining material gaps are explicitly identified above, but the two governing-source dependencies and UI provenance remain unresolved.
+
+The Owner may consider closing the *read-only evidence-review activity* as **VERIFIED-CLOSED WITH BLOCKERS RECORDED**, provided the closure record expressly preserves all of the following:
+
+1. G-01 and G-02 remain BLOCKING / CRITICAL. No hierarchy or authority model is certified.
+2. G-04 remains unresolved at the relationship and authority level. The eight labels remain discovery terminology only.
+3. G-06 remains unresolved. Existing UI must be preserved; no recreation or replacement is authorized.
+4. G-07 through G-11 remain open or not tested; no requirements, legal compliance, privacy readiness, or technical acceptance claims are implied.
+5. The main-branch constitutional and terminology conflicts are recorded but not changed.
+6. A2 closure does not authorize A3, source edits, schema/API/UI implementation, merge, deployment, signing, or publication.
+
+**Current stage status pending Owner decision:** A1 = OWNER APPROVED; A2 = PARTIAL / OPEN, closure recommendation prepared; A3 = NOT AUTHORIZED / NOT STARTED; A4 = NOT STARTED; A5 = NOT STARTED.
+
+If the Owner accepts the bounded evidence-review closure, the next permitted activity remains separately gated. Any A3 proposal must first be based on authenticated current governing sources and explicit scope approval. No automatic transition is implied by this recommendation.
