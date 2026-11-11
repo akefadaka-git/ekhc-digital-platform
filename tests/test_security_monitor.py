@@ -31,7 +31,7 @@ class SecurityMonitorTests(unittest.TestCase):
         )
 
     def test_escapes_untrusted_advisory_text_for_markdown_tables(self):
-        escaped = escape_table_cell('<img>|[link](javascript:alert(1))')
+        escaped = escape_table_cell("<img>|[link](javascript:alert(1))")
         self.assertIn("&lt;img&gt;", escaped)
         self.assertIn("\\|", escaped)
         self.assertIn("\\[link\\]", escaped)
@@ -92,8 +92,8 @@ class SecurityMonitorTests(unittest.TestCase):
 
     @patch("scripts.security_monitor.urlopen")
     def test_osv_rejects_oversized_response(self, mocked_urlopen):
-        mocked_urlopen.return_value.__enter__.return_value.read.return_value = (
-            b"x" * (MAX_OSV_RESPONSE_BYTES + 1)
+        mocked_urlopen.return_value.__enter__.return_value.read.return_value = b"x" * (
+            MAX_OSV_RESPONSE_BYTES + 1
         )
         with self.assertRaisesRegex(ValueError, "2 MiB safety limit"):
             query_osv([{"name": "Django", "version": "5.2.19"}])
