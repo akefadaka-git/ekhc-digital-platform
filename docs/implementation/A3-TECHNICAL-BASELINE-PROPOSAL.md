@@ -157,6 +157,17 @@ The local commands are illustrative until the project files and dependency lock 
 
 **Owner decision required:** Approve or revise this CI/local-verification proposal before creating workflow files. Until approved, CI configuration remains NOT CREATED and no CI run is claimed.
 
+
+
+### Decision 6 — CI and local verification approach
+
+**Decision:** APPROVED — use a minimal GitHub Actions workflow on standard GitHub-hosted Linux runners for this public repository, subject to the safeguards in Section 11, with documented local commands as the fallback.
+
+**Decision scope:** Standard public-repository runners only; no larger runners, paid hosted services, billing activation, secrets, deployment, release signing, publication, or production access. Workflow permissions must be least-privilege. Third-party actions must be pinned to reviewed immutable commit SHAs when the workflow is authored. Local and CI checks must use the same pinned Python/dependency baseline. No CI success is claimed until an actual run is observed.
+
+**Implementation boundary:** This approves preparation of the workflow specification and file-level acceptance checklist. It does not by itself approve merging, deployment, or expansion beyond the first increment. Create the executable workflow only with the approved checklist and ensure it does not report success when required application files are absent.
+
+
 ## 10. Current disposition
 
 - Backend preference: **OWNER-APPROVED — Django/Python**.
