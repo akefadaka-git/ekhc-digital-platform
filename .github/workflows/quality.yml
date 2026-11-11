@@ -83,12 +83,9 @@ jobs:
               hashes = sorted({file["digests"]["sha256"] for file in release["urls"]})
               if not hashes:
                   raise SystemExit(f"No PyPI hashes found for {name}=={version}")
-              lines = [f"{name}=={version} \\\"]
-              lines.extend(
-                  f"    --hash=sha256:{digest}" + (" \\\\" if index < len(hashes) - 1 else "")
-                  for index, digest in enumerate(hashes)
+              entries.append(
+                  f"{name}=={version} " + " ".join(f"--hash=sha256:{digest}" for digest in hashes)
               )
-              entries.append("\\n".join(lines))
 
           print("LOCK_PREVIEW_BEGIN")
           print("\\n\\n".join(sorted(entries, key=str.casefold)))
