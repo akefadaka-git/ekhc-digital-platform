@@ -27,7 +27,11 @@ class SafeJsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         method = getattr(record, "method", "")
-        method = method if isinstance(method, str) and _METHOD_PATTERN.fullmatch(method) else "OTHER"
+        method = (
+            method
+            if isinstance(method, str) and _METHOD_PATTERN.fullmatch(method)
+            else "OTHER"
+        )
         status_code = getattr(record, "status_code", None)
         if not isinstance(status_code, int) or isinstance(status_code, bool):
             status_code = None
@@ -76,7 +80,9 @@ class RequestCorrelationLoggingMiddleware:
                 "http_request_completed",
                 extra={
                     "method": request.method.upper()[:16],
-                    "status_code": response.status_code if response is not None else None,
+                    "status_code": (
+                        response.status_code if response is not None else None
+                    ),
                     "duration_ms": duration_ms,
                     "exception_type": exception_type,
                 },
