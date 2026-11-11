@@ -1,6 +1,6 @@
 # EKHC OS — A3 Restricted Foundation Scope and Authorization Record
 
-**Status:** OWNER-AUTHORIZED SCOPE; implementation entry constraints remain open  
+**Status:** OWNER-AUTHORIZED SCOPE; restricted first-increment implementation and exact-head hash-locked CI verified; A3 closure awaits Owner review  
 **Authorization date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/restricted-foundation-scope`  
@@ -16,7 +16,7 @@ This authorization is narrow. It does not approve the constitutional hierarchy, 
 
 - A1 remains OWNER APPROVED.
 - A2 remains PARTIAL / OPEN. This record does not declare A2 closed or represent that its formal roadmap exit condition has been met.
-- A3 restricted scope is OWNER-AUTHORIZED, but executable implementation is subject to the technical and source prerequisites in this record.
+- A3 restricted scope is OWNER-AUTHORIZED. The approved technical baseline and file-level checklist have been implemented; exact-head hash-locked CI has passed. The first-increment closure recommendation is ready for Owner review.
 - A4 and A5 remain NOT STARTED.
 - Work stays on this branch. Do not modify `main`, merge, deploy, sign, or publish.
 - Preserve existing UI and unrelated repository work. No UI recreation or replacement is authorized.
@@ -51,23 +51,21 @@ These are candidates for subsequent implementation only after the technical prer
 
 No candidate above is yet an approved framework, database, API, schema, hosting, or deployment decision.
 
-## 5. Technical prerequisites — unresolved
+## 5. Approved technical baseline and implementation status
 
-The A1 architecture proposal explicitly leaves framework, backend/frontend technology, database, migration strategy, mobile/PWA delivery, authentication/session model, offline protocol, storage, hosting, and deployment topology undecided.
+The Owner-approved first-increment technical baseline is:
 
-The repository's current `main` tree contains documentation and historical research artifacts, but no application source tree or established build/test pipeline. Therefore, selecting a runtime or creating executable application code now would silently convert an unapproved architecture proposal into an implementation decision.
+- Backend: Django/Python.
+- Runtime: Python 3.14.10 and Django 5.2.19.
+- API: Django-native `GET /health/` only; DRF and general resource endpoints are deferred.
+- Persistence: no database server, ORM persistence, migrations, schemas, models, or database-backed features.
+- Quality: Django built-in test runner, Ruff 0.17.4, and pip-audit 2.10.1.
+- CI: standard public GitHub Actions Linux runner, least-privilege read-only permissions, immutable action SHAs, and local fallback.
+- Dependencies: direct pins in `requirements.txt` and `requirements-dev.txt`; transitive lock in `requirements-lock.txt` with 32 exact package versions and 402 SHA-256 hashes.
 
-Before executable A3 work begins, record an Owner-approved technical baseline covering at minimum:
+The approved first-increment files are implemented on `a3/restricted-foundation-scope`. Exact-head workflow run #22 passed hash-locked installation, Django system check, three tests, Ruff lint/format, and pip-audit. The audit reported no known vulnerabilities at the time of the run. Evidence: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968364171
 
-- Backend and frontend/runtime selection, including supported versions.
-- Package/build/test tooling and repository layout.
-- Database and migration approach, if any.
-- API boundary and authentication/session approach, if any.
-- Test strategy and free/public-repository CI constraints.
-- Localization and Ethiopian-calendar implementation/test references.
-- Security baseline and dependency-update policy.
-
-This is a technical prerequisite, not a request to resolve constitutional authority by assumption.
+This technical baseline is limited to the authority-independent foundation. Frontend selection, database/persistence architecture, authentication/authorization, identity, institutional hierarchy, office mandates, governance workflows, localization product behavior, hosting, and deployment remain unselected, deferred, or blocked. Preserve existing UI; do not replace it.
 
 ## 6. Blocking evidence retained
 
@@ -82,7 +80,7 @@ The following A2 gaps remain open and must not be represented as fixed by this A
 - G-07 — stakeholder validation: OPEN / HIGH.
 - G-08 — qualified legal/institutional review: OPEN / HIGH.
 - G-09 — privacy and safeguarding validation: OPEN / HIGH.
-- G-10 — technical acceptance evidence: NOT TESTED.
+- G-10 — broader product/requirements technical acceptance: NOT TESTED; the restricted A3 foundation has separate passing CI evidence.
 - G-11 — requirements validation: OPEN / HIGH.
 
 ## 7. Change-control and verification requirements
@@ -100,7 +98,10 @@ A3 completion requires a reconciled change inventory and review evidence. A4 ver
 ## 8. Current disposition
 
 **A3 scope authorization: VERIFIED.**  
-**Executable implementation: BLOCKED pending technical baseline and acceptance criteria.**  
+**Restricted first-increment implementation: COMPLETE.**  
+**Exact-head hash-locked CI: PASS — run #22.**  
+**A3 first-increment closure recommendation: READY FOR OWNER REVIEW; not automatically closed.**  
 **A2: PARTIAL / OPEN.**  
+**A4/A5: NOT STARTED.**  
 **Main branch: UNCHANGED.**  
 **Merge/deployment/signing/publication: NOT AUTHORIZED.**
