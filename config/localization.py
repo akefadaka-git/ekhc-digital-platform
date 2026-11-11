@@ -1,6 +1,7 @@
 """Request-scoped Amharic-first platform language negotiation."""
 
 from django.conf import settings
+from django.utils.cache import patch_vary_headers
 
 
 def resolve_platform_language(accept_language):
@@ -48,4 +49,5 @@ class PlatformLanguageMiddleware:
         request.LANGUAGE_CODE = language
         response = self.get_response(request)
         response.headers["Content-Language"] = language
+        patch_vary_headers(response, ("Accept-Language",))
         return response
