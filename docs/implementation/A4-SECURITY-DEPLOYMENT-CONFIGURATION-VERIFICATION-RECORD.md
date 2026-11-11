@@ -2,7 +2,7 @@
 
 **Verification status:** TECHNICAL PASS — Owner acceptance pending  
 **Date:** 2026-11-11  
-**Repository:** ake fadaka-git/ekhc-digital-platform  
+**Repository:** akefadaka-git/ekhc-digital-platform  
 **Implementation branch:** a3/security-deployment-configuration  
 **Implementation SHA tested by CI:** 6ae339305641ace35232981f175d6fe416a12df7  
 **Verification branch:** a4/security-deployment-configuration-verification  
