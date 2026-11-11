@@ -235,7 +235,8 @@ def main() -> int:
             lines.append("| " + " | ".join(cells) + " |")
     else:
         lines.append(
-            "No matching OSV advisories were returned for the locked PyPI package versions."
+            "No matching OSV advisories were returned for the "
+            "locked PyPI package versions."
         )
     if reminders:
         lines.extend(
@@ -254,7 +255,8 @@ def main() -> int:
         lines.extend(
             [
                 "",
-                "No approved exception is at a configured reminder threshold or past expiry.",
+                "No approved exception is at a configured reminder "
+                "threshold or past expiry.",
             ]
         )
     lines.extend(
@@ -262,7 +264,8 @@ def main() -> int:
             "",
             (
                 "> This workflow reports signals only. It does not assign severity, "
-                "create tickets, modify dependencies, approve/revoke/expire exceptions, "
+                "create tickets, modify dependencies, "
+                "approve/revoke/expire exceptions, "
                 "or deliver a guaranteed out-of-band notification."
             ),
         ]
