@@ -1,6 +1,6 @@
 # A3 — Security Headers and Deployment Configuration Foundation
 
-**Status:** IMPLEMENTATION IN PROGRESS — verification pending  
+**Status:** IMPLEMENTED — exact-head CI PASS (run #80)  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/security-deployment-configuration`  
@@ -53,6 +53,17 @@ Boolean values accept only `true`/`false` or `1`/`0`. Invalid or ambiguous value
 - Django checks, all tests, Ruff lint/format, dependency audit, and exact-head CI pass.
 - A4 verifies the exact implementation head and records deployment limitations.
 
-## 6. Explicit exclusions
+## 6. Exact-head CI evidence
+
+- Workflow: **A3 quality checks**
+- Run: **#80**
+- Run ID: `43023827925`
+- Tested implementation SHA: `6ae339305641ace35232981f175d6fe416a12df7`
+- Result: **SUCCESS**
+- URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43023827925
+
+Verified steps: required-file gate, Python 3.14.10 setup, hash-locked dependency installation, Django system check, Django tests (**31 tests**), Ruff lint, Ruff format, and pip-audit — all PASS. Earlier attempts exposed a missing X-frame middleware assertion and import/format issues; these were corrected. Only run #80 is treated as final passing evidence.
+
+## 7. Explicit exclusions
 
 No proxy trust, CORS policy, CSP allowlist, hostname, certificate, secret, production data, database, authentication, authorization, institutional hierarchy, external service, merge, deployment, signing, or publication is introduced. A2 remains open and A5 remains separately gated.
