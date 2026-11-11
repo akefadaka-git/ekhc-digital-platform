@@ -83,7 +83,7 @@ The approved CI approach is standard GitHub-hosted runners for the public reposi
 - Executable implementation: AUTHORIZED within this checklist.
 - CI workflow file: CREATED on the authorized A3 branch.
 - A2: PARTIAL / OPEN.
-- A4/A5: NOT STARTED.
+- A4: IN PROGRESS. A5: NOT STARTED.
 - Merge/deployment/signing/publication: NOT AUTHORIZED.
 
 ## 7. Implementation and verification record — 2026-11-11
@@ -143,8 +143,8 @@ Created on `a3/restricted-foundation-scope`:
 - pip-audit: PASS — no known vulnerabilities found in run #22.
 - Exact-head GitHub Actions: PASS for the tested commit above.
 - Dependency reproducibility: PASS for the approved Python 3.14.10 / Ubuntu 24.04 x86_64 CI environment; re-lock and re-verify when the approved runtime/platform or direct inputs change.
-- A3 implementation acceptance: READY FOR OWNER CLOSURE REVIEW.
-- Independent A4 review: NOT STARTED.
+- A3 implementation acceptance: OWNER-ACCEPTED; A3 closure approved before A4 authorization.
+- Independent A4 review: IN PROGRESS; see `A4-INDEPENDENT-VERIFICATION-RECORD.md`.
 - A2 constitutional and organizational blockers: remain PARTIAL / OPEN.
 
 **Closure record:** The Owner accepted A3 first-increment closure and separately authorized A4 independent verification. A4 is in progress; see `A4-INDEPENDENT-VERIFICATION-RECORD.md`. A3 acceptance does not authorize merge, deployment, signing, publication, production data, or any A2-dependent feature.
