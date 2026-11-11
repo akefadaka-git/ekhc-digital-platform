@@ -1,6 +1,6 @@
 # A3 — Secure Request Observability Foundation
 
-**Status:** IMPLEMENTED — exact-head CI pending  
+**Status:** IMPLEMENTED — exact-head CI PASS (run #62)  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/secure-observability-foundation`  
@@ -45,6 +45,14 @@ The request ID is a correlation identifier, not an authentication credential, au
 - CI runs against the exact implementation head.
 - A4 review verifies request-ID generation, context reset, safe field allowlisting, and scope boundaries.
 
-## 6. Explicit exclusions
+## 6. Exact-head CI evidence
+
+- Workflow: A3 quality checks, run #62
+- Run ID: `43022041099`
+- Tested implementation SHA: `04456a05e4668bc518336e16f33260031609f963`
+- Result: SUCCESS — 18 tests, Django system check, Ruff lint/format, and pip-audit all passed.
+- Evidence: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43022041099
+
+## 7. Explicit exclusions
 
 No database, migrations, authentication, user identity, roles, authorization, institutional hierarchy, retention policy, log shipping, monitoring vendor, frontend/UI, production credentials, production data, deployment, merge, signing, or publication is introduced. A2 remains open and A5 remains separately gated.
