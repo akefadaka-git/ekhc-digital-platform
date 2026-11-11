@@ -1,8 +1,8 @@
 """Static guards for dependency and CI supply-chain invariants."""
 
+from pathlib import Path
 import re
 import unittest
-from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,7 +89,9 @@ class CiSupplyChainBoundaryTests(unittest.TestCase):
 
     def test_ci_installs_only_from_hash_locked_manifest_and_audits_it(self):
         workflow = read_text(".github/workflows/quality.yml")
-        self.assertIn("pip install --require-hashes -r requirements-lock.txt", workflow)
+        self.assertIn(
+            "pip install --require-hashes -r requirements-lock.txt", workflow
+        )
         self.assertIn("pip-audit -r requirements-lock.txt", workflow)
 
     def test_artifact_attestation_is_not_claimed_or_enabled(self):
