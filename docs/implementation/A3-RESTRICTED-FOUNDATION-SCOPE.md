@@ -100,7 +100,7 @@ A3 completion requires a reconciled change inventory and review evidence. A4 ver
 **A3 scope authorization: VERIFIED.**  
 **Restricted first-increment implementation: COMPLETE.**  
 **Final A3 exact-head hash-locked CI: PASS — run #26, SHA `bf3443b288bcc78d7479630ffa92f0af7c88cd77`.**  
-**A3 first-increment closure recommendation: READY FOR OWNER REVIEW; not automatically closed.**  
+**A3 first-increment closure: OWNER-ACCEPTED before A4 authorization.**  
 **A2: PARTIAL / OPEN.**  
 **A4: IN PROGRESS. A5: NOT STARTED.**  
 **Main branch: UNCHANGED.**  
