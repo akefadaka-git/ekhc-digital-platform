@@ -17,6 +17,7 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 OSV_QUERYBATCH_URL = "https://api.osv.dev/v1/querybatch"
+MAX_OSV_RESPONSE_BYTES = 2 * 1024 * 1024
 PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)(?:\s|$)")
 REMINDER_DAYS = (30, 14, 7, 3, 1)
 VALID_SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
@@ -145,7 +146,10 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
         method="POST",
     )
     with urlopen(request, timeout=20) as response:
-        data = json.loads(response.read().decode("utf-8"))
+        raw_response = response.read(MAX_OSV_RESPONSE_BYTES + 1)
+    if len(raw_response) > MAX_OSV_RESPONSE_BYTES:
+        raise ValueError("OSV response exceeded the 2 MiB safety limit")
+    data = json.loads(raw_response.decode("utf-8"))
     if not isinstance(data, dict):
         raise ValueError("OSV returned a non-object response")
     results = data.get("results")
