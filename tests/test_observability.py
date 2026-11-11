@@ -6,7 +6,7 @@ from uuid import UUID
 
 from django.test import SimpleTestCase
 
-from config.observability import RequestContextFilter, SafeJsonFormatter
+from config.observability import RequestContextFilter, SafeJsonFormatter, _request_id
 
 
 class RequestCorrelationTests(SimpleTestCase):
@@ -46,14 +46,22 @@ class StructuredLogPrivacyTests(SimpleTestCase):
                 "body": "private payload",
             }
         )
-        RequestContextFilter().filter(record)
-        rendered = SafeJsonFormatter().format(record)
+        context_token = _request_id.set(
+            "a5df7f5c-cc83-46c8-8c98-5cb4d85a7d8f"
+        )
+        try:
+            RequestContextFilter().filter(record)
+            rendered = SafeJsonFormatter().format(record)
+        finally:
+            _request_id.reset(context_token)
         payload = json.loads(rendered)
 
         self.assertEqual(payload["event"], "http_request_completed")
         self.assertEqual(payload["method"], "GET")
         self.assertEqual(payload["status_code"], 200)
-        self.assertEqual(payload["request_id"], "-")
+        self.assertEqual(
+            payload["request_id"], "a5df7f5c-cc83-46c8-8c98-5cb4d85a7d8f"
+        )
         for sensitive_value in (
             "hunter2",
             "top-secret",
