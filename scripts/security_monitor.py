@@ -6,6 +6,7 @@ issues, changes dependencies, approves exceptions, or changes exception status.
 from __future__ import annotations
 
 import argparse
+from html import escape as escape_html
 import json
 import os
 import re
@@ -158,6 +159,13 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
     return findings
 
 
+def escape_table_cell(value: object) -> str:
+    escaped = escape_html(str(value).replace("\\", "\\\\"), quote=True)
+    for character in ("|", "`", "[", "]", "*", "_"):
+        escaped = escaped.replace(character, "\\" + character)
+    return escaped.replace("\r", " ").replace("\n", " ")
+
+
 def write_summary(markdown: str) -> None:
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
@@ -202,11 +210,11 @@ def main() -> int:
             ]
         )
         for item in findings:
-            summary = str(item["summary"]).replace("|", "\\|").replace("\n", " ")
-            lines.append(
-                f"| {item['package']} | {item['version']} | {item['id']} | "
-                f"{item['modified']} | {summary} |"
-            )
+            cells = [
+                escape_table_cell(item[field])
+                for field in ("package", "version", "id", "modified", "summary")
+            ]
+            lines.append("| " + " | ".join(cells) + " |")
     else:
         lines.append(
             "No matching OSV advisories were returned for the locked PyPI package versions."
