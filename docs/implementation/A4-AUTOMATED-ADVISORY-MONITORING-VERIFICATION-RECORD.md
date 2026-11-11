@@ -6,8 +6,8 @@
 **A3 base:** `974ca3c05af5cb024ee7ed45e099a9461a9a69b8`  
 **A4 review date:** 2026-11-12  
 **Owner acceptance:** PENDING  
-**Exact-head CI:** QUALITY RUN #147 PENDING; MONITOR RUN #32 SUCCESS  
-**Technical disposition:** A4 RE-REVIEW IN PROGRESS; no closure until exact-head quality evidence is complete  
+**Exact-head CI:** QUALITY RUN #147 SUCCESS; MONITOR RUN #32 SUCCESS  
+**Technical disposition:** A4 TECHNICAL VERIFICATION PASS WITH LIMITATIONS; AWAITING OWNER ACCEPTANCE  
 **Closure status:** NOT YET OWNER-CLOSED
 
 ## 1. Scope and method
@@ -40,7 +40,7 @@ The A3-owned files received import-order and line-length corrections; the existi
 
 **Prior exact-head execution evidence:** security monitor run #19 / ID `43074972062` on prior corrected head `32812969c1ad13eccc681721d58c79a1d58dfa36` completed SUCCESS (32 packages queried; zero advisories; empty exception register). This is historical evidence for that prior SHA, not evidence for the new head.
 
-**Current exact-head execution:** security monitor run #32 / ID `43122480518` on `b4ed07262b1366e49f566cfadc9af3f892abfa14` completed **SUCCESS**. It queried 32 locked PyPI packages, returned zero OSV advisories, and emitted zero exception-expiry signals because the exception register is empty. This is a successful point-in-time query, not proof of no vulnerabilities or complete OSV coverage. Earlier run #23 / ID `43099104462` was cancelled and has no job result.
+**Current exact-head execution:** security monitor run #32 / ID `43122480518` on `b4ed07262b1366e49f566cfadc9af3f892abfa14` completed **SUCCESS**. It queried 32 locked PyPI packages, returned zero OSV advisories, and emitted zero exception-expiry signals because the exception register is empty. This is a successful point-in-time query, not proof of no vulnerabilities or complete OSV coverage. Earlier run #23 / ID `43099104462` was cancelled with zero jobs returned and has no execution result.
 
 ## 3. Lock parser review
 
@@ -84,7 +84,7 @@ Limitations:
 
 ## 6. Test review and concrete defect
 
-**Current exact-head result: PENDING — final quality run has not started executing steps.**
+**Current exact-head result: PASS — quality run #147 / ID `43122480532` completed successfully on `b4ed07262b1366e49f566cfadc9af3f892abfa14`.** Django system check passed; all 64 tests passed; `ruff check .` passed with “All checks passed!”; `ruff format --check .` passed with 51 files already formatted; `pip-audit -r requirements-lock.txt` passed with “No known vulnerabilities found”. All five workflow quality stages completed successfully on Python 3.14.10 using the hash-locked requirements.
 
 The deterministic timezone.utc defect was corrected to use imported UTC. The test module includes regression cases for oversized OSV responses, incomplete batch responses, and a valid matching advisory.
 
@@ -126,7 +126,7 @@ The final exact-head run must complete and its test, Ruff lint, Ruff format, and
 
 ## 9. Required follow-up
 
-1. Obtain completion of quality run #147 at exact head b4ed07262b1366e49f566cfadc9af3f892abfa14; inspect Django tests, Ruff lint, Ruff format, and pip-audit steps/logs. If any step fails, correct and rerun against the new exact head.
+1. Preserve the successful exact-head quality and monitor run evidence; no further CI correction is currently indicated.
 2. Retain successful final-head monitoring evidence from run #32, with its zero-result and empty-register limitations.
 3. Add further coverage for OSV HTTP/network failures, every reminder boundary, missed-run behavior, and end-to-end exit-code/reporting semantics.
 4. Validate notification delivery and escalation with a controlled, non-sensitive test before operational adoption.
@@ -136,13 +136,13 @@ The final exact-head run must complete and its test, Ruff lint, Ruff format, and
 ## 10. Disposition
 
 **Source corrections: COMMITTED — the six A3-owned Ruff findings and two pre-existing repository-wide Ruff findings were addressed without weakening lint rules or coverage.**  
-**Final-head test execution: NOT YET VERIFIED — run #147 pending.**  
-**Final-head Ruff lint/format: NOT YET VERIFIED — run #147 pending.**  
-**Final-head dependency audit: NOT YET VERIFIED — run #147 pending.**  
+**Final-head test execution: PASS — 64 tests on run #147.**  
+**Final-head Ruff lint/format: PASS — full-repository Ruff lint and format checks on run #147.**  
+**Final-head dependency audit: PASS — pip-audit reported no known vulnerabilities on run #147.**  
 **Final-head security monitor: PASS — run #32; 32 packages queried, zero advisories returned, zero exception signals, empty register.**  
-**Exact-head CI: PARTIAL — monitor PASS; quality PENDING.**  
+**Exact-head CI: PASS — quality run #147 and monitor run #32 both succeeded on the same A3 head.**  
 **Operational adoption: PARTIAL / NOT VERIFIED.**  
 **Owner acceptance: PENDING.**  
-**Closure: NOT YET OWNER-CLOSED; await exact-head quality evidence before A4 closure.**
+**Closure: NOT YET OWNER-CLOSED; technical evidence is complete with limitations, and explicit Owner acceptance remains pending.**
 
 This A4 record does not authorize merge, deployment, publication, signing, automatic dependency changes, exception approval, or A5.
