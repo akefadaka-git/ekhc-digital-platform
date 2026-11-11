@@ -28,7 +28,6 @@ ASGI_APPLICATION = "config.asgi.application"
 INSTALLED_APPS = []
 MIDDLEWARE = []
 TEMPLATES = []
-DATABASES = {}
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
