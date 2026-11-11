@@ -4,7 +4,7 @@ A national, Amharic-first, multilingual digital platform intended to support chu
 
 ## Project status
 
-**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — restricted first increment authorized and under implementation. A4 and A5 have not started.
+**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — OWNER-ACCEPTED restricted first increment; A4 — INDEPENDENT VERIFICATION IN PROGRESS; A5 — NOT STARTED.
 
 This repository is the independent home of EKHC OS. It is not part of ARNA, MASES, MaaleNex, or IROKA.
 
@@ -120,7 +120,6 @@ This repository starts with governance, assessment, and specification. Do not in
 
 **A1 — OWNER APPROVED. A2 — PARTIAL / OPEN.** The first A3 technical increment is restricted to a non-persistent Django foundation and a non-sensitive health endpoint. No production feature, live member data, real officeholder record, migration, deployment, or external integration has been implemented.
 
-
 ## A3 first-increment technical foundation — 2026-11-11
 
 The Owner approved the exact file-level acceptance checklist at [docs/implementation/A3-FIRST-INCREMENT-ACCEPTANCE-CHECKLIST.md](docs/implementation/A3-FIRST-INCREMENT-ACCEPTANCE-CHECKLIST.md). Implementation is confined to the files listed there and the following approved baseline:
@@ -133,7 +132,7 @@ The Owner approved the exact file-level acceptance checklist at [docs/implementa
 
 ### Local setup and verification
 
-Create and activate a Python 3.14.10 virtual environment, then install the pinned direct dependencies:
+Create and activate a Python 3.14.10 virtual environment, then install the pinned dependencies:
 
 ```bash
 python -m venv .venv
@@ -155,7 +154,6 @@ Run:
 
 ```bash
 python --version
-python -m pip install -r requirements-dev.txt
 python manage.py check
 python manage.py test
 ruff check .
@@ -163,10 +161,16 @@ ruff format --check .
 pip-audit -r requirements-lock.txt
 ```
 
-`requirements-dev.txt` records the reviewed direct development inputs. `requirements-lock.txt` records the resolved transitive dependency set with SHA-256 hashes for every published release file for each pinned package version. Install it with `--require-hashes`; regenerate and review it whenever a direct dependency changes. The current lock was resolved on Python 3.14.10 / Ubuntu 24.04 x86_64 and contains 32 packages and 402 SHA-256 hashes. A passing dependency audit is not security certification.
+`requirements-dev.txt` records the reviewed direct development inputs. `requirements-lock.txt` records the resolved transitive dependency set with SHA-256 hashes for every published release file for each pinned package version. Install it with `--require-hashes`; regenerate and review it whenever a direct dependency changes. The current lock contains 32 packages and 402 SHA-256 hashes. A passing dependency audit is not security certification.
 
 The health endpoint reports process responsiveness only and does not probe databases, networks, storage, or external services. It returns no organizational or personal data.
 
 ### A3 restrictions
 
-Synthetic data only. No UI creation or replacement, database, authentication, authorization, role/office/hierarchy model, membership or governance workflow, live data, paid service, production credential, deployment, signing, or publication. The work branch is `a3/restricted-foundation-scope`; `main` remains unchanged. A4, A5, merge, and deployment remain separately gated.
+Synthetic data only. No UI creation or replacement, database, authentication, authorization, role/office/hierarchy model, membership or governance workflow, live data, paid service, production credential, deployment, signing, or publication. The work branch is `a3/restricted-foundation-scope`; `main` remains unchanged. A4 verification is in progress; A5, merge, and deployment remain separately gated.
+
+## A4 verification status — 2026-11-11
+
+A3 first-increment closure was accepted by the Owner. Independent A4 verification is underway against the approved implementation branch. The A4 corrective work adds negative tests for missing secret configuration and empty/wildcard allowed-host configuration, reconciles the exact-head CI evidence, and corrects stage-status documentation. A4 closure is not yet claimed. See the A4 verification record in `docs/implementation/A4-INDEPENDENT-VERIFICATION-RECORD.md`.
+
+A2 remains PARTIAL / OPEN. A5 remains NOT STARTED. No merge, deployment, signing, publication, or production-data use is authorized.
