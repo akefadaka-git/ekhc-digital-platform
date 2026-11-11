@@ -41,7 +41,7 @@ jobs:
             .python-version requirements.txt requirements-dev.txt requirements-lock.txt manage.py
             config/__init__.py config/settings.py config/urls.py config/wsgi.py config/asgi.py config/localization.py config/observability.py config/security.py config/runtime.py
             health/__init__.py health/views.py
-            tests/__init__.py tests/test_health.py tests/test_observability.py tests/test_security.py tests/test_runtime.py tests/test_access_control_boundary.py pyproject.toml README.md
+            tests/__init__.py tests/test_health.py tests/test_observability.py tests/test_security.py tests/test_runtime.py tests/test_access_control_boundary.py tests/test_supply_chain_baseline.py pyproject.toml README.md
           )
           for file in "${required_files[@]}"; do
             if [[ ! -f "$file" ]]; then
