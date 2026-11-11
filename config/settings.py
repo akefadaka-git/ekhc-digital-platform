@@ -4,7 +4,6 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 
-
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "").strip()
 if not SECRET_KEY:
     raise ImproperlyConfigured(
