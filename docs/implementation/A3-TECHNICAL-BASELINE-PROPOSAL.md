@@ -78,13 +78,13 @@ Each item needs a separate acceptance criterion and focused tests before impleme
 4. **CI approach — RESOLVED:** standard public GitHub Actions runner with local fallback and least privilege.
 5. **Runtime — RESOLVED:** Python 3.14.10 and Django 5.2.19, subject to future upstream security re-checks.
 6. **First-increment sequence and file-level acceptance checklist — OWNER APPROVED:** exact checklist approved on 2026-11-11 and implementation started on the authorized branch.
-7. **First-increment verification and dependency reproducibility — PASS:** exact-head CI, tests, Ruff, pip-audit, and a transitive SHA-256 hash lock are verified in run #22. Broader product and independent A4 acceptance remain open.
+7. **First-increment verification and dependency reproducibility — PASS:** the final A3 exact-head CI, tests, Ruff, pip-audit, and transitive SHA-256 hash lock are verified in run #26 at `bf3443b288bcc78d7479630ffa92f0af7c88cd77`; run #22 is retained as historical lock-integration evidence. Broader product and independent A4 acceptance remain open.
 
 Keep all deferred or unresolved items out of executable scope until separately approved.
 
 ## 8. Acceptance and governance
 
-The file-level checklist has been created and Owner-approved. The first-increment files and transitive hash lock have been implemented on the authorized A3 branch. Exact-head workflow run #22 passed hash-locked installation, Django checks/tests, Ruff lint/format, and pip-audit. The A3 first-increment closure recommendation is recorded in the checklist and awaits Owner acceptance. Broader product requirements and A4 independent verification remain separate.
+The file-level checklist has been created and Owner-approved. The first-increment files and transitive hash lock have been implemented on the authorized A3 branch. Final A3 exact-head workflow run #26 passed hash-locked installation, Django checks/tests, Ruff lint/format, and pip-audit. Run #22 remains historical lock-integration evidence. The A3 first-increment closure recommendation is recorded in the checklist and awaits Owner acceptance. Broader product requirements and A4 independent verification remain separate.
 
 A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evidence and closure conditions are separately reconciled and accepted. Merge, deployment, signing, publication, and production data remain separately gated.
 
@@ -179,12 +179,13 @@ The local commands are illustrative until the project files and dependency lock 
 - Dependency audit: **OWNER-APPROVED — pip-audit 2.10.1**.
 - Direct dependency inputs: `requirements.txt` and `requirements-dev.txt`.
 - Transitive dependency lock: `requirements-lock.txt`, 32 exact package versions and 402 SHA-256 hashes.
-- Exact-head hash-locked CI: **PASS — run #22**, including `pip install --require-hashes`, Django check/tests, Ruff, and pip-audit; no known vulnerabilities found in that audit.
+- Final A3 exact-head hash-locked CI: **PASS — run #26 at `bf3443b288bcc78d7479630ffa92f0af7c88cd77`**, including `pip install --require-hashes`, Django check/tests, Ruff, and pip-audit; no known vulnerabilities found in that audit.
 - First-increment A3 closure recommendation: **READY FOR OWNER REVIEW**; not automatically closed.
 - Frontend: **UNRESOLVED / DEFERRED**; preserve existing UI and do not replace it.
 - Database, authentication, authorization, hierarchy, roles, governance workflows, production data, hosting, deployment: **DEFERRED / EXCLUDED**.
 - A2: **PARTIAL / OPEN**.
-- A4/A5: **NOT STARTED**.
+- A4: **IN PROGRESS**; see `docs/implementation/A4-INDEPENDENT-VERIFICATION-RECORD.md`.
+- A5: **NOT STARTED**.
 - Main branch: **MUST REMAIN UNCHANGED**.
 - Merge/deployment/signing/publication: **NOT AUTHORIZED**.
 
@@ -196,4 +197,4 @@ The Owner-approved checklist at `docs/implementation/A3-FIRST-INCREMENT-ACCEPTAN
 
 **Exact verification:** A3 quality workflow run #22, commit `628dccda9d12fa78a29cecfe9520452f930b5df3`, succeeded: hash-locked installation, Django system check, three Django tests, Ruff lint, Ruff format, and pip-audit. The audit reported no known vulnerabilities. Run: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42968364171
 
-The A3 first-increment closure recommendation is ready for Owner review. This does not close A3 automatically and does not authorize merge, deployment, signing, publication, production data, or any A2-dependent feature. No database, UI, organizational authority model, or product workflow is included.
+The A3 first-increment closure was accepted by the Owner before A4 authorization. This does not imply and does not authorize merge, deployment, signing, publication, production data, or any A2-dependent feature. No database, UI, organizational authority model, or product workflow is included.
