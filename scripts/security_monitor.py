@@ -16,7 +16,7 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 OSV_QUERYBATCH_URL = "https://api.osv.dev/v1/querybatch"
-PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\\s;\\\\]+)(?:\\s|$)")
+PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)(?:\s|$)")
 REMINDER_DAYS = (30, 14, 7, 3, 1)
 VALID_SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
 VALID_STATUSES = {"PROPOSED", "APPROVED", "REJECTED", "REVOKED", "EXPIRED"}
@@ -162,7 +162,7 @@ def write_summary(markdown: str) -> None:
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as summary:
-            summary.write(markdown + "\\n")
+            summary.write(markdown + "\n")
     print(markdown)
 
 
@@ -179,8 +179,8 @@ def main() -> int:
         findings = query_osv(packages)
     except (OSError, ValueError, json.JSONDecodeError, URLError, TimeoutError) as error:
         message = (
-            "## Security monitoring — INCOMPLETE\\n\\n"
-            f"Monitoring could not complete: `{type(error).__name__}`. See job logs."
+            "## Security monitoring — INCOMPLETE\n\n"
+            f"Monitoring could not complete: {type(error).__name__}. See job logs."
         )
         write_summary(message)
         return 2
@@ -202,7 +202,7 @@ def main() -> int:
             ]
         )
         for item in findings:
-            summary = str(item["summary"]).replace("|", "\\\\|").replace("\\n", " ")
+            summary = str(item["summary"]).replace("|", "\\|").replace("\n", " ")
             lines.append(
                 f"| {item['package']} | {item['version']} | {item['id']} | "
                 f"{item['modified']} | {summary} |"
@@ -239,7 +239,7 @@ def main() -> int:
             "a guaranteed out-of-band notification.",
         ]
     )
-    write_summary("\\n".join(lines))
+    write_summary("\n".join(lines))
     return 1 if findings or reminders else 0
 
 
