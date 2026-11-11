@@ -4,7 +4,7 @@ A national, Amharic-first, multilingual digital platform intended to support chu
 
 ## Project status
 
-**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — localization increment IMPLEMENTED; exact-head CI PASS (run #48); A4 verification of this increment PENDING; A5 — NOT STARTED.
+**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — localization increment A4 VERIFIED-CLOSED; secure observability increment IMPLEMENTED on `a3/secure-observability-foundation`, exact-head CI pending; A5 — NOT STARTED.
 
 This repository is the independent home of EKHC OS. It is not part of ARNA, MASES, MaaleNex, or IROKA.
 
@@ -181,3 +181,8 @@ A2 remains PARTIAL / OPEN. A5 remains NOT STARTED. No merge, deployment, signing
 The current A3 increment adds request-scoped Amharic-first language negotiation using a small platform language-negotiation middleware. Amharic (`am`) is the platform default; English (`en`) can be selected by an explicit supported language preference. Unsupported preferences fall back to Amharic. This is language metadata negotiation only; it does not claim that Django ships an Amharic translation catalogue. The selection is request-scoped only: no account preference, user profile, session store, database, translation catalogue, translated product copy, UI, or persistence layer is introduced. Existing UI provenance remains unresolved and untouched.
 
 The increment adds regression tests for default Amharic, English selection, and unsupported-language fallback. It does not create or assert institutional terminology or translations. Branch: `a3/localization-foundation`; `main` remains unchanged.
+
+
+## A3 secure request observability increment — 2026-11-11
+
+The next authority-independent increment is isolated on `a3/secure-observability-foundation`. It introduces server-generated UUIDv4 request correlation, an `X-Request-ID` response header, request-scoped log correlation, and allowlisted JSON completion events. Caller-supplied IDs are ignored. The request logger deliberately omits paths, query strings, headers, bodies, identities, credentials, tokens, and arbitrary log messages/extra fields. No retention period, external log service, or institutional privacy assumption is introduced. See [the A3 increment record](docs/implementation/A3-SECURE-OBSERVABILITY-FOUNDATION.md). Exact-head CI and A4 verification are pending.
