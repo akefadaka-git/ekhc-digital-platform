@@ -120,13 +120,21 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 
 **Constraints retained:** synthetic data only; preserve existing UI; no invented organizational hierarchy, offices, mandates, roles, permissions, or governance workflows; no paid services; no main-branch changes; no merge, deployment, signing, or publication without separate approval.
 
+
+
+### Decision 5 — first-increment test and quality toolchain
+
+**Decision:** APPROVED — use Django's built-in test runner for unit and integration tests, Ruff for Python linting and formatting, and pip-audit for dependency vulnerability checks. Defer additional static type checking until the first increment establishes meaningful interfaces.
+
+**Decision scope:** These tools are approved for the narrowly scoped first increment. Their configuration must be reproducible and usable locally without paid services. Dependency-audit results must be recorded; a clean audit is not a security certification. Do not add unrelated quality platforms or paid services. Any additional tool or materially broader check requires a separate justification and approval.
+
 ## 10. Current disposition
 
 - Backend preference: **OWNER-APPROVED — Django/Python**.
 - First-increment API: **OWNER-APPROVED — Django-native health/readiness endpoint only; DRF DEFERRED**.
 - First-increment database/schema work: **OWNER-APPROVED — DEFERRED**.
 - Complete technical baseline: PARTIAL / OPEN.
-- Runtime baseline: **OWNER-APPROVED — Python 3.14.10 + Django 5.2.19**, subject to a final upstream patch check before project-file pinning.\n- Additional dependencies: NOT SELECTED.
+- Runtime baseline: **OWNER-APPROVED — Python 3.14.10 + Django 5.2.19**, subject to a final upstream patch check before project-file pinning.\n- Test runner: **OWNER-APPROVED — Django built-in test runner**.\n- Lint/format: **OWNER-APPROVED — Ruff**.\n- Dependency audit: **OWNER-APPROVED — pip-audit**.\n- Additional static type checking: **DEFERRED** until meaningful interfaces exist.\n- Additional dependencies: NOT SELECTED.
 - Executable application implementation: NOT STARTED.
 - Existing UI: PRESERVE; provenance unresolved.
 - Main branch: MUST REMAIN UNCHANGED.
