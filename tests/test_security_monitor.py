@@ -1,7 +1,12 @@
 import unittest
 from datetime import datetime, timezone
 
-from scripts.security_monitor import evaluate_exceptions, parse_lockfile, parse_utc
+from scripts.security_monitor import (
+    escape_table_cell,
+    evaluate_exceptions,
+    parse_lockfile,
+    parse_utc,
+)
 
 
 class SecurityMonitorTests(unittest.TestCase):
@@ -21,6 +26,12 @@ class SecurityMonitorTests(unittest.TestCase):
                 {"name": "ruff", "version": "0.17.4"},
             ],
         )
+
+    def test_escapes_untrusted_advisory_text_for_markdown_tables(self):
+        escaped = escape_table_cell('<img>|[link](javascript:alert(1))')
+        self.assertIn('&lt;img&gt;', escaped)
+        self.assertIn('\\|', escaped)
+        self.assertIn('\\[link\\]', escaped)
 
     def test_rejects_unpinned_and_duplicate_normalized_entries(self):
         with self.assertRaises(ValueError):
