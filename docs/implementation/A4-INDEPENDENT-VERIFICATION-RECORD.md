@@ -1,11 +1,12 @@
 # EKHC OS — A4 Independent Verification Record
 
-**Status:** VERIFIED — A4 closure recommendation ready for Owner review; formal A4 closure not yet accepted  
+**Status:** OWNER-ACCEPTED — A4 independent verification formally closed  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Working branch:** `a3/restricted-foundation-scope`  
 **A3 accepted implementation baseline:** `bf3443b288bcc78d7479630ffa92f0af7c88cd77`  
-**A3 Owner decision:** A3 first-increment closure accepted; A4 independent verification authorized.
+**A3 Owner decision:** A3 first-increment closure accepted; A4 independent verification authorized.  
+**A4 Owner decision:** Formal A4 closure approved by the Owner on 2026-11-11.
 
 ## 1. Verification boundary
 
@@ -114,6 +115,18 @@ Run #37 verified the corrective implementation and the reconciled A3/A4 governan
 - Ruff lint: PASS; Ruff format: PASS (18 files already formatted).
 - pip-audit: PASS — no known vulnerabilities found.
 
+### Exact final branch-head verification — run #39
+
+- Workflow: **A3 quality checks**, run **#39**, ID `42969971958`.
+- Exact tested branch head: `c2994b2259b089be38b6a6f54297b1b8ef31dae1`.
+- Run URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42969971958
+- Workflow/job conclusion: **SUCCESS**; all 10 job steps completed successfully.
+- Required-file check, Python 3.14.10 setup, and hash-locked dependency installation: PASS.
+- Django system check: PASS.
+- Django tests: PASS — **6 tests**.
+- Ruff lint: PASS; Ruff format: PASS (18 files already formatted).
+- pip-audit: PASS — no known vulnerabilities found.
+
 ## 6. A2 blockers retained
 
 The following remain outside A4 and continue to block broader product acceptance:
@@ -132,10 +145,10 @@ No unsupported organizational relationship, office mandate, role, permission, or
 
 - A3 first-increment closure: **OWNER-ACCEPTED**.
 - A4 corrective implementation: **VERIFIED; six tests, Ruff, and pip-audit passed on the final branch head in run #38**.
-- A4 independent verification: **VERIFIED; closure recommendation READY FOR OWNER REVIEW; formal closure awaits Owner acceptance**.
+- A4 independent verification: **OWNER-ACCEPTED / VERIFIED-CLOSED** on 2026-11-11; exact final branch-head CI run #39 passed.
 - A2: **PARTIAL / OPEN**.
 - A5: **NOT STARTED**.
 - `main`: **MUST REMAIN UNCHANGED**.
 - Merge, deployment, signing, publication, production data: **NOT AUTHORIZED**.
 
-A4 verification is complete and its closure recommendation is ready for Owner review. This record does not itself close A4. A4 closure does not imply A2 closure, production readiness, or A5 authorization.
+A4 independent verification is formally closed by Owner approval. A4 closure does not imply A2 closure, production readiness, or A5 authorization.
