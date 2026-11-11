@@ -33,6 +33,7 @@ ASGI_APPLICATION = "config.asgi.application"
 INSTALLED_APPS = []
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.observability.RequestCorrelationLoggingMiddleware",
     "config.localization.PlatformLanguageMiddleware",
 ]
