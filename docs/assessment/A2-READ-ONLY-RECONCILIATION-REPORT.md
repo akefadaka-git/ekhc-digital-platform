@@ -265,3 +265,97 @@ A further public-source search located a Scribd-hosted scan/transcription titled
 **Updated disposition:** A potential historical/current-at-publication sixth-revision bylaw candidate is now LOCATED, but current bylaws remain MISSING / UNVERIFIED for A2 exit purposes. The seventh-edition Constitution remains MISSING / BLOCKING. The hierarchy remains unapproved. The candidate may be authenticated by comparing a complete copy against an official EKHC-issued original, adoption record, amendments, and confirmation of current force.
 
 This finding updates G-02 from “no candidate located” to “historical sixth-revision candidate located; current authoritative edition and amendments not verified.” It does not remove the blocker.
+
+
+## 14. A2 evidence refresh and gate reconciliation — 2026-11-11
+
+**Refresh branch:** `a2/authority-provenance-refresh`  
+**Parent A2 evidence branch head:** `30bcadc1367fa4dad4fd78032f68a1baf7287335`  
+**Method:** Read-only repository and historical-path inspection; public-source discovery; this section records evidence and does not amend `main`, A1 source documents, or application code.
+
+### 14.1 Repository topology and stage-state correction
+
+A fresh repository branch listing now shows the following visible refs:
+
+- `main`
+- `a1/assessment-specification`
+- `docs/a1-architecture-options-assessment`
+- `docs/a1-assessment-foundation`
+- `docs/a1-data-classification-privacy`
+- `docs/a1-data-inventory-workbook`
+- `docs/a1-hosting-sustainability-cost-assessment`
+- `docs/a1-legal-regulatory-policy-assessment`
+- `docs/a1-master-evidence-decision-register`
+- `docs/a2-read-only-reconciliation`
+- `a2/authority-provenance-refresh` (this refresh branch)
+- `a3/restricted-foundation-scope`
+
+The A3 branch now contains the Owner-accepted restricted first increment and the A4 closure record. The A4 closure-record commit is `ebe25ab828812c9b0b76fc18423b66e3e6c31d37`. Its exact-head quality workflow run #40 (ID `42971789834`) completed with conclusion SUCCESS on that SHA. Run URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42971789834
+
+This supersedes older A2-report statements that A3 was unauthorized/not started and A4 had not started. Current gate status is: A1 OWNER-APPROVED; A2 PARTIAL / OPEN; A3 OWNER-ACCEPTED for the restricted first increment; A4 OWNER-ACCEPTED / VERIFIED-CLOSED; A5 NOT STARTED. This status correction does not close A2 or authorize A5.
+
+### 14.2 Current official public-site corroboration — terminology only
+
+A fresh review of the current English and Amharic pages at `https://ekhc.et/` and `https://ekhc.et/amh/` found public-facing ministry/service labels including Missions, Theological Education, Finance, Human Resource/Properties/Logistics, Communication and Literature, Discipleship/Church Education, Women, Youth, Children, Social Security Commission, Professionals, National Mobile Leadership Training, Church and Community Empowerment, and Christian Marriage/National Prayer services.
+
+These are current public website labels as displayed during this review. They are discovery and terminology evidence only. They do not prove that each label is a constitutional department, its administrative tier, legal status, mandate, approval authority, reporting line, or relationship to another body. Website cards and English renderings must not be copied into canonical organization enums or permission scopes without approved institutional evidence.
+
+The legacy `ekhc.net` pages remain a distinct historical/legacy source set. Their older organizational descriptions and numerical claims differ from the current `ekhc.et` presentation. The discrepancy is retained as source-version/freshness risk; no numerical organization counts or hierarchy claims are accepted.
+
+### 14.3 Historical UI path and repository-history check
+
+The three previously identified UI paths were checked against repository commit history using path-scoped commit queries:
+
+- `resources/js/layouts/Header.vue`: no commits returned.
+- `resources/js/styles/tokens.css`: no commits returned.
+- `tailwind.config.js`: no commits returned.
+
+The A2 evidence branch tree and the current A3 branch tree contain no frontend/UI source files. This strengthens the finding that the identified files are not present in the inspected repository history and current branch snapshots. It does not establish that the UI never existed or cannot exist in another private, deleted, transferred, unindexed, or inaccessible repository. No original UI repository, branch, commit, or owner-verified artifact has been identified.
+
+**Disposition:** G-06 remains UNRESOLVED / HIGH. Preserve the existing UI direction; do not recreate, replace, or infer its implementation from current website appearance.
+
+### 14.4 Additional historical structure lead — 2002
+
+A publicly accessible academic repository document includes an appendix titled “EKHC Central Office Structure (August, 2002)”. The appendix depicts a historical central-office arrangement with General Secretary and spiritual/development leadership groupings, departments, and programs.
+
+This is a dated secondary academic source reproducing a 2002 diagram. It is useful only as a historical lead and cannot establish current structure, current office names, current reporting lines, or current delegated authority. Its labels must not be treated as a seventh-edition constitutional interpretation or imported into the application.
+
+**Disposition:** Historical evidence candidate recorded; no hierarchy gap closed.
+
+### 14.5 Updated gap disposition
+
+| Gap | Refresh evidence | Current status |
+|---|---|---|
+| G-01 — Seventh-edition Constitution | No authoritative seventh-edition copy or adoption/amendment record located in this refresh | BLOCKING / CRITICAL — MISSING |
+| G-02 — Current bylaws and amendments | Sixth-revision third-party copy remains the only located public candidate; current force and amendment history unverified | BLOCKING / CRITICAL — UNVERIFIED |
+| G-03 — Main constitutional-source conflict | Main README still requires separate controlled reconciliation against Owner-directed seventh-edition baseline | BLOCKING / MATERIAL — OPEN |
+| G-04 — Hierarchy and relationships | 2002 academic diagram and sixth-revision copy are historical only; current parentage/authority cannot be inferred | BLOCKING / CRITICAL — UNRESOLVED |
+| G-05 — Office mandates/reporting | Current website service labels corroborate public terminology only; no approved mandate schedule or current organogram located | BLOCKING / HIGH — UNVERIFIED |
+| G-06 — UI provenance | No path-scoped commits for the three historical UI paths; no UI files in inspected A2/A3 trees; no source repo identified | UNRESOLVED / HIGH |
+| G-07 — Stakeholder validation | No authorized process-owner validation evidence added | OPEN / HIGH |
+| G-08 — Legal/institutional review | No qualified legal or institutional review evidence added | OPEN / HIGH |
+| G-09 — Privacy/safeguarding | No current approved institutional policy or authorized operational validation added | OPEN / HIGH |
+| G-10 — Technical acceptance | A3/A4 checks verify only the restricted Django foundation, not product-wide security, accessibility, offline, performance, recovery or operations | NOT TESTED / OPEN |
+| G-11 — Requirements validation | Public site discovery does not validate workflows; functional and non-functional requirements remain unvalidated/unmeasured | OPEN / HIGH |
+
+### 14.6 A2 disposition and next evidence requests
+
+A2 remains PARTIAL / OPEN. The expanded search improved the public-source and repository-history record but did not resolve the blocking constitutional or UI dependencies. The existing recommendation for bounded evidence-review closure with blockers recorded remains an Owner decision, not an automatic status.
+
+The following primary evidence is still required from authorized EKHC custodians:
+
+1. Complete seventh-edition Constitution in authoritative Amharic, with cover/title page, adoption/approval record, effective date, complete articles, and amendment history.
+2. Current consolidated bylaws and every effective amendment/directive, with issuing body and effective dates.
+3. Current approved organizational chart and office/department mandate documents, including reporting/accountability and appointment/delegation authority.
+4. Original UI source repository or archive location, exact branch/commit or release archive, and confirmation of ownership/source-of-truth.
+5. Authorized process-owner contacts and approved forms/manuals for workflow validation.
+6. Current privacy, safeguarding, pastoral-care, records-retention, HR, finance, communications, and security policies.
+7. Qualified legal/institutional review of applicable Ethiopian legal instruments and the institution's governing documents.
+
+Until these arrive, keep the seven governance/provenance dependencies open. Do not implement hierarchy, role/permission scopes, governance workflows, sensitive-data processing, or UI replacement based on historical or public-web evidence.
+
+**A2 status:** PARTIAL / OPEN — evidence refresh recorded; closure not recommended as fully reconciled.  
+**A3:** OWNER-ACCEPTED restricted first increment only.  
+**A4:** OWNER-ACCEPTED / VERIFIED-CLOSED; exact closure-record head CI run #40 passed.  
+**A5:** NOT STARTED; separate Owner authorization required.  
+**Main:** unchanged. No merge, deployment, signing, publication, or production-data activity performed.
