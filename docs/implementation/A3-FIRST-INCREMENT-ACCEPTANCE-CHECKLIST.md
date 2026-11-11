@@ -81,7 +81,7 @@ The approved CI approach is standard GitHub-hosted runners for the public reposi
 - Checklist: OWNER APPROVED.
 - Executable implementation: AUTHORIZED within this checklist.
 - CI workflow file: CREATED on the authorized A3 branch; run verification pending.
-- CI run: NOT RUN.
+- CI run: NOT VERIFIED; push-triggered execution may have been queued, but no run result or exact-head link is available from the connected read-only status view.
 - A2: PARTIAL / OPEN.
 - A4/A5: NOT STARTED.
 - Merge/deployment/signing/publication: NOT AUTHORIZED.
