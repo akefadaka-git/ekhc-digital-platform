@@ -52,10 +52,13 @@ def parse_allowed_hosts(raw_value):
     for item in raw_hosts:
         host = item.strip()
         normalized = host.lower()
-        if (
-            "*" in host
-            or any(character.isspace() for character in host)
-            or not _valid_host(normalized)
+        if "*" in host:
+            raise _improperly_configured(
+                "DJANGO_ALLOWED_HOSTS must contain explicit hostnames; "
+                "wildcards are forbidden."
+            )
+        if any(character.isspace() for character in host) or not _valid_host(
+            normalized
         ):
             raise _improperly_configured(
                 "DJANGO_ALLOWED_HOSTS contains an invalid host entry."
