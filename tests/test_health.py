@@ -103,3 +103,19 @@ class LocalizationNegotiationTests(SimpleTestCase):
     def test_zero_quality_language_is_ignored(self):
         response = self.client.get("/health/", HTTP_ACCEPT_LANGUAGE="en;q=0,am;q=1")
         self.assertEqual(response["Content-Language"], "am")
+
+    def test_regional_language_tag_resolves_to_supported_primary_language(self):
+        response = self.client.get("/health/", HTTP_ACCEPT_LANGUAGE="en-US,en;q=0.8")
+        self.assertEqual(response["Content-Language"], "en")
+
+    def test_invalid_quality_value_is_ignored(self):
+        response = self.client.get("/health/", HTTP_ACCEPT_LANGUAGE="en;q=2,fr;q=1")
+        self.assertEqual(response["Content-Language"], "am")
+
+    def test_response_varies_by_accept_language(self):
+        response = self.client.get("/health/")
+        vary_headers = {
+            value.strip().lower()
+            for value in response.headers.get("Vary", "").split(",")
+        }
+        self.assertIn("accept-language", vary_headers)
