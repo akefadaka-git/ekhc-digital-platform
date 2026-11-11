@@ -27,7 +27,7 @@ No production features, production data migrations, deployment, signing, or publ
 - Web, Android, iOS, and offline-capable PWA are target delivery channels, subject to A1 validation.
 - Offline-first behavior with controlled synchronization is a design requirement to validate.
 - Organization-scoped authorization, role/permission controls, and auditable actions are mandatory design concerns.
-- The authoritative organizational baseline for current A1 work is the EKHC Constitution / Bylaw, Sixth Revision, 2012 E.C. (2020 G.C.), in Amharic.
+- The sixth-revision Constitution / Bylaw (2012 E.C.) is retained only as a historical A1 extraction candidate; it is not the current authoritative baseline. A2 records the seventh-edition Constitution and current bylaws/amendments as blocking dependencies.
 - Constitutional names must be preserved in Amharic as canonical labels; translations are secondary and must not introduce a new organizational meaning.
 - The terms **ወረዳ** and **District** are prohibited in the application, documentation, code, database schemas, APIs, UI, reports, and analytics. Do not translate ኅብረት as “District”; use the constitutional Amharic name and a separately verified English equivalent only.
 - Existing EKHC UI and related work must be discovered and assessed before any replacement or integration; do not overwrite it blindly.
