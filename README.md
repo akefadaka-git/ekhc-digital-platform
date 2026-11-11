@@ -4,7 +4,7 @@ A national, Amharic-first, multilingual digital platform intended to support chu
 
 ## Project status
 
-**Stage:** A1 — Assessment, specification, and architecture (draft; not approved or frozen)
+**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — restricted first increment authorized and under implementation. A4 and A5 have not started.
 
 This repository is the independent home of EKHC OS. It is not part of ARNA, MASES, MaaleNex, or IROKA.
 
@@ -32,9 +32,9 @@ No production features, production data migrations, deployment, signing, or publ
 - The terms **ወረዳ** and **District** are prohibited in the application, documentation, code, database schemas, APIs, UI, reports, and analytics. Do not translate ኅብረት as “District”; use the constitutional Amharic name and a separately verified English equivalent only.
 - Existing EKHC UI and related work must be discovered and assessed before any replacement or integration; do not overwrite it blindly.
 
-## Constitutional source baseline — initial A1 extraction
+## Constitutional source baseline — historical A1 extraction, not authoritative closure
 
-The working source is titled **የኢትዮጵያ ቃለ ሕይወት ቤተ ክርስቲያን — መተዳደሪያ ደንብ (ለስድስተኛ ጊዜ የተሻሻለ), 2012 ዓ.ም.** The publicly accessible copy identifies EKHC as copyright holder and EKHC Communication and Literature Department as publisher. Its hosting on a third-party platform does not independently prove authenticity; seek confirmation against EKHC's own publication where possible.
+The sixth-revision text titled **የኢትዮጵያ ቃለ ሕይወት ቤተ ክርስቲያን — መተዳደሪያ ደንብ (ለስድስተኛ ጊዜ የተሻሻለ), 2012 ዓ.ም.** is retained here only as a historical A1 extraction reference. It is not accepted as the current authoritative baseline. A2 records the seventh-edition Constitution and current bylaws/amendments as blocking dependencies; the public third-party copy is unauthenticated and cannot clear those blockers. Do not derive or implement current authority from this historical section until authoritative sources are reconciled.
 
 Public copy (reference only; do not reproduce the full copyrighted text):
 https://www.scribd.com/document/943135783/የቃለ-ህይወት-መተዳደሪያ-ደንብ
@@ -118,4 +118,55 @@ This repository starts with governance, assessment, and specification. Do not in
 
 ## Current status
 
-**A1 — IN PROGRESS.** This documentation update is an initial source-backed baseline only. No production feature, live member data, real officeholder record, migration, deployment, or external integration has been implemented.
+**A1 — OWNER APPROVED. A2 — PARTIAL / OPEN.** The first A3 technical increment is restricted to a non-persistent Django foundation and a non-sensitive health endpoint. No production feature, live member data, real officeholder record, migration, deployment, or external integration has been implemented.
+
+
+## A3 first-increment technical foundation — 2026-11-11
+
+The Owner approved the exact file-level acceptance checklist at [docs/implementation/A3-FIRST-INCREMENT-ACCEPTANCE-CHECKLIST.md](docs/implementation/A3-FIRST-INCREMENT-ACCEPTANCE-CHECKLIST.md). Implementation is confined to the files listed there and the following approved baseline:
+
+- Python 3.14.10 and Django 5.2.19.
+- Django-native `GET /health/` endpoint only; no general REST API or DRF.
+- No database, ORM, persistence, migrations, schema, or database-backed feature.
+- Django built-in test runner, Ruff 0.17.4, and pip-audit 2.10.1.
+- Standard public GitHub Actions runner with read-only permissions and immutable action SHAs; local verification remains available.
+
+### Local setup and verification
+
+Create and activate a Python 3.14.10 virtual environment, then install the pinned direct dependencies:
+
+```bash
+python -m venv .venv
+# Linux/macOS: source .venv/bin/activate
+# PowerShell: .venv\\Scripts\\Activate.ps1
+python -m pip install -r requirements-dev.txt
+```
+
+Set a local-only secret key before Django commands; never commit or reuse it:
+
+```bash
+# Linux/macOS
+export DJANGO_SECRET_KEY='replace-with-a-long-random-local-only-value'
+# PowerShell
+$env:DJANGO_SECRET_KEY = 'replace-with-a-long-random-local-only-value'
+```
+
+Run:
+
+```bash
+python --version
+python -m pip install -r requirements-dev.txt
+python manage.py check
+python manage.py test
+ruff check .
+ruff format --check .
+pip-audit -r requirements-dev.txt
+```
+
+The requirements files pin direct dependencies only. A complete transitive lockfile and hash-locked installation are not yet established; full dependency reproducibility remains an open verification item. A passing dependency audit is not security certification.
+
+The health endpoint reports process responsiveness only and does not probe databases, networks, storage, or external services. It returns no organizational or personal data.
+
+### A3 restrictions
+
+Synthetic data only. No UI creation or replacement, database, authentication, authorization, role/office/hierarchy model, membership or governance workflow, live data, paid service, production credential, deployment, signing, or publication. The work branch is `a3/restricted-foundation-scope`; `main` remains unchanged. A4, A5, merge, and deployment remain separately gated.
