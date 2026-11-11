@@ -96,7 +96,7 @@ Quality history:
 - Formatter-reported changes were applied to those three files, using the exact Ruff output: module-docstring spacing and one wrapped expression in the monitor script; quote and expression layout in its tests; and one assertion layout in the supply-chain test.
 - Intermediate quality run #145 / ID 43122470468 targeted 86b5cf9e35d73a71c4400aa6587924318079e2ee and was IN PROGRESS with no steps reported at the time of the earlier inspection. It is not the final head.
 - Run #146 / ID 43122475763 on 3ae70be144992dfde196108bab04733aaf47da7a was cancelled before jobs were returned.
-- Final-head quality run #147 / ID 43122480532 targets b4ed07262b1366e49f566cfadc9af3f892abfa14 and is PENDING with no jobs/steps returned at last inspection. Do not infer any quality result from prior heads.
+- Final-head quality run #147 / ID 43122480532 targets b4ed07262b1366e49f566cfadc9af3f892abfa14 and completed SUCCESS. Its inspected logs confirm Django system check PASS, 64 tests PASS, Ruff lint PASS, Ruff format PASS (51 files already formatted), and pip-audit PASS (no known vulnerabilities found). Do not infer quality results from prior heads; this result is specific to the recorded final SHA.
 
 The final exact-head run must complete and its test, Ruff lint, Ruff format, and pip-audit steps/logs must be inspected before A4 can close.
 
