@@ -27,17 +27,16 @@ ASGI_APPLICATION = "config.asgi.application"
 # No product apps, database, ORM persistence, or migrations are enabled.
 INSTALLED_APPS = []
 MIDDLEWARE = [
-    "django.middleware.locale.LocaleMiddleware",
+    "config.localization.PlatformLanguageMiddleware",
 ]
 TEMPLATES = []
 
-# Request-scoped language negotiation: Amharic is the default; English is
-# available as a supported preference. No user preference is persisted.
-LANGUAGE_CODE = "am"
-LANGUAGES = [
-    ("am", "አማርኛ"),
-    ("en", "English"),
-]
+# Django's internal translation fallback remains English because Django
+# doesn't ship an Amharic catalogue. Platform language negotiation is handled
+# separately and defaults to Amharic without claiming translated UI content.
+LANGUAGE_CODE = "en"
+PLATFORM_DEFAULT_LANGUAGE = "am"
+PLATFORM_SUPPORTED_LANGUAGES = ("am", "en")
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True

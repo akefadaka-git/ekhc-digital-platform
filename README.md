@@ -178,6 +178,6 @@ A2 remains PARTIAL / OPEN. A5 remains NOT STARTED. No merge, deployment, signing
 
 ## A3 localization foundation increment — 2026-11-11
 
-The current A3 increment adds request-scoped Amharic-first language negotiation using Django's built-in internationalization support. Amharic (`am`) is the default; English (`en`) can be selected by an explicit supported language preference. Unsupported preferences fall back to Amharic. The setting is request-scoped only: no account preference, user profile, session store, database, translation catalogue, translated product copy, UI, or persistence layer is introduced. Existing UI provenance remains unresolved and untouched.
+The current A3 increment adds request-scoped Amharic-first language negotiation using a small platform language-negotiation middleware. Amharic (`am`) is the platform default; English (`en`) can be selected by an explicit supported language preference. Unsupported preferences fall back to Amharic. This is language metadata negotiation only; it does not claim that Django ships an Amharic translation catalogue. The selection is request-scoped only: no account preference, user profile, session store, database, translation catalogue, translated product copy, UI, or persistence layer is introduced. Existing UI provenance remains unresolved and untouched.
 
 The increment adds regression tests for default Amharic, English selection, and unsupported-language fallback. It does not create or assert institutional terminology or translations. Branch: `a3/localization-foundation`; `main` remains unchanged.

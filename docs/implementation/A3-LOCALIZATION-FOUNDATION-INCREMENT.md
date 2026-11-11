@@ -1,6 +1,6 @@
 # EKHC OS — A3 Localization Foundation Increment
 
-**Status:** IMPLEMENTED — exact-head verification pending  
+**Status:** IMPLEMENTED — corrective exact-head verification pending  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/localization-foundation`  
@@ -12,11 +12,15 @@ Establish a small, authority-independent localization foundation while instituti
 
 ## 2. Implemented behavior
 
-- Amharic (`am`) is the default language.
+- Amharic (`am`) is the platform default.
 - English (`en`) is supported when requested through the standard `Accept-Language` header.
-- Unsupported language preferences fall back to Amharic.
-- Django's built-in `LocaleMiddleware` performs request-scoped negotiation.
-- The selected language is not persisted to an account, session, cookie, database, or profile by this increment.
+- Regional tags such as `en-US` and `am-ET` are reduced to their supported primary language.
+- Quality weights are respected; zero-quality and unsupported languages are ignored.
+- Unsupported or absent preferences fall back to Amharic.
+- The middleware sets `request.LANGUAGE_CODE` and the response `Content-Language` header.
+- Selection is request-scoped and is not persisted to an account, session, cookie, database, or profile.
+
+Django's own `LANGUAGE_CODE` remains `en` for its internal translation fallback because Django 5.2.19 does not ship an Amharic translation catalogue. The platform middleware deliberately separates platform language negotiation from Django's catalogue-based translation machinery. No translated UI copy is claimed.
 
 ## 3. Explicit boundaries
 
@@ -32,8 +36,9 @@ Amharic-first behavior is a platform default, not a substitute for Owner-approve
 
 ## 4. Changed paths
 
-- `config/settings.py` — Amharic default, supported Amharic/English language list, and locale middleware.
-- `tests/test_health.py` — tests for default Amharic, English selection, and unsupported-language fallback.
+- `config/localization.py` — dependency-free, request-scoped language negotiation middleware.
+- `config/settings.py` — Amharic platform default, supported platform language list, and middleware registration.
+- `tests/test_health.py` — default, English, unsupported fallback, quality-order, and zero-quality regression tests.
 - `.github/workflows/quality.yml` — run the existing read-only quality workflow for A3 implementation branches.
 - `README.md` — current incremental implementation and verification status.
 - This record.
@@ -47,10 +52,13 @@ No dependency or lockfile changes are required.
 | LOC-01 | Requests without a language preference resolve to Amharic | Automated test |
 | LOC-02 | Supported English preference resolves to English | Automated test |
 | LOC-03 | Unsupported preference falls back to Amharic | Automated test |
-| LOC-04 | Existing health response remains minimal and non-sensitive | Existing health tests |
-| LOC-05 | No database, persistence, UI, translation catalogue, or institutional authority model is introduced | Change review |
-| LOC-06 | Exact-head Django checks/tests, Ruff, and dependency audit pass | GitHub Actions |
+| LOC-04 | Quality weights are respected and q=0 is ignored | Automated tests |
+| LOC-05 | Existing health response remains minimal and non-sensitive | Existing health tests |
+| LOC-06 | No database, persistence, UI, translation catalogue, or institutional authority model is introduced | Change review |
+| LOC-07 | Exact-head Django checks/tests, Ruff, and dependency audit pass | GitHub Actions |
 
 ## 6. Verification and governance
 
-Exact-head CI evidence will be added after the workflow completes. This increment remains on its own A3 branch. The accepted prior A3/A4 baseline remains unchanged; `main` remains unchanged. A4 verification for this increment is not yet claimed. A2 remains PARTIAL / OPEN. A5, merge, deployment, signing, and publication remain separately gated.
+Initial run #41 failed at Django system checks because the framework's built-in locale catalogue does not include Amharic. The implementation was corrected to use a dedicated platform negotiation middleware rather than falsely treating Amharic as a Django translation catalogue. Corrective exact-head CI evidence will be added after the workflow completes.
+
+This increment remains on its own A3 branch. The accepted prior A3/A4 baseline remains unchanged; `main` remains unchanged. A4 verification for this increment is not yet claimed. A2 remains PARTIAL / OPEN. A5, merge, deployment, signing, and publication remain separately gated.
