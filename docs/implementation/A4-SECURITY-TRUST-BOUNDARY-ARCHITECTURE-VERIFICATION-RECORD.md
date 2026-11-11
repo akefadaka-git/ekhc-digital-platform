@@ -1,7 +1,7 @@
 # EKHC OS — A4 Independent Verification Record
 ## Security trust-boundary and data-flow architecture
 
-**Verification disposition:** TECHNICAL REVIEW PASS WITH LIMITATIONS — Owner acceptance pending  
+**Verification disposition:** VERIFIED-CLOSED WITH LIMITATIONS — Owner acceptance granted  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **A3 subject branch:** `a3/security-trust-boundary-architecture`  
@@ -141,4 +141,6 @@ No corrective code change is required for this documentation-only increment. The
 
 **Technical result: PASS WITH LIMITATIONS.** The increment meets its narrow non-invasive architecture objective. It is suitable for Owner review, but it is not a production security approval, does not authorize authentication/authorization implementation, does not close A2, and does not authorize A5.
 
-**Owner acceptance:** PENDING.
+**Owner acceptance:** GRANTED — the Owner explicitly approved closure as VERIFIED-CLOSED WITH LIMITATIONS on 2026-11-11.
+
+**Closure status:** VERIFIED-CLOSED WITH LIMITATIONS. Exact-head CI remains NOT CONFIRMED; this limitation is retained and no CI pass is claimed. External security, legal/institutional, privacy, and production reviews remain outstanding. This closure does not authorize authentication/authorization implementation, close A2, authorize A5, merge, deploy, sign, or publish.
