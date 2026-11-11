@@ -6,12 +6,16 @@ header-stripping behavior, and network trust boundary are verified.
 
 from __future__ import annotations
 
-from django.core.exceptions import ImproperlyConfigured
-
 
 _TRUE_VALUES = {"1", "true"}
 _FALSE_VALUES = {"0", "false"}
 _MAX_HSTS_SECONDS = 63_072_000
+
+
+def _improperly_configured(message):
+    from django.core.exceptions import ImproperlyConfigured
+
+    return ImproperlyConfigured(message)
 
 
 def _boolean(environ, name, default):
@@ -24,7 +28,7 @@ def _boolean(environ, name, default):
         return True
     if normalized in _FALSE_VALUES:
         return False
-    raise ImproperlyConfigured(f"{name} must be exactly true/false or 1/0.")
+    raise _improperly_configured(f"{name} must be exactly true/false or 1/0.")
 
 
 def _hsts_seconds(environ):
