@@ -1,6 +1,6 @@
 # EKHC OS — A3 Technical Baseline Decision Proposal
 
-**Status:** PARTIALLY APPROVED — backend candidate selected; remaining baseline decisions pending  
+**Status:** PARTIALLY APPROVED — backend and database deferral decisions recorded; remaining baseline decisions pending  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/restricted-foundation-scope`  
@@ -10,7 +10,7 @@
 
 Approve a technical baseline for a first, authority-independent implementation increment, or return the proposal for revision.
 
-This proposal does not approve constitutional or organizational modeling, production data, an existing UI replacement, deployment, or any paid service. No framework or database is selected by this document.
+This proposal does not approve constitutional or organizational modeling, production data, an existing UI replacement, deployment, or any paid service. No production database or schema is approved.
 
 ## 2. Verified current repository condition
 
@@ -36,7 +36,7 @@ The A1 architecture document explicitly leaves framework, database, API, authent
 |---|---|---|
 | Backend | Laravel/PHP; Django/Python; FastAPI/Python | Django/Python selected as preferred backend by Owner; runtime version and exact dependency set remain to be specified. |
 | Frontend | Existing UI if recovered; otherwise Vue/TypeScript or React/TypeScript | No selection. Existing UI provenance must be resolved before any replacement or new shell is considered. |
-| Persistence | PostgreSQL; SQLite for isolated local tests only if compatible with chosen runtime | PostgreSQL remains an A1 candidate, not an approved production choice. Do not create schema yet. |
+| Persistence | PostgreSQL; SQLite for isolated local tests only if compatible with chosen runtime | Owner approved deferring database and schema implementation from the first A3 increment. No database dependency, migration, schema, or persistence layer is to be added in that increment. Revisit persistence only when an approved requirement demonstrates the need. |
 | API | Framework-native API or documented REST boundary | No endpoint contract or API surface approved. |
 | Tests | Framework-native unit/integration tests; static analysis; dependency audit; accessibility checks where UI exists | Tooling depends on approved runtimes. Tests must include negative authorization cases before any access-control feature is accepted. |
 | CI | Public-repository GitHub Actions or documented local commands | Candidate only. Verify actual free-tier availability and workflow permissions; no billing/top-up assumptions. |
@@ -55,10 +55,13 @@ The first increment should remain deliberately narrow and must not encode instit
 - Add Unicode and Amharic rendering test fixtures only in an approved UI location; do not create a replacement UI.
 - Add calendar conversion only after selecting a reviewed implementation and authoritative test vectors for Ethiopian and Gregorian dates.
 
+**Database boundary:** no database server, ORM persistence integration, migration, schema, model, or database-backed feature is included in this first increment. Tests should use in-memory or framework-supported non-persistent mechanisms where practical. This does not select SQLite or authorize a hidden substitute database.
+
 Each item needs a separate acceptance criterion and focused tests before implementation. This list is not blanket approval to choose dependencies or create product features.
 
 ## 6. Explicitly deferred
 
+- Database selection for production, persistence integration, migrations, and all schemas.
 - Organization, church, office, ministry, membership, and hierarchy schemas.
 - Roles, permissions, delegated authority, scope resolution, and identity-to-office assignment.
 - Governance meetings, approvals, minutes, resolutions, and official records workflows.
@@ -69,13 +72,13 @@ Each item needs a separate acceptance criterion and focused tests before impleme
 
 ## 7. Remaining decisions before executable work
 
-1. Frontend disposition: continue existing UI if recovered, or authorize a new UI only after provenance review.
-2. Persistence choice and whether any database is needed in the first increment.
-3. API approach and whether an API is in the first increment.
-4. Test, lint, static-analysis, and dependency-audit tools.
-5. CI approach constrained to public/free execution and local fallback.
-6. Supported Python and Django versions, pinned only after compatibility and support-lifecycle review.
-7. Whether the proposed first increment is the intended A3 implementation sequence.
+1. Frontend disposition: continue existing UI if recovered; no replacement is authorized by default.
+2. API approach and whether an API is needed in the first increment.
+3. Test, lint, static-analysis, and dependency-audit tools.
+4. CI approach constrained to public/free execution and local fallback.
+5. Supported Python and Django versions, pinned only after compatibility and support-lifecycle review.
+6. Whether the proposed first increment is the intended A3 implementation sequence.
+7. File-level scope and measurable acceptance criteria for each included item.
 
 If any decision is deferred, keep the related implementation item out of scope.
 
@@ -87,17 +90,26 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 
 ## 9. Owner decision record — 2026-11-11
 
+### Decision 1 — backend
+
 **Decision:** APPROVED — Django/Python as the preferred EKHC OS backend candidate.
 
 **Decision scope:** This approval selects Django/Python as the preferred backend for the technical baseline. It does not select an exact Python or Django version, approve dependencies, database/schema, API contracts, frontend technology, authentication/authorization model, or implementation file list.
 
-**Implementation authorization:** NOT GRANTED by this decision. The earlier restricted A3 authorization remains bounded; executable implementation remains NOT STARTED pending the remaining technical decisions and a file-level acceptance checklist.
+### Decision 2 — database deferral
+
+**Decision:** APPROVED — defer database and schema implementation from the first A3 increment.
+
+**Decision scope:** The first increment must not add a database server dependency, ORM persistence integration, migrations, schemas, or database-backed product features. Use non-persistent test mechanisms where practical. This is a deferral, not a selection of SQLite or any other database. Reconsider persistence only after a concrete, approved requirement justifies it.
+
+**Implementation authorization:** These decisions record technical direction only. Executable implementation remains NOT STARTED pending the remaining technical decisions and a file-level acceptance checklist.
 
 **Constraints retained:** synthetic data only; preserve existing UI; no invented organizational hierarchy, offices, mandates, roles, permissions, or governance workflows; no paid services; no main-branch changes; no merge, deployment, signing, or publication without separate approval.
 
 ## 10. Current disposition
 
 - Backend preference: **OWNER-APPROVED — Django/Python**.
+- First-increment database/schema work: **OWNER-APPROVED — DEFERRED**.
 - Complete technical baseline: PARTIAL / OPEN.
 - Exact runtime and dependencies: NOT SELECTED.
 - Executable application implementation: NOT STARTED.
