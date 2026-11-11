@@ -3,12 +3,12 @@ from datetime import UTC, datetime
 from unittest.mock import patch
 
 from scripts.security_monitor import (
+    MAX_OSV_RESPONSE_BYTES,
     escape_table_cell,
     evaluate_exceptions,
     parse_lockfile,
     parse_utc,
     query_osv,
-    MAX_OSV_RESPONSE_BYTES,
 )
 
 
@@ -108,7 +108,10 @@ class SecurityMonitorTests(unittest.TestCase):
 
     @patch("scripts.security_monitor.urlopen")
     def test_osv_parses_matching_advisory(self, mocked_urlopen):
-        payload = b'{"results":[{"vulns":[{"id":"GHSA-test","modified":"2026-01-01T00:00:00Z","summary":"test"}]}]}'
+        payload = (
+            b'{"results":[{"vulns":[{"id":"GHSA-test",'
+            b'"modified":"2026-01-01T00:00:00Z","summary":"test"}]}]}'
+        )
         mocked_urlopen.return_value.__enter__.return_value.read.return_value = payload
         result = query_osv([{"name": "Django", "version": "5.2.19"}])
         self.assertEqual(result[0]["id"], "GHSA-test")
