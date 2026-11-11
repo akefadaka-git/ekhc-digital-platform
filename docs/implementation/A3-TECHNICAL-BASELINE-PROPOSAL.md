@@ -70,21 +70,21 @@ Each item needs a separate acceptance criterion and focused tests before impleme
 - UI recreation, redesign, or replacement.
 - Production migration, hosting, monitoring service purchase, deployment, release signing, or publication.
 
-## 7. Remaining decisions before executable work
+## 7. Remaining decisions and deferred items
 
-1. Frontend disposition: continue existing UI if recovered; no replacement is authorized by default.
-2. API approach: resolved by Owner Decision 3 below; no general API surface is approved.
-3. Test, lint, static-analysis, and dependency-audit tools.
-4. CI approach constrained to public/free execution and local fallback.
-5. Test, lint, static-analysis, and dependency-audit tools; Python/Django version decision is recorded below.
-6. Whether the proposed first increment is the intended A3 implementation sequence.
-7. File-level scope and measurable acceptance criteria for each included item.
+1. **Frontend disposition — UNRESOLVED / DEFERRED:** preserve existing UI if recovered; no replacement is authorized by default.
+2. **API approach — RESOLVED:** Django-native minimal health/readiness endpoint only; no general API or DRF.
+3. **Test and quality tools — RESOLVED:** Django test runner, Ruff, and pip-audit.
+4. **CI approach — RESOLVED:** standard public GitHub Actions runner with local fallback and least privilege.
+5. **Runtime — RESOLVED:** Python 3.14.10 and Django 5.2.19, subject to future upstream security re-checks.
+6. **First-increment sequence and file-level acceptance checklist — OWNER APPROVED:** exact checklist approved on 2026-11-11 and implementation started on the authorized branch.
+7. **Verification and complete dependency reproducibility — OPEN:** exact-head CI evidence, test/lint/audit results, and transitive lock/hash strategy remain to be completed.
 
-If any decision is deferred, keep the related implementation item out of scope.
+Keep all deferred or unresolved items out of executable scope until separately approved.
 
 ## 8. Acceptance and governance
 
-After the remaining decisions are resolved, create a separate implementation checklist with file-level scope and testable acceptance criteria. Implement only that checklist on the authorized A3 branch. Record exact dependency versions, changed files, commit SHAs, test commands/results, CI run links, and limitations.
+The file-level checklist has been created and Owner-approved. The listed first-increment files have been implemented on the authorized A3 branch. Acceptance remains open until dependency reproducibility is addressed and exact-head test, lint, audit, and CI evidence is reconciled. Record exact dependency versions, changed files, commit SHAs, test commands/results, CI run links, and limitations.
 
 A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evidence and closure conditions are separately reconciled and accepted. Merge, deployment, signing, publication, and production data remain separately gated.
 
