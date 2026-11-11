@@ -49,7 +49,7 @@ python manage.py check
 python manage.py test
 ruff check .
 ruff format --check .
-pip-audit
+pip-audit -r requirements-dev.txt
 ```
 
 Acceptance requires:
@@ -70,7 +70,7 @@ Any item in this exclusion list requires separate evidence, scope definition, an
 
 ## 5. Workflow preparation note
 
-The approved CI approach is standard GitHub-hosted runners for the public repository, with local execution as fallback. The workflow file must be authored only after this checklist is approved and its action dependencies are reviewed and pinned to immutable SHAs. No workflow run or passing status is claimed at checklist-preparation time.
+The approved CI approach is standard GitHub-hosted runners for the public repository, with local execution as fallback. The workflow file was authored after checklist approval and its third-party actions are pinned to immutable SHAs. Workflow evidence is recorded in Section 7.
 
 ## 6. Owner approval record
 
@@ -80,16 +80,14 @@ The approved CI approach is standard GitHub-hosted runners for the public reposi
 
 - Checklist: OWNER APPROVED.
 - Executable implementation: AUTHORIZED within this checklist.
-- CI workflow file: CREATED on the authorized A3 branch; run verification pending.
-- CI run: NOT VERIFIED; push-triggered execution may have been queued, but no run result or exact-head link is available from the connected read-only status view.
+- CI workflow file: CREATED on the authorized A3 branch.
 - A2: PARTIAL / OPEN.
 - A4/A5: NOT STARTED.
 - Merge/deployment/signing/publication: NOT AUTHORIZED.
 
+## 7. Implementation and verification record — 2026-11-11
 
-## 7. Implementation progress record — 2026-11-11
-
-**Implementation state:** FILES CREATED; ACCEPTANCE VERIFICATION PENDING.
+**Implementation state:** FILES CREATED; first-increment technical checks have a successful exact-head run. Full A3 acceptance remains OPEN because dependency reproducibility and other scope-level acceptance items remain unresolved.
 
 Created on `a3/restricted-foundation-scope`:
 - Runtime and direct dependency declarations: `.python-version`, `requirements.txt`, `requirements-dev.txt`.
@@ -98,14 +96,36 @@ Created on `a3/restricted-foundation-scope`:
 - Tests and lint configuration: `tests/__init__.py`, `tests/test_health.py`, `pyproject.toml`.
 - CI and developer instructions: `.github/workflows/quality.yml`, `README.md` (existing README content preserved and updated).
 
-**Verification disposition:**
-- Required files: PRESENT on the branch (read-back checked).
-- Django system check: NOT RUN / NOT VERIFIED.
-- Django tests: NOT RUN / NOT VERIFIED.
-- Ruff lint: NOT RUN / NOT VERIFIED.
-- Ruff format: NOT RUN / NOT VERIFIED.
-- pip-audit: NOT RUN / NOT VERIFIED.
-- GitHub Actions exact-head run: NOT VERIFIED; the available commit-status query returned no status entries and does not establish a successful workflow run.
-- Dependency reproducibility: PARTIAL. Direct dependencies are pinned; a complete transitive lockfile and hash-locked installation are not yet present, so this acceptance criterion remains OPEN.
+**Verified workflow evidence:**
+- Workflow: **A3 quality checks**, run **#17**.
+- Exact tested commit: `abe25c34c76215c9b6080810dd4469334fddbe36`.
+- Run URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42966710204
+- Event: push on `a3/restricted-foundation-scope`.
+- Overall workflow conclusion: **SUCCESS**.
+- Required-file check: PASS.
+- Python 3.14.10 setup and dependency installation: PASS.
+- Django system check: PASS.
+- Django tests: PASS — 3 tests.
+- Ruff lint: PASS.
+- Ruff format check: PASS.
+- pip-audit against `requirements-dev.txt`: PASS (command completed with exit code 0; this is not a security certification).
+- Job conclusion: SUCCESS.
 
-No PASS or VERIFIED-CLOSED claim is made. Resolve the dependency-lock gap and obtain exact-head local/CI verification evidence before A3 first-increment acceptance can close.
+**Earlier failure and correction record:**
+- Run #11 at `f84cfc81459091784dbcaf8309f20621f6e8a067` failed at Ruff import sorting.
+- The CI diagnostic showed the actual issue was one extra blank line between the import block and the first module setting. It was corrected in `config/settings.py`.
+- Subsequent successful run #17 verifies the corrected file and all required checks.
+
+**Acceptance disposition:**
+- Required files: PRESENT.
+- Django system check: PASS.
+- Django tests: PASS — 3 tests.
+- Ruff lint: PASS.
+- Ruff format: PASS.
+- pip-audit: PASS — successful completion; findings are not asserted beyond the recorded exit status.
+- Exact-head GitHub Actions: PASS for the tested commit above.
+- Dependency reproducibility: PARTIAL / OPEN. Direct dependencies are pinned, but a complete transitive lockfile and hash-locked installation are not present.
+- Independent A4 review: NOT STARTED.
+- A2 constitutional and organizational blockers: remain PARTIAL / OPEN.
+
+No A3 VERIFIED-CLOSED claim is made. Complete and verify the transitive dependency lock/hash strategy, reconcile all remaining checklist acceptance criteria, and then prepare an A3 closure recommendation. A4 and A5 remain separate gates. No merge, deployment, signing, or publication is authorized.
