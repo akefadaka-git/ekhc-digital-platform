@@ -46,9 +46,7 @@ class StructuredLogPrivacyTests(SimpleTestCase):
                 "body": "private payload",
             }
         )
-        context_token = _request_id.set(
-            "a5df7f5c-cc83-46c8-8c98-5cb4d85a7d8f"
-        )
+        context_token = _request_id.set("a5df7f5c-cc83-46c8-8c98-5cb4d85a7d8f")
         try:
             RequestContextFilter().filter(record)
             rendered = SafeJsonFormatter().format(record)
@@ -59,9 +57,7 @@ class StructuredLogPrivacyTests(SimpleTestCase):
         self.assertEqual(payload["event"], "http_request_completed")
         self.assertEqual(payload["method"], "GET")
         self.assertEqual(payload["status_code"], 200)
-        self.assertEqual(
-            payload["request_id"], "a5df7f5c-cc83-46c8-8c98-5cb4d85a7d8f"
-        )
+        self.assertEqual(payload["request_id"], "a5df7f5c-cc83-46c8-8c98-5cb4d85a7d8f")
         for sensitive_value in (
             "hunter2",
             "top-secret",
