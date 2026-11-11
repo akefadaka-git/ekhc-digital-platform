@@ -5,6 +5,9 @@ target-version = "py314"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.isort]
+known-third-party = ["django"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
