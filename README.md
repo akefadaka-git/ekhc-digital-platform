@@ -4,7 +4,7 @@ A national, Amharic-first, multilingual digital platform intended to support chu
 
 ## Project status
 
-**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — incremental implementation IN PROGRESS; A4 — prior increment VERIFIED-CLOSED; current increment verification PENDING; A5 — NOT STARTED.
+**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — localization increment IMPLEMENTED; exact-head CI PASS (run #48); A4 verification of this increment PENDING; A5 — NOT STARTED.
 
 This repository is the independent home of EKHC OS. It is not part of ARNA, MASES, MaaleNex, or IROKA.
 
