@@ -27,6 +27,7 @@ ASGI_APPLICATION = "config.asgi.application"
 # No product apps, database, ORM persistence, or migrations are enabled.
 INSTALLED_APPS = []
 MIDDLEWARE = [
+    "config.observability.RequestCorrelationLoggingMiddleware",
     "config.localization.PlatformLanguageMiddleware",
 ]
 TEMPLATES = []
@@ -44,3 +45,34 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+
+# Operational logs are structured and deliberately exclude paths, query strings,
+# headers, bodies, user identifiers, and arbitrary log messages/extra fields.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_context": {
+            "()": "config.observability.RequestContextFilter",
+        },
+    },
+    "formatters": {
+        "safe_json": {
+            "()": "config.observability.SafeJsonFormatter",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["request_context"],
+            "formatter": "safe_json",
+        },
+    },
+    "loggers": {
+        "ekhc.request": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
