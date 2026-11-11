@@ -1,6 +1,6 @@
 # EKHC OS — A3 Technical Baseline Decision Proposal
 
-**Status:** PROPOSAL ONLY — Owner decision required  
+**Status:** PARTIALLY APPROVED — backend candidate selected; remaining baseline decisions pending  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/restricted-foundation-scope`  
@@ -34,7 +34,7 @@ The A1 architecture document explicitly leaves framework, database, API, authent
 
 | Concern | Candidate options | Current disposition |
 |---|---|---|
-| Backend | Laravel/PHP; Django/Python; FastAPI/Python | No selection. Compare maintainability, security defaults, team capability, testability, and hosting constraints before approval. |
+| Backend | Laravel/PHP; Django/Python; FastAPI/Python | Django/Python selected as preferred backend by Owner; runtime version and exact dependency set remain to be specified. |
 | Frontend | Existing UI if recovered; otherwise Vue/TypeScript or React/TypeScript | No selection. Existing UI provenance must be resolved before any replacement or new shell is considered. |
 | Persistence | PostgreSQL; SQLite for isolated local tests only if compatible with chosen runtime | PostgreSQL remains an A1 candidate, not an approved production choice. Do not create schema yet. |
 | API | Framework-native API or documented REST boundary | No endpoint contract or API surface approved. |
@@ -67,29 +67,39 @@ Each item needs a separate acceptance criterion and focused tests before impleme
 - UI recreation, redesign, or replacement.
 - Production migration, hosting, monitoring service purchase, deployment, release signing, or publication.
 
-## 7. Required decisions before executable work
+## 7. Remaining decisions before executable work
 
-The Owner should approve or revise the following:
-
-1. Backend framework and supported runtime.
-2. Frontend disposition: continue existing UI if recovered, or authorize a new UI only after provenance review.
-3. Persistence choice and whether any database is needed in the first increment.
-4. API approach and whether an API is in the first increment.
-5. Test, lint, static-analysis, and dependency-audit tools.
-6. CI approach constrained to public/free execution and local fallback.
+1. Frontend disposition: continue existing UI if recovered, or authorize a new UI only after provenance review.
+2. Persistence choice and whether any database is needed in the first increment.
+3. API approach and whether an API is in the first increment.
+4. Test, lint, static-analysis, and dependency-audit tools.
+5. CI approach constrained to public/free execution and local fallback.
+6. Supported Python and Django versions, pinned only after compatibility and support-lifecycle review.
 7. Whether the proposed first increment is the intended A3 implementation sequence.
 
 If any decision is deferred, keep the related implementation item out of scope.
 
 ## 8. Acceptance and governance
 
-After Owner approval, create a separate implementation checklist with file-level scope and testable acceptance criteria. Implement only that checklist on the authorized A3 branch. Record exact dependency versions, changed files, commit SHAs, test commands/results, CI run links, and limitations.
+After the remaining decisions are resolved, create a separate implementation checklist with file-level scope and testable acceptance criteria. Implement only that checklist on the authorized A3 branch. Record exact dependency versions, changed files, commit SHAs, test commands/results, CI run links, and limitations.
 
 A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evidence and closure conditions are separately reconciled and accepted. Merge, deployment, signing, publication, and production data remain separately gated.
 
-## 9. Current disposition
+## 9. Owner decision record — 2026-11-11
 
-- Technical baseline: PROPOSED / NOT APPROVED.
+**Decision:** APPROVED — Django/Python as the preferred EKHC OS backend candidate.
+
+**Decision scope:** This approval selects Django/Python as the preferred backend for the technical baseline. It does not select an exact Python or Django version, approve dependencies, database/schema, API contracts, frontend technology, authentication/authorization model, or implementation file list.
+
+**Implementation authorization:** NOT GRANTED by this decision. The earlier restricted A3 authorization remains bounded; executable implementation remains NOT STARTED pending the remaining technical decisions and a file-level acceptance checklist.
+
+**Constraints retained:** synthetic data only; preserve existing UI; no invented organizational hierarchy, offices, mandates, roles, permissions, or governance workflows; no paid services; no main-branch changes; no merge, deployment, signing, or publication without separate approval.
+
+## 10. Current disposition
+
+- Backend preference: **OWNER-APPROVED — Django/Python**.
+- Complete technical baseline: PARTIAL / OPEN.
+- Exact runtime and dependencies: NOT SELECTED.
 - Executable application implementation: NOT STARTED.
 - Existing UI: PRESERVE; provenance unresolved.
 - Main branch: MUST REMAIN UNCHANGED.
