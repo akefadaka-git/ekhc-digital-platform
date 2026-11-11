@@ -147,4 +147,4 @@ Created on `a3/restricted-foundation-scope`:
 - Independent A4 review: NOT STARTED.
 - A2 constitutional and organizational blockers: remain PARTIAL / OPEN.
 
-**Closure recommendation:** A3 first-increment implementation and its approved technical acceptance checks are complete. Recommend Owner acceptance of A3 implementation closure, followed by a separate A4 independent verification stage. This recommendation does not close A3 automatically and does not authorize merge, deployment, signing, publication, production data, or any A2-dependent feature.
+**Closure record:** The Owner accepted A3 first-increment closure and separately authorized A4 independent verification. A4 is in progress; see `A4-INDEPENDENT-VERIFICATION-RECORD.md`. A3 acceptance does not authorize merge, deployment, signing, publication, production data, or any A2-dependent feature.
