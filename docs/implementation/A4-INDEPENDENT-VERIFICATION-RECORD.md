@@ -1,6 +1,6 @@
 # EKHC OS — A4 Independent Verification Record
 
-**Status:** IN PROGRESS — corrective increment committed; A4 exact-head CI evidence verified on commit `48e6da85d4cc32a3d8da654d5cb2beca64377e31`  
+**Status:** IN PROGRESS — corrective increment verified; final record-head confirmation pending  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Working branch:** `a3/restricted-foundation-scope`  
@@ -86,7 +86,20 @@ A4 corrective verification is accepted only after a successful GitHub Actions ru
 - Ruff lint: PASS; Ruff format: PASS (18 files already formatted).
 - pip-audit: PASS — no known vulnerabilities found.
 
-This run verified the corrective implementation and A4 record at its tested commit. The subsequent governance-record reconciliation is documentation-only and requires its own exact-head CI confirmation before A4 closure.
+This run verified the corrective implementation and the reconciled A3/A4 governance records at its tested commit. The final checklist-status correction was then committed as a documentation-only change; the resulting final branch head requires its own exact-head CI confirmation before A4 closure.
+
+
+### Final A4 corrective verification — run #37
+
+- Workflow: **A3 quality checks**, run **#37**, ID `42969700818`.
+- Tested commit: `6d2ccc1116d9c95955e36ccba9bc54724073ff95`.
+- Run URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42969700818
+- Workflow/job conclusion: **SUCCESS**; all 10 job steps completed successfully.
+- Required-file check, Python 3.14.10 setup, and hash-locked dependency installation: PASS.
+- Django system check: PASS.
+- Django tests: PASS — **6 tests**, including all three fail-closed settings regression tests.
+- Ruff lint: PASS; Ruff format: PASS (18 files already formatted).
+- pip-audit: PASS — no known vulnerabilities found.
 
 ## 6. A2 blockers retained
 
@@ -105,7 +118,7 @@ No unsupported organizational relationship, office mandate, role, permission, or
 ## 7. Current disposition
 
 - A3 first-increment closure: **OWNER-ACCEPTED**.
-- A4 corrective implementation: **COMMITTED; corrective code and initial A4 record CI verified by run #29; final governance-head confirmation pending**.
+- A4 corrective implementation: **COMMITTED; all six tests, Ruff, and pip-audit passed in run #37 at `6d2ccc1116d9c95955e36ccba9bc54724073ff95`; final record-head confirmation pending**.
 - A4 independent verification: **IN PROGRESS; NOT CLOSED**.
 - A2: **PARTIAL / OPEN**.
 - A5: **NOT STARTED**.
