@@ -94,7 +94,7 @@ Quality history:
 - Run #143 / ID 43122251234, head a33e1907964397c7ab3a0837dc5c3db00324cb94: system check PASS, 64 tests PASS, Ruff lint PASS; Ruff format failed and identified three files: scripts/security_monitor.py, tests/test_security_monitor.py, tests/test_supply_chain_baseline.py. pip-audit was skipped.
 - Run #144 / ID 43122390947, head d426c3fba4d9513b36b1fb0b489df71e16402e72: system check PASS, 64 tests PASS, Ruff lint PASS; Ruff format failed with the same three files. pip-audit was skipped.
 - Formatter-reported changes were applied to those three files, using the exact Ruff output: module-docstring spacing and one wrapped expression in the monitor script; quote and expression layout in its tests; and one assertion layout in the supply-chain test.
-- Intermediate quality run #145 / ID 43122470468 targets 86b5cf9e35d73a71c4400aa6587924318079e2ee and remains IN PROGRESS with no steps reported. It is not the final head.
+- Intermediate quality run #145 / ID 43122470468 targeted 86b5cf9e35d73a71c4400aa6587924318079e2ee and was IN PROGRESS with no steps reported at the time of the earlier inspection. It is not the final head.
 - Run #146 / ID 43122475763 on 3ae70be144992dfde196108bab04733aaf47da7a was cancelled before jobs were returned.
 - Final-head quality run #147 / ID 43122480532 targets b4ed07262b1366e49f566cfadc9af3f892abfa14 and is PENDING with no jobs/steps returned at last inspection. Do not infer any quality result from prior heads.
 
@@ -118,7 +118,7 @@ The final exact-head run must complete and its test, Ruff lint, Ruff format, and
 - Quality run #143 passed system check, 64 tests, and Ruff lint, but failed Ruff format; pip-audit was skipped.
 - Quality run #144 passed system check, 64 tests, and Ruff lint, but failed Ruff format; pip-audit was skipped.
 - Formatter changes were committed in the final A3 correction sequence. Intermediate run #145 remains in progress on a non-final SHA; run #146 was cancelled.
-- Final-head A3 quality run #147 / ID 43122480532 targets exact SHA b4ed07262b1366e49f566cfadc9af3f892abfa14 and is PENDING with no jobs/steps returned at last inspection. [Run #147](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43122480532)
+- Final-head A3 quality run #147 / ID 43122480532 targets exact SHA b4ed07262b1366e49f566cfadc9af3f892abfa14 and completed SUCCESS. All five quality workflow stages completed successfully. [Run #147](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43122480532)
 - Security monitor run #32 / ID 43122480518 on the final A3 head b4ed07262b1366e49f566cfadc9af3f892abfa14 completed SUCCESS. The job and logs were inspected: 32 locked PyPI packages queried; zero OSV advisories returned; zero exception reminders/expiries; exception register empty. [Run #32](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43122480518)
 - Earlier monitor runs #28–#31 succeeded on their respective heads; #32 is the current-head evidence.
 - The exact current A3 branch head is b4ed07262b1366e49f566cfadc9af3f892abfa14. main was fetched and remains adfa62eccda93c8b261e5abd3cbdb22cf28c8823.
