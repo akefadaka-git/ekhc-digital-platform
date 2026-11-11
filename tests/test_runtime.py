@@ -17,7 +17,7 @@ class AllowedHostParsingTests(SimpleTestCase):
         for value in ("*", "*.example.org", "api.*.example.org"):
             with self.subTest(value=value):
                 with self.assertRaisesMessage(
-                    ImproperlyConfigured, "invalid host entry"
+                    ImproperlyConfigured, "wildcards are forbidden"
                 ):
                     parse_allowed_hosts(value)
 
