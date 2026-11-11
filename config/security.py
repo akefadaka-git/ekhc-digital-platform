@@ -4,7 +4,6 @@ Proxy TLS termination is deliberately unsupported until the actual proxy chain,
 header-stripping behavior, and network trust boundary are verified.
 """
 
-from __future__ import annotations
 
 
 _TRUE_VALUES = {"1", "true"}
