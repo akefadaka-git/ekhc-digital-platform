@@ -149,3 +149,18 @@ A2 remains open until the following are addressed or explicitly recorded as bloc
 - Produce a final A2 gap matrix and closure recommendation.
 
 **Current conclusion:** A2 inventory and initial conflict reconciliation are verified. Full constitutional, UI, stakeholder, and legal/policy reconciliation is blocked or unresolved. A2 is PARTIAL / OPEN. A3 implementation remains unauthorized.
+
+
+## 11. Official public-site corroboration (not constitutional authority)
+
+Public official EKHC pages were checked as corroborative evidence only on 2026-11-11:
+
+- The newer Amharic homepage at `https://ekhc.et/amh/` presents public ministry/service labels, including missions, theological education, finance, human resources/properties/logistics, communication/literature, discipleship/church education, women, youth, children, social security, professionals, leadership training, community empowerment, and marriage/prayer services.
+- The English homepage at `https://ekhc.et/` presents a substantially similar set of public ministry/service labels.
+- The older `https://ekhc.net/about_us` page reports a different public organizational snapshot, including numerical counts for zonal administrations, subordinate offices and special centres. The page does not establish the constitutional authority, approved terminology, or current validity of those counts.
+- The `https://ekhc.net/literature_and_communication` page describes publication and circulation of church legal documents and archive work. It does not expose the required seventh-edition Constitution.
+
+**Reconciliation result:** Official public pages are useful for discovery and corroboration, but their different content, freshness and level of detail prevent them from resolving constitutional hierarchy, office mandates, approved terminology, or current reporting relationships. No public-page label or translation has been adopted as a canonical application term.
+
+**Status:** CORROBORATIVE EVIDENCE RECORDED; GOVERNANCE AUTHORITY UNRESOLVED.
+
