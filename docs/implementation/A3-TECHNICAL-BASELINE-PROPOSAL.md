@@ -37,7 +37,7 @@ The A1 architecture document explicitly leaves framework, database, API, authent
 | Backend | Laravel/PHP; Django/Python; FastAPI/Python | Django/Python selected as preferred backend by Owner; runtime version and exact dependency set remain to be specified. |
 | Frontend | Existing UI if recovered; otherwise Vue/TypeScript or React/TypeScript | No selection. Existing UI provenance must be resolved before any replacement or new shell is considered. |
 | Persistence | PostgreSQL; SQLite for isolated local tests only if compatible with chosen runtime | Owner approved deferring database and schema implementation from the first A3 increment. No database dependency, migration, schema, or persistence layer is to be added in that increment. Revisit persistence only when an approved requirement demonstrates the need. |
-| API | Framework-native API or documented REST boundary | No endpoint contract or API surface approved. |
+| API | Django-native minimal endpoint for the first increment; Django REST Framework (DRF) deferred | Owner approved Django-native endpoints only for the minimal health/readiness check in the first increment. No general REST API or resource endpoints are approved. DRF is deferred. |
 | Tests | Framework-native unit/integration tests; static analysis; dependency audit; accessibility checks where UI exists | Tooling depends on approved runtimes. Tests must include negative authorization cases before any access-control feature is accepted. |
 | CI | Public-repository GitHub Actions or documented local commands | Candidate only. Verify actual free-tier availability and workflow permissions; no billing/top-up assumptions. |
 | Delivery | Local development and CI verification only | No hosting, deployment, release signing, or publication in this increment. |
@@ -73,7 +73,7 @@ Each item needs a separate acceptance criterion and focused tests before impleme
 ## 7. Remaining decisions before executable work
 
 1. Frontend disposition: continue existing UI if recovered; no replacement is authorized by default.
-2. API approach and whether an API is needed in the first increment.
+2. API approach: resolved by Owner Decision 3 below; no general API surface is approved.
 3. Test, lint, static-analysis, and dependency-audit tools.
 4. CI approach constrained to public/free execution and local fallback.
 5. Supported Python and Django versions, pinned only after compatibility and support-lifecycle review.
@@ -102,6 +102,12 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 
 **Decision scope:** The first increment must not add a database server dependency, ORM persistence integration, migrations, schemas, or database-backed product features. Use non-persistent test mechanisms where practical. This is a deferral, not a selection of SQLite or any other database. Reconsider persistence only after a concrete, approved requirement justifies it.
 
+### Decision 3 — first-increment API approach
+
+**Decision:** APPROVED — use Django-native endpoints for the first increment; defer Django REST Framework (DRF).
+
+**Decision scope:** Django-native routing/views may be used only to implement and test the minimal health/readiness check described in Section 5. The endpoint must not expose secrets, personal data, organizational data, or internal configuration values. This decision does not approve a general REST API, resource endpoints, authentication API, data endpoints, API contracts, or DRF dependency. Any broader API surface requires a separate Owner decision.
+
 **Implementation authorization:** These decisions record technical direction only. Executable implementation remains NOT STARTED pending the remaining technical decisions and a file-level acceptance checklist.
 
 **Constraints retained:** synthetic data only; preserve existing UI; no invented organizational hierarchy, offices, mandates, roles, permissions, or governance workflows; no paid services; no main-branch changes; no merge, deployment, signing, or publication without separate approval.
@@ -109,6 +115,7 @@ A4 remains a separate verification gate. A2 remains PARTIAL / OPEN until its evi
 ## 10. Current disposition
 
 - Backend preference: **OWNER-APPROVED — Django/Python**.
+- First-increment API: **OWNER-APPROVED — Django-native health/readiness endpoint only; DRF DEFERRED**.
 - First-increment database/schema work: **OWNER-APPROVED — DEFERRED**.
 - Complete technical baseline: PARTIAL / OPEN.
 - Exact runtime and dependencies: NOT SELECTED.
