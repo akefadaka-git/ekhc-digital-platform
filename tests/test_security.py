@@ -58,9 +58,7 @@ class SecurityConfigurationTests(SimpleTestCase):
             load_security_settings({"DJANGO_SECURE_HSTS_SECONDS": "one-year"})
 
     def test_out_of_range_hsts_duration_fails_closed(self):
-        with self.assertRaisesMessage(
-            ImproperlyConfigured, "between 0 and 63072000"
-        ):
+        with self.assertRaisesMessage(ImproperlyConfigured, "between 0 and 63072000"):
             load_security_settings({"DJANGO_SECURE_HSTS_SECONDS": "63072001"})
 
     def test_subdomain_hsts_requires_positive_duration(self):
