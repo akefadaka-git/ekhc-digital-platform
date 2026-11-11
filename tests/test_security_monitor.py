@@ -88,7 +88,7 @@ class SecurityMonitorTests(unittest.TestCase):
         )
 
     def test_rejects_duplicate_exception_ids_and_non_utc_time(self):
-        now = datetime(2026, 11, 11, tzinfo=timezone.utc)
+        now = datetime(2026, 11, 11, tzinfo=UTC)
         entry = {
             "exception_id": "EX-1",
             "severity": "HIGH",
