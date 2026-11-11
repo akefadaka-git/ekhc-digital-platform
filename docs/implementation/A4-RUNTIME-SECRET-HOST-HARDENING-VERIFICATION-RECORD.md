@@ -1,6 +1,8 @@
 # EKHC OS — A4 Runtime Secret and Host Configuration Hardening Verification Record
 
-**Verification status:** TECHNICAL PASS — Owner acceptance pending  
+**Verification status:** OWNER-ACCEPTED — VERIFIED-CLOSED  
+**Technical result:** PASS  
+**Owner acceptance:** Explicitly granted in the project conversation on 2026-11-11 (“yes”)  
 **Date:** 2026-11-11  
 **Repository:** akefadaka-git/ekhc-digital-platform  
 **Implementation branch:** a3/runtime-security-hardening  
@@ -71,6 +73,13 @@ An earlier exact-head attempt failed because the new wildcard parser changed an 
 
 **A4 technical conclusion: PASS for the restricted runtime secret and allowed-host configuration increment.**
 
-The final implementation SHA passed exact-head CI, including 42 tests, Django system check, Ruff lint/format, and dependency audit. The implementation remains isolated on its A3 branch. The A4 verification record is prepared for Owner acceptance; it is not yet marked VERIFIED-CLOSED.
+**Owner acceptance: GRANTED.** The Owner explicitly accepted this A4 verification record on 2026-11-11. This restricted increment is therefore **VERIFIED-CLOSED**.
 
 This verification does not close A2, resolve institutional authority/provenance blockers, or authorize A5. A5 remains NOT STARTED and separately gated.
+
+## 6. Change-control disposition
+
+- This acceptance update changes this A4 verification record only, on `a4/runtime-security-hardening-verification`.
+- The tested implementation SHA `5c5e347fbb6a74d9ae226fbb38f1f5093c073e0b` is unchanged.
+- No application source, test, or workflow code changed in this acceptance update.
+- No merge to `main`, deployment, signing, or publication is authorized or performed.
