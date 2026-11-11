@@ -4,7 +4,7 @@ A national, Amharic-first, multilingual digital platform intended to support chu
 
 ## Project status
 
-**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — localization increment A4 VERIFIED-CLOSED; secure observability increment IMPLEMENTED on `a3/secure-observability-foundation`, exact-head CI pending; A5 — NOT STARTED.
+**Stage status (2026-11-11):** A1 — OWNER APPROVED; A2 — PARTIAL / OPEN; A3 — localization increment A4 VERIFIED-CLOSED; secure observability increment IMPLEMENTED; exact-head CI PASS (run #62); A4 technical PASS / Owner acceptance pending; A5 — NOT STARTED.
 
 This repository is the independent home of EKHC OS. It is not part of ARNA, MASES, MaaleNex, or IROKA.
 
@@ -185,4 +185,4 @@ The increment adds regression tests for default Amharic, English selection, and 
 
 ## A3 secure request observability increment — 2026-11-11
 
-The next authority-independent increment is isolated on `a3/secure-observability-foundation`. It introduces server-generated UUIDv4 request correlation, an `X-Request-ID` response header, request-scoped log correlation, and allowlisted JSON completion events. Caller-supplied IDs are ignored. The request logger deliberately omits paths, query strings, headers, bodies, identities, credentials, tokens, and arbitrary log messages/extra fields. No retention period, external log service, or institutional privacy assumption is introduced. See [the A3 increment record](docs/implementation/A3-SECURE-OBSERVABILITY-FOUNDATION.md). Exact-head CI and A4 verification are pending.
+The next authority-independent increment is isolated on `a3/secure-observability-foundation`. It introduces server-generated UUIDv4 request correlation, an `X-Request-ID` response header, request-scoped log correlation, and allowlisted JSON completion events. Caller-supplied IDs are ignored. The request logger deliberately omits paths, query strings, headers, bodies, identities, credentials, tokens, and arbitrary log messages/extra fields. No retention period, external log service, or institutional privacy assumption is introduced. See [the A3 increment record](docs/implementation/A3-SECURE-OBSERVABILITY-FOUNDATION.md). Exact-head CI run #62 passed on implementation SHA `04456a05e4668bc518336e16f33260031609f963`; A4 technical verification passed and Owner acceptance is pending.
