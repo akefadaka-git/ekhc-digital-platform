@@ -1,6 +1,6 @@
 # EKHC OS — A4 Independent Verification Record
 
-**Status:** IN PROGRESS — corrective increment committed; final exact-head CI evidence pending  
+**Status:** IN PROGRESS — corrective increment committed; A4 exact-head CI evidence verified on commit `48e6da85d4cc32a3d8da654d5cb2beca64377e31`  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Working branch:** `a3/restricted-foundation-scope`  
@@ -74,9 +74,19 @@ A4 corrective verification is accepted only after a successful GitHub Actions ru
 - Workflow conclusion: SUCCESS.
 - Run URL and exact tested SHA recorded below.
 
-### Final corrective CI evidence
+### Final corrective CI evidence — first A4 verification head
 
-**Pending.** Do not mark A4 verified or closed until the workflow run is complete and the tested SHA matches the final branch head.
+- Workflow: **A3 quality checks**, run **#29**, ID `42969284013`.
+- Tested commit: `48e6da85d4cc32a3d8da654d5cb2beca64377e31`.
+- Run URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42969284013
+- Workflow/job conclusion: **SUCCESS**; all 10 job steps completed successfully.
+- Python 3.14.10 setup and hash-locked installation: PASS.
+- Django system check: PASS.
+- Django tests: PASS — **6 tests**, including all three new fail-closed settings regression tests.
+- Ruff lint: PASS; Ruff format: PASS (18 files already formatted).
+- pip-audit: PASS — no known vulnerabilities found.
+
+This run verified the corrective implementation and A4 record at its tested commit. The subsequent governance-record reconciliation is documentation-only and requires its own exact-head CI confirmation before A4 closure.
 
 ## 6. A2 blockers retained
 
@@ -95,7 +105,7 @@ No unsupported organizational relationship, office mandate, role, permission, or
 ## 7. Current disposition
 
 - A3 first-increment closure: **OWNER-ACCEPTED**.
-- A4 corrective implementation: **COMMITTED; final CI pending**.
+- A4 corrective implementation: **COMMITTED; corrective code and initial A4 record CI verified by run #29; final governance-head confirmation pending**.
 - A4 independent verification: **IN PROGRESS; NOT CLOSED**.
 - A2: **PARTIAL / OPEN**.
 - A5: **NOT STARTED**.
