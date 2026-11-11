@@ -1,8 +1,8 @@
 """Static guards for dependency and CI supply-chain invariants."""
 
-from pathlib import Path
 import re
 import unittest
+from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,7 +69,9 @@ class CiSupplyChainBoundaryTests(unittest.TestCase):
     def test_ci_uses_read_only_repository_permissions(self):
         workflow = read_text(".github/workflows/quality.yml")
         self.assertRegex(workflow, r"(?m)^permissions:\s*\n\s+contents:\s+read\s*$")
-        self.assertRegex(workflow, r"(?m)^\s{4}permissions:\s*\n\s{6}contents:\s+read\s*$")
+        self.assertRegex(
+            workflow, r"(?m)^\s{4}permissions:\s*\n\s{6}contents:\s+read\s*$"
+        )
         self.assertNotRegex(
             workflow,
             r"(?mi)^\s+(contents|packages|id-token|attestations):\s+write\s*$",
