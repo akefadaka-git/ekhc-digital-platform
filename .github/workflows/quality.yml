@@ -63,9 +63,6 @@ jobs:
       - name: Django tests
         run: python manage.py test
 
-      - name: Diagnose Ruff import ordering
-        run: ruff check --diff config/settings.py || true
-
       - name: Ruff lint
         run: ruff check .
 
