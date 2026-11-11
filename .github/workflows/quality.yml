@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           required_files=(
-            .python-version requirements.txt requirements-dev.txt manage.py
+            .python-version requirements.txt requirements-dev.txt requirements-lock.txt manage.py
             config/__init__.py config/settings.py config/urls.py config/wsgi.py config/asgi.py
             health/__init__.py health/views.py
             tests/__init__.py tests/test_health.py pyproject.toml README.md
@@ -55,42 +55,7 @@ jobs:
           python-version-file: .python-version
 
       - name: Install pinned requirements
-        run: python -m pip install -r requirements-dev.txt
-
-      - name: Generate transitive lock preview from resolved releases
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --dry-run --ignore-installed --report /tmp/requirements-resolution.json -r requirements-dev.txt
-          python - <<'PY'
-          import json
-          import re
-          import urllib.request
-          from pathlib import Path
-
-          report = json.loads(Path("/tmp/requirements-resolution.json").read_text())
-          entries = []
-          for item in report["install"]:
-              name = item["metadata"]["name"]
-              version = item["metadata"]["version"]
-              normalized = re.sub(r"[-_.]+", "-", name).lower()
-              request = urllib.request.Request(
-                  f"https://pypi.org/pypi/{normalized}/{version}/json",
-                  headers={"User-Agent": "EKHC-OS-dependency-lock-review/1.0"},
-              )
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  release = json.load(response)
-              hashes = sorted({file["digests"]["sha256"] for file in release["urls"]})
-              if not hashes:
-                  raise SystemExit(f"No PyPI hashes found for {name}=={version}")
-              entries.append(
-                  f"{name}=={version} " + " ".join(f"--hash=sha256:{digest}" for digest in hashes)
-              )
-
-          print("LOCK_PREVIEW_BEGIN")
-          print("\\n\\n".join(sorted(entries, key=str.casefold)))
-          print("LOCK_PREVIEW_END")
-          PY
+        run: python -m pip install --require-hashes -r requirements-lock.txt
 
       - name: Django system check
         run: python manage.py check
@@ -105,4 +70,4 @@ jobs:
         run: ruff format --check .
 
       - name: Dependency vulnerability audit
-        run: pip-audit -r requirements-dev.txt
+        run: pip-audit -r requirements-lock.txt
