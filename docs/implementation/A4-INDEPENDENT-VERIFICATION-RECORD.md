@@ -1,6 +1,6 @@
 # EKHC OS — A4 Independent Verification Record
 
-**Status:** IN PROGRESS — corrective increment verified; final record-head confirmation pending  
+**Status:** VERIFIED — A4 closure recommendation ready for Owner review; formal A4 closure not yet accepted  
 **Date:** 2026-11-11  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Working branch:** `a3/restricted-foundation-scope`  
@@ -86,7 +86,7 @@ A4 corrective verification is accepted only after a successful GitHub Actions ru
 - Ruff lint: PASS; Ruff format: PASS (18 files already formatted).
 - pip-audit: PASS — no known vulnerabilities found.
 
-This run verified the corrective implementation and the reconciled A3/A4 governance records at its tested commit. The final checklist-status correction was then committed as a documentation-only change; the resulting final branch head requires its own exact-head CI confirmation before A4 closure.
+Run #37 verified the corrective implementation and the reconciled A3/A4 governance records at its tested commit. The final A4 record update was then committed as a documentation-only change. Run #38 below confirms the resulting final branch head.
 
 
 ### Final A4 corrective verification — run #37
@@ -98,6 +98,19 @@ This run verified the corrective implementation and the reconciled A3/A4 governa
 - Required-file check, Python 3.14.10 setup, and hash-locked dependency installation: PASS.
 - Django system check: PASS.
 - Django tests: PASS — **6 tests**, including all three fail-closed settings regression tests.
+- Ruff lint: PASS; Ruff format: PASS (18 files already formatted).
+- pip-audit: PASS — no known vulnerabilities found.
+
+### Final record-head CI confirmation — run #38
+
+- Workflow: **A3 quality checks**, run **#38**, ID `42969850685`.
+- Exact tested branch head: `8b94f27ff84ad97e4adb38a2ddc8b723adc9c542`.
+- Run URL: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/42969850685
+- Workflow/job conclusion: **SUCCESS**; all 10 job steps completed successfully.
+- Required-file check: PASS.
+- Python 3.14.10 setup and hash-locked dependency installation: PASS.
+- Django system check: PASS.
+- Django tests: PASS — **6 tests**.
 - Ruff lint: PASS; Ruff format: PASS (18 files already formatted).
 - pip-audit: PASS — no known vulnerabilities found.
 
@@ -118,11 +131,11 @@ No unsupported organizational relationship, office mandate, role, permission, or
 ## 7. Current disposition
 
 - A3 first-increment closure: **OWNER-ACCEPTED**.
-- A4 corrective implementation: **COMMITTED; all six tests, Ruff, and pip-audit passed in run #37 at `6d2ccc1116d9c95955e36ccba9bc54724073ff95`; final record-head confirmation pending**.
-- A4 independent verification: **IN PROGRESS; NOT CLOSED**.
+- A4 corrective implementation: **VERIFIED; six tests, Ruff, and pip-audit passed on the final branch head in run #38**.
+- A4 independent verification: **VERIFIED; closure recommendation READY FOR OWNER REVIEW; formal closure awaits Owner acceptance**.
 - A2: **PARTIAL / OPEN**.
 - A5: **NOT STARTED**.
 - `main`: **MUST REMAIN UNCHANGED**.
 - Merge, deployment, signing, publication, production data: **NOT AUTHORIZED**.
 
-A4 closure recommendation may be prepared only after final exact-head CI succeeds and the resulting branch/file inventory is reconciled. A4 closure does not imply A2 closure, production readiness, or A5 authorization.
+A4 verification is complete and its closure recommendation is ready for Owner review. This record does not itself close A4. A4 closure does not imply A2 closure, production readiness, or A5 authorization.
