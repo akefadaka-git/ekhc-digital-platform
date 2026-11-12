@@ -188,7 +188,7 @@ class SQLiteNotificationLedger:
         if path != ":memory:":
             database_path = Path(path)
             database_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-            if database_path.exists() and database_path.is_symlink():
+            if database_path.is_symlink():
                 raise ValueError("Notification ledger must not be a symlink")
         self._lock = RLock()
         self._connection = sqlite3.connect(
@@ -363,20 +363,22 @@ class NotificationOrchestrator:
     ) -> list[DeliveryReceipt]:
         """Process only explicit synthetic destinations, atomically if persisted."""
         if not destinations or self.fixtures is None:
-            self.audit_events.append(
+            events = [
                 {
                     "event": "notification_requested",
                     "event_id": notification.event_id,
                     "severity": notification.severity,
                     "event_code": notification.event_code,
-                }
-            )
-            self.audit_events.append(
-                {"event": "no_synthetic_recipients", "event_id": notification.event_id}
-            )
+                },
+                {
+                    "event": "no_synthetic_recipients",
+                    "event_id": notification.event_id,
+                },
+            ]
             if self.ledger is not None:
                 with self.ledger.transaction():
-                    self.ledger.record_audit(self.audit_events[-2:])
+                    self.ledger.record_audit(events)
+            self.audit_events.extend(events)
             return []
 
         prior_memory = dict(self._receipts)
