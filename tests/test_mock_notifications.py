@@ -113,9 +113,7 @@ class MockNotificationTests(unittest.TestCase):
 
     def test_retry_exhaustion_is_explicit_and_bounded(self):
         sleeps = []
-        fixtures = FixtureSet(
-            outcomes={Channel.SMS: (MockOutcome.UNAVAILABLE,)}
-        )
+        fixtures = FixtureSet(outcomes={Channel.SMS: (MockOutcome.UNAVAILABLE,)})
         orchestrator = NotificationOrchestrator(
             config(), fixtures, sleeper=sleeps.append
         )
