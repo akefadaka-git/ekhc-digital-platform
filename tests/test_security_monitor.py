@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
-from urllib.error import HTTPError, URLError
 from unittest.mock import patch
+from urllib.error import HTTPError, URLError
 
 from scripts.security_monitor import (
     MAX_OSV_RESPONSE_BYTES,
