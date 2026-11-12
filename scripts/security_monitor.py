@@ -26,7 +26,8 @@ OSV_RETRY_BACKOFF_SECONDS = (1, 2)
 OSV_MAX_WALL_CLOCK_SECONDS = (
     OSV_MAX_ATTEMPTS * OSV_REQUEST_TIMEOUT_SECONDS + sum(OSV_RETRY_BACKOFF_SECONDS)
 )
-PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)(?:\s|$)")
+PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)$")
+SHA256_HASH_OPTION = re.compile(r"^--hash=sha256:[0-9a-fA-F]{64}$")
 REMINDER_DAYS = (30, 14, 7, 3, 1)
 VALID_SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
 VALID_STATUSES = {"PROPOSED", "APPROVED", "REJECTED", "REVOKED", "EXPIRED"}
@@ -40,11 +41,18 @@ def parse_lockfile(text: str) -> list[dict[str, str]]:
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        match = PINNED_REQUIREMENT.match(line)
+        tokens = line.split()
+        match = PINNED_REQUIREMENT.fullmatch(tokens[0]) if tokens else None
         if not match:
             raise ValueError(
                 f"Unsupported lock entry at line {number}; expected name==version"
             )
+        for option in tokens[1:]:
+            if not SHA256_HASH_OPTION.fullmatch(option):
+                raise ValueError(
+                    f"Unsupported lock option at line {number}; "
+                    "expected --hash=sha256:<64 hex>"
+                )
         name, version = match.groups()
         normalized = re.sub(r"[-_.]+", "-", name).lower()
         if normalized in seen:
