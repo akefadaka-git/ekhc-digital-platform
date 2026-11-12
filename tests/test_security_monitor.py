@@ -353,7 +353,9 @@ class SecurityMonitorTests(unittest.TestCase):
         report = mocked_summary.call_args.args[0]
         self.assertIn("Security monitoring — INCOMPLETE", report)
         self.assertIn("Monitoring could not complete", report)
-        mocked_parse.assert_called_once()\n        mocked_evaluate.assert_called_once()\n        mocked_query.assert_called_once()
+        mocked_parse.assert_called_once()
+        mocked_evaluate.assert_called_once()
+        mocked_query.assert_called_once()
 
     def test_lock_parser_accepts_only_sha256_hash_options(self):
         valid_hash = "a" * 64
