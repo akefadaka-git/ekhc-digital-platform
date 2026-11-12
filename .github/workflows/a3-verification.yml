@@ -26,6 +26,10 @@ jobs:
           python-version-file: .python-version
       - name: Install pinned requirements
         run: python -m pip install --require-hashes -r requirements-lock.txt
+      - name: Diagnose Ruff import ordering
+        run: |
+          ruff check --select I --fix audit/storage.py security/crypto.py
+          git diff -- audit/storage.py security/crypto.py
       - name: Django system check
         run: python manage.py check
       - name: Django tests
