@@ -3,7 +3,6 @@ import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
-from pathlib import Path
 from urllib.error import HTTPError, URLError
 from unittest.mock import patch
 
@@ -14,8 +13,8 @@ from scripts.security_monitor import (
     OSV_REQUEST_TIMEOUT_SECONDS,
     OSV_RETRY_BACKOFF_SECONDS,
     escape_table_cell,
-    main,
     evaluate_exceptions,
+    main,
     parse_lockfile,
     parse_utc,
     query_osv,
@@ -255,7 +254,7 @@ class SecurityMonitorTests(unittest.TestCase):
             root = Path(directory)
             lockfile = root / "requirements-lock.txt"
             register = root / "exception-register.json"
-            lockfile.write_text("Django==5.2.19\\n", encoding="utf-8")
+            lockfile.write_text("Django==5.2.19\n", encoding="utf-8")
             register.write_text(
                 '{"schema_version":1,"exceptions":[]}', encoding="utf-8"
             )
