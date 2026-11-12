@@ -470,3 +470,41 @@ class SyncFailureEdgeTests(SimpleTestCase):
         self.assertEqual(len(store.state["audit"]), 1)
         self.assertEqual(store.state["mutations"], [])
         self.assertEqual(store.state["outbox"], [])
+
+
+class AuditAndSyncInvariantExtensionTests(SimpleTestCase):
+    def test_chain_rejects_non_hex_digest_even_when_length_is_valid(self):
+        event = AuditEvent(
+            action="records.read",
+            resource_type="document",
+            resource_reference="doc-001",
+            occurred_at=NOW,
+            correlation_id=uuid4(),
+            outcome=AuditOutcome.SUCCEEDED,
+        )
+        entry = AuditChainEntry(1, "0" * 64, event, "g" * 64)
+        self.assertFalse(verify_audit_chain((entry,)))
+
+    def test_conflict_audit_failure_rolls_back_conflict_receipt(self):
+        store = FakeUnitOfWork(fail_audit=True)
+        with self.assertRaisesMessage(RuntimeError, "injected audit insert failure"):
+            apply_sync_command(make_command(base_version=2), store, FixedClock())
+        self.assertEqual(store.state["versions"]["aggregate-001"], 3)
+        self.assertEqual(store.state["mutations"], [])
+        self.assertEqual(store.state["receipts"], {})
+        self.assertEqual(store.state["audit"], [])
+        self.assertEqual(store.state["outbox"], [])
+
+    def test_outbox_reference_matches_audit_event_and_excludes_payload(self):
+        store = FakeUnitOfWork()
+        command = make_command()
+        result = apply_sync_command(command, store, FixedClock())
+        event = store.state["audit"][0]
+        outbox = store.state["outbox"][0]
+        self.assertEqual(result.status, "applied")
+        self.assertEqual(outbox[0], event.event_id)
+        self.assertEqual(outbox[1], command.envelope.aggregate_reference)
+        self.assertEqual(outbox[2], result.resulting_version)
+        self.assertEqual(outbox[3], event.occurred_at)
+        self.assertNotIn(command.encrypted_payload.ciphertext, outbox)
+        self.assertNotIn(command.encrypted_payload.wrapped_key, outbox)
