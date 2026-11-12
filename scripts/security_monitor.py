@@ -11,14 +11,21 @@ import json
 import os
 import re
 import sys
+from time import sleep
 from datetime import UTC, datetime, timedelta
 from html import escape as escape_html
 from pathlib import Path
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 OSV_QUERYBATCH_URL = "https://api.osv.dev/v1/querybatch"
 MAX_OSV_RESPONSE_BYTES = 2 * 1024 * 1024
+OSV_REQUEST_TIMEOUT_SECONDS = 20
+OSV_MAX_ATTEMPTS = 3
+OSV_RETRY_BACKOFF_SECONDS = (1, 2)
+OSV_MAX_WALL_CLOCK_SECONDS = (
+    OSV_MAX_ATTEMPTS * OSV_REQUEST_TIMEOUT_SECONDS + sum(OSV_RETRY_BACKOFF_SECONDS)
+)
 PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)(?:\s|$)")
 REMINDER_DAYS = (30, 14, 7, 3, 1)
 VALID_SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
@@ -113,7 +120,7 @@ def evaluate_exceptions(document: dict, now: datetime) -> list[dict[str, object]
             reminders.append(
                 {"id": identifier, "kind": "EXPIRED", "days_left": days_left}
             )
-        elif days_left in REMINDER_DAYS or days_left == 0:
+        elif days_left == 0:
             reminders.append(
                 {
                     "id": identifier,
@@ -121,6 +128,29 @@ def evaluate_exceptions(document: dict, now: datetime) -> list[dict[str, object]
                     "days_left": days_left,
                 }
             )
+        elif days_left in REMINDER_DAYS:
+            reminders.append(
+                {
+                    "id": identifier,
+                    "kind": "EXPIRY_REMINDER",
+                    "days_left": days_left,
+                }
+            )
+        elif days_left > 0:
+            missed_thresholds = [
+                threshold for threshold in REMINDER_DAYS if threshold > days_left
+            ]
+            if missed_thresholds:
+                threshold = min(missed_thresholds)
+                reminders.append(
+                    {
+                        "id": identifier,
+                        "kind": "EXPIRY_REMINDER_OVERDUE",
+                        "days_left": days_left,
+                        "threshold_days": threshold,
+                        "days_overdue": threshold - days_left,
+                    }
+                )
     return reminders
 
 
@@ -146,8 +176,22 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
         },
         method="POST",
     )
-    with urlopen(request, timeout=20) as response:
-        raw_response = response.read(MAX_OSV_RESPONSE_BYTES + 1)
+    raw_response = None
+    for attempt in range(1, OSV_MAX_ATTEMPTS + 1):
+        try:
+            with urlopen(request, timeout=OSV_REQUEST_TIMEOUT_SECONDS) as response:
+                raw_response = response.read(MAX_OSV_RESPONSE_BYTES + 1)
+            break
+        except HTTPError as error:
+            retryable = error.code == 429 or 500 <= error.code <= 599
+            if not retryable or attempt == OSV_MAX_ATTEMPTS:
+                raise
+        except (URLError, TimeoutError, ConnectionError, OSError):
+            if attempt == OSV_MAX_ATTEMPTS:
+                raise
+        sleep(OSV_RETRY_BACKOFF_SECONDS[attempt - 1])
+    if raw_response is None:
+        raise ValueError("OSV request completed without a response")
     if len(raw_response) > MAX_OSV_RESPONSE_BYTES:
         raise ValueError("OSV response exceeded the 2 MiB safety limit")
     data = json.loads(raw_response.decode("utf-8"))
@@ -244,18 +288,24 @@ def main() -> int:
             [
                 "",
                 "### Exception expiry signals",
-                "| Exception | Signal | Days remaining |",
-                "|---|---|---:|",
+                "| Exception | Signal | Days remaining | Overdue threshold | Days overdue |",
+                "|---|---|---:|---:|---:|",
             ]
         )
         for item in reminders:
-            lines.append(f"| {item['id']} | {item['kind']} | {item['days_left']} |")
+            identifier = escape_table_cell(item["id"])
+            threshold = item.get("threshold_days", "")
+            overdue = item.get("days_overdue", "")
+            lines.append(
+                f"| {identifier} | {item['kind']} | {item['days_left']} "
+                f"| {threshold} | {overdue} |"
+            )
     else:
         lines.extend(
             [
                 "",
-                "No approved exception is at a configured reminder "
-                "threshold or past expiry.",
+                "No approved exception is at, past, or overdue for a configured "
+                "reminder threshold.",
             ]
         )
     lines.extend(
@@ -265,7 +315,9 @@ def main() -> int:
                 "> This workflow reports signals only. It does not assign severity, "
                 "create tickets, modify dependencies, "
                 "approve/revoke/expire exceptions, "
-                "or deliver a guaranteed out-of-band notification."
+                "or deliver a guaranteed out-of-band notification. "
+                "Overdue reminders may repeat on subsequent runs because no "
+                "delivery state or acknowledgement is stored."
             ),
         ]
     )
