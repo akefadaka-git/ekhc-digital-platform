@@ -1,22 +1,26 @@
 # EKHC OS — Owner Operational-Readiness Input Register
 
-**Status:** TEMPLATE — NOT OWNER-APPROVED; NOT OPERATIONAL EVIDENCE  
+**Status:** OWNER-APPROVED TEMPLATE ONLY — NOT OPERATIONAL EVIDENCE  
+**Approval date:** 2026-11-12  
+**Approval scope:** Use this register as the controlled structure for capturing ORG-02, ORG-03, and ORG-04 decisions and evidence.  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Related reconciliation:** `docs/operations/MONITORING-OPERATIONAL-READINESS-GAP-RECONCILIATION.md`  
 **Purpose:** Capture the explicit decisions and evidence required to resolve ORG-02, ORG-03, and ORG-04 before proposing a controlled synthetic rehearsal.
+
+> **Approval boundary:** Owner approval applies to this template and its use as a decision/evidence register only. It does not select a notification channel, identify recipients or responders, assign custodians, establish an SLA, approve an integration, or authorize a rehearsal, production operation, merge, deployment, schedule activation, or A5.
 
 > **Confidentiality rule:** This file is in a public repository. Do not enter personal names, email addresses, telephone numbers, account identifiers, private URLs, credentials, confidential exception rationales, or restricted-record contents here. Store those details in the separately approved restricted system. This public register may contain only non-sensitive decision status, generic role labels, and opaque evidence references that disclose no protected information.
 
 ## 1. Owner decision record
 
-- Owner decision reference: **NOT PROVIDED**
-- Decision date: **NOT PROVIDED**
-- Approving authority: **OWNER APPROVAL REQUIRED**
-- Scope approved: **NOT APPROVED**
-- Public evidence reference: **NOT PROVIDED**
+- Owner decision reference: **CHAT APPROVAL — 2026-11-12**
+- Decision date: **2026-11-12**
+- Approving authority: **OWNER**
+- Scope approved: **TEMPLATE STRUCTURE AND USE ONLY**
+- Public evidence reference: **THIS COMMIT**
 - Restricted evidence location/reference: **NOT PROVIDED**
 
-No operational selection is implied by this template. Blank fields are unresolved, not accepted defaults.
+All operational decision fields below remain unresolved. Blank fields are unresolved, not accepted defaults.
 
 ## 2. ORG-02 — Notification destination and recipients
 
