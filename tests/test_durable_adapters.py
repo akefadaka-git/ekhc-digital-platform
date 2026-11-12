@@ -563,7 +563,9 @@ class AuditTruncationAndSequenceTests(SimpleTestCase):
             verify_audit_chain(chain, expected_head_sequence=3)
         with self.assertRaisesMessage(ValueError, "non-negative integer"):
             verify_audit_chain(
-                chain, expected_head_sequence=True, expected_head_digest=chain[-1].digest
+                chain,
+                expected_head_sequence=True,
+                expected_head_digest=chain[-1].digest,
             )
 
 
@@ -603,10 +605,17 @@ class SyncRetryAndInterruptionTests(SimpleTestCase):
     def test_interruption_after_aggregate_mutation_rolls_back_then_retries(self):
         class InterruptingTransaction(FakeTransaction):
             def apply_aggregate_mutation(
-                self, aggregate_reference, expected_version, encrypted_payload, occurred_at
+                self,
+                aggregate_reference,
+                expected_version,
+                encrypted_payload,
+                occurred_at,
             ):
                 version = super().apply_aggregate_mutation(
-                    aggregate_reference, expected_version, encrypted_payload, occurred_at
+                    aggregate_reference,
+                    expected_version,
+                    encrypted_payload,
+                    occurred_at,
                 )
                 if self.state.get("interrupt_after_mutation"):
                     self.state["interrupt_after_mutation"] = False
@@ -665,3 +674,12 @@ class SyncRetryAndInterruptionTests(SimpleTestCase):
         self.assertEqual(len(store.state["receipts"]), 1)
         self.assertEqual(len(store.state["audit"]), 1)
         self.assertEqual(len(store.state["outbox"]), 1)
+
+    def test_genesis_checkpoint_accepts_empty_chain(self):
+        self.assertTrue(
+            verify_audit_chain(
+                (),
+                expected_head_sequence=0,
+                expected_head_digest="0" * 64,
+            )
+        )
