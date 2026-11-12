@@ -298,7 +298,7 @@ def osv_worker_main() -> int:
             for item in packages
         ):
             raise ValueError("Worker input must be a list of pinned package objects")
-        findings = query_osv_with_deadline(packages)
+        findings = query_osv(packages)
     except (OSError, ValueError, TypeError) as error:
         print(type(error).__name__, file=sys.stderr)
         return 1
