@@ -133,9 +133,7 @@ def make_command(key=None, base_version=3, *, aad_override=None):
         algorithm_suite=AES_256_GCM_SUITE,
         aad_sha256=aad_override or hashlib.sha256(aad).hexdigest(),
     )
-    return SyncCommand(
-        envelope, AccountReference("account-001"), encrypted_payload
-    )
+    return SyncCommand(envelope, AccountReference("account-001"), encrypted_payload)
 
 
 class TransactionalSyncTests(SimpleTestCase):
@@ -157,9 +155,7 @@ class TransactionalSyncTests(SimpleTestCase):
             store.state["outbox"][0][3],
         ]
         self.assertTrue(all(value is NOW for value in timestamps))
-        self.assertIs(
-            store.state["mutations"][0][1], command.encrypted_payload
-        )
+        self.assertIs(store.state["mutations"][0][1], command.encrypted_payload)
         self.assertNotIn(command.encrypted_payload.ciphertext, store.state["outbox"])
 
     def test_duplicate_idempotency_key_returns_prior_receipt_without_mutation(self):
@@ -174,9 +170,7 @@ class TransactionalSyncTests(SimpleTestCase):
 
     def test_version_conflict_records_receipt_and_audit_without_mutation(self):
         store = FakeUnitOfWork()
-        result = apply_sync_command(
-            make_command(base_version=2), store, FixedClock()
-        )
+        result = apply_sync_command(make_command(base_version=2), store, FixedClock())
         self.assertEqual(result.status, "conflict")
         self.assertEqual(store.state["versions"]["aggregate-001"], 3)
         self.assertEqual(store.state["mutations"], [])
@@ -252,8 +246,7 @@ class ReversibleTestCipher:
     def decrypt(self, ciphertext, key, nonce, associated_data):
         transformed = ciphertext[:-16]
         return bytes(
-            value ^ key[index % len(key)]
-            for index, value in enumerate(transformed)
+            value ^ key[index % len(key)] for index, value in enumerate(transformed)
         )
 
 
