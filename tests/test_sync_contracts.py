@@ -75,14 +75,10 @@ class SyncStateTransitionTests(SimpleTestCase):
             can_transition_sync_state(SyncState.QUEUED, SyncState.IN_FLIGHT)
         )
         self.assertTrue(
-            can_transition_sync_state(
-                SyncState.IN_FLIGHT, SyncState.RETRYABLE_FAILURE
-            )
+            can_transition_sync_state(SyncState.IN_FLIGHT, SyncState.RETRYABLE_FAILURE)
         )
         self.assertTrue(
-            can_transition_sync_state(
-                SyncState.RETRYABLE_FAILURE, SyncState.QUEUED
-            )
+            can_transition_sync_state(SyncState.RETRYABLE_FAILURE, SyncState.QUEUED)
         )
 
     def test_acknowledged_and_permanent_failure_are_terminal(self):
@@ -90,18 +86,14 @@ class SyncStateTransitionTests(SimpleTestCase):
             can_transition_sync_state(SyncState.ACKNOWLEDGED, SyncState.QUEUED)
         )
         self.assertFalse(
-            can_transition_sync_state(
-                SyncState.PERMANENT_FAILURE, SyncState.QUEUED
-            )
+            can_transition_sync_state(SyncState.PERMANENT_FAILURE, SyncState.QUEUED)
         )
 
     def test_conflict_requires_explicit_resolution_before_requeue(self):
         self.assertFalse(
             can_transition_sync_state(SyncState.IN_FLIGHT, SyncState.QUEUED)
         )
-        self.assertTrue(
-            can_transition_sync_state(SyncState.CONFLICT, SyncState.QUEUED)
-        )
+        self.assertTrue(can_transition_sync_state(SyncState.CONFLICT, SyncState.QUEUED))
 
 
 class EncryptedLocalRecordTests(SimpleTestCase):
