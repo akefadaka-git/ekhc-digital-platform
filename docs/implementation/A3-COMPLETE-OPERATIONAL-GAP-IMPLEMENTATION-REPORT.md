@@ -1,6 +1,6 @@
 # A3 Technical Gap Implementation — Hard Deadline and Durable Mock Ledger
 
-**Status:** IMPLEMENTED — EXACT-HEAD CI PENDING  
+**Status:** IMPLEMENTED — EXACT-HEAD CI PASS  
 **Date:** 2026-11-12  
 **Branch:** `a3/complete-operational-gap-implementation`  
 **Base:** Monitoring A3 corrective source `1a3946284c819b7004d4a652a4bbcb02396f3389`
@@ -105,6 +105,34 @@ No provider, person, contact route, system, custodian, or service guarantee is i
 - No exception register mutation.
 - No schedule activation, merge, default-branch integration, deployment, publication, signing, rehearsal, or A5.
 
-## 7. Acceptance and status
+## 7. Exact-head CI evidence
 
-Implementation is complete only when exact-head CI passes on the final source head and the commit tree is read back and compared. Operational readiness remains NOT VERIFIED regardless of technical CI results.
+**Validated branch head:** `37b907a7caaa2e4bfcbaaa53c6152e9d25507037`
+
+Both workflows completed successfully on this exact commit:
+
+- **A3 quality run #263**, run ID `43215780859`: SUCCESS.
+  - Required-file gate: PASS.
+  - Django system check: PASS.
+  - Django test suite: **100 tests PASS**.
+  - Ruff lint: PASS.
+  - Ruff format: PASS.
+  - pip-audit: PASS.
+  - [Workflow run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43215780859)
+- **Security Monitor run #148**, run ID `43215780854`: SUCCESS.
+  - OSV query and exception-register monitoring workflow: PASS.
+  - [Workflow run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43215780854)
+
+The final branch read-back and comparison must still be recorded after this report commit; the implementation source/test head above is the CI-validated code head. The report-only commit does not change implementation or test files.
+
+## 8. Acceptance and status
+
+- Hard OSV wall-clock deadline: IMPLEMENTED; exact-head tests and CI PASS.
+- Durable SQLite mock ledger: IMPLEMENTED; persistence, restart replay, destination conflict, transaction rollback, and concurrent orchestrator tests PASS.
+- CI quality and dependency audit: PASS.
+- Security monitor workflow: PASS.
+- External email/SMS services, recipients, responders, restricted-record custody: NOT AVAILABLE / NOT VERIFIED.
+- Controlled rehearsal: NOT AUTHORIZED / NOT RUN.
+- Operational readiness: NOT VERIFIED.
+- Production readiness: NOT READY.
+- Merge, deployment, schedule activation, publication, signing, and A5: NOT AUTHORIZED.
