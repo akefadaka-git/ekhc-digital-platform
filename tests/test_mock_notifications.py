@@ -162,9 +162,7 @@ class MockNotificationTests(unittest.TestCase):
         event_record = orchestrator.audit_events[-1]
         self.assertEqual(event_record["event"], "human_acknowledgement_simulated")
         self.assertIs(event_record["simulated"], True)
-        self.assertEqual(
-            event_record["display_label"], "SIMULATED — NOT DELIVERED"
-        )
+        self.assertEqual(event_record["display_label"], "SIMULATED — NOT DELIVERED")
         with self.assertRaises(ValueError):
             orchestrator.record_simulated_acknowledgement(
                 "SYNTH-EVENT-0001", "real-person"
