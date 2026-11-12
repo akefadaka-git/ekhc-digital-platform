@@ -321,8 +321,7 @@ class NotificationOrchestrator:
         for receipt in self._receipts.values():
             counts[receipt.status.value] = counts.get(receipt.status.value, 0) + 1
         details = ", ".join(
-            f"{status}={count}"
-            for status, count in sorted(counts.items())
+            f"{status}={count}" for status, count in sorted(counts.items())
         )
         if not details:
             details = "no synthetic receipts"
