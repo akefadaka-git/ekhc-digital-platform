@@ -233,7 +233,6 @@ class SecurityMonitorTests(unittest.TestCase):
         self.assertEqual(mocked_urlopen.call_count, OSV_MAX_ATTEMPTS)
         self.assertEqual(mocked_sleep.call_count, OSV_MAX_ATTEMPTS - 1)
 
-
     @patch("scripts.security_monitor.sleep")
     @patch("scripts.security_monitor.urlopen")
     def test_osv_does_not_retry_non_transient_url_error(
