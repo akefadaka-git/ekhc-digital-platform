@@ -57,6 +57,17 @@ class MockNotificationTests(unittest.TestCase):
         }
         with self.assertRaises(NotificationConfigurationError):
             NotificationConfig.from_environment(env)
+        for key in ("EKHC_EMAIL_HOST", "EKHC_SMS_API_URL"):
+            unsafe_env = {
+                "EKHC_NOTIFICATION_MODE": "mock",
+                "EKHC_EMAIL_MODE": "mock",
+                "EKHC_SMS_MODE": "mock",
+                key: "provider.example.invalid",
+            }
+            with self.subTest(key=key), self.assertRaises(
+                NotificationConfigurationError
+            ):
+                NotificationConfig.from_environment(unsafe_env)
         with self.assertRaises(NotificationConfigurationError):
             config("unapproved-fixture")
 
