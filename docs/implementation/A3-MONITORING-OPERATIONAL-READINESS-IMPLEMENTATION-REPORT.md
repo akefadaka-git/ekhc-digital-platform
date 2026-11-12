@@ -5,7 +5,7 @@
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **A3 branch:** `a3/monitoring-operational-readiness`  
 **A2 governing baseline:** `15c971ce703d51adf1db83a340c5dc3c2a987058`  
-**Implementation/tested source head:** `1126bcad218a0391efea1c3ac22bdb29c87a0017`  
+**Implementation/tested source head:** `f91cbca5c20cd21b7a55551cad23f5495d903e9c`  
 **Main observed unchanged:** `adfa62eccda93c8b261e5abd3cbdb22cf28c8823`  
 **Accepted A4 branch observed unchanged:** `9d77f91dbdbca0b220b5e0d0d735caa525a0c9ec`
 
@@ -20,7 +20,7 @@ The implementation is confined to the separate A3 branch. No merge, default-bran
 | Work package | Result | Implementation/evidence |
 |---|---|---|
 | OR-01 Positive advisory simulation | PASS | Added a mocked end-to-end `main()` test covering synthetic advisory rendering, Markdown escaping, and finding exit status 1. No live vulnerability or public disclosure was used. |
-| OR-02 Bounded OSV retry | PASS | At most 3 total attempts; retry only transient transport `OSError` and HTTP 429/5xx; 20-second per-attempt timeout; 1-second then 2-second backoff; configured request/backoff budget 63 seconds. Exhaustion remains INCOMPLETE/non-zero. |
+| OR-02 Bounded OSV retry | PASS | At most 3 total attempts; retry only recognized transient socket/transport failures (connection resets/refusals/aborts, timeouts, temporary DNS resolution) and HTTP 429/5xx; permanent URL/TLS/input failures are not retried; 20-second per-attempt timeout; 1-second then 2-second backoff; configured request/backoff budget 63 seconds. Exhaustion remains INCOMPLETE/non-zero. |
 | OR-03 Missed reminder catch-up | PASS | For positive days remaining, report the smallest configured threshold strictly greater than current days remaining, with threshold and days overdue. Preserve exact-threshold reminders, expiry-day signal, and repeated EXPIRED signals after expiry. Only APPROVED entries are eligible; no register mutation or delivery state. |
 | OR-04 Operator runbook | PASS — DOCUMENTED | Added manual execution, exit-code interpretation, INCOMPLETE handling, Owner escalation boundary, and explicit notification/coverage limitations. No responder, channel, rota, or acknowledgement path was invented. |
 | OR-05 Production activation gate | PASS — DOCUMENTED / ACTIVATION BLOCKED | Added mandatory separate approval/evidence checklist. Daily schedule remains on the workflow but inactive off the default branch. No schedule or trigger activation was performed. |
@@ -39,13 +39,13 @@ The implementation is confined to the separate A3 branch. No merge, default-bran
 
 Both workflows completed successfully on the implementation/tested source head `1126bcad218a0391efea1c3ac22bdb29c87a0017`:
 
-- Quality run #170, ID `43129406546`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43129406546
+- Quality run #178, ID `43130192707`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43129406546
   - Django system check: PASS
-  - Django test suite: PASS — 71 tests
+  - Django test suite: PASS — 72 tests
   - Ruff lint: PASS
   - Ruff format check: PASS
   - pip-audit: PASS
-- Security monitor run #55, ID `43129406350`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43129406350
+- Security monitor run #63, ID `43130192672`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43129406350
   - 32 locked PyPI packages queried
   - 0 OSV advisories returned
   - 0 approved exception reminders/expiries (register remains empty)
