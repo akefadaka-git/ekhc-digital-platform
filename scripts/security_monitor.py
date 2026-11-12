@@ -15,7 +15,7 @@ from time import sleep
 from datetime import UTC, datetime, timedelta
 from html import escape as escape_html
 from pathlib import Path
-from urllib.error import HTTPError, URLError
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 OSV_QUERYBATCH_URL = "https://api.osv.dev/v1/querybatch"
@@ -186,7 +186,7 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
             retryable = error.code == 429 or 500 <= error.code <= 599
             if not retryable or attempt == OSV_MAX_ATTEMPTS:
                 raise
-        except (URLError, TimeoutError, ConnectionError, OSError):
+        except OSError:
             if attempt == OSV_MAX_ATTEMPTS:
                 raise
         sleep(OSV_RETRY_BACKOFF_SECONDS[attempt - 1])
