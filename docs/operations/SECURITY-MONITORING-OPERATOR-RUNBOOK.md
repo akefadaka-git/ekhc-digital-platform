@@ -37,7 +37,11 @@ The monitor stores no delivery/acknowledgement state. An overdue or expired sign
 
 The committed exception register is empty. Do not add a real exception merely to test the monitor. Synthetic records belong only in isolated tests and must not be committed to the register.
 
-## 5. Escalation and unresolved operations
+## 5. Mock notification persistence boundary
+
+The repository also contains a separate fail-closed mock notification package. If explicitly configured with `EKHC_NOTIFICATION_LEDGER_PATH`, it can persist synthetic receipts and redacted audit metadata in a local SQLite database. The ledger is optional and mock-only; it is not connected to this OSV workflow, does not send email or SMS, and does not prove provider delivery or human acknowledgement. The database contains synthetic identifiers only and must not be used as a live-delivery ledger. Runtime database files are excluded from version control.
+
+## 6. Escalation and unresolved operations
 
 The Owner retains authority for exception approval, renewal, revocation, and risk acceptance. This runbook does not assign authority to an unverified role or name a responder. Where a finding or exception signal requires a decision, preserve the evidence and seek Owner direction through an independently established and authorized communication route.
 
