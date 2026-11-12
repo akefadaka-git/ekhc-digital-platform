@@ -136,3 +136,69 @@ This register records the Owner's approved policy decisions and preserves outsta
 No credentials, secrets, private contact details, or restricted records may be copied into this public repository. No external integration, secret creation, permission expansion, workflow-trigger change, exception-register mutation, schedule activation, production operation, merge, deployment, publication, signing, or A5 is authorized by these decisions.
 
 A4 technical verification remains **VERIFIED-CLOSED WITH EXPLICIT LIMITATIONS**. Operational readiness remains **NOT VERIFIED** until the implementation evidence above is supplied and assessed.
+
+
+## 8. Evidence reconciliation against approved policies — 2026-11-12
+
+**Method and scope:** Read-only inspection of the current Owner register, operational gap reconciliation, security-monitor operator runbook, A3 monitoring design, and committed exception register in the repository. This pass did not access an external institutional email tenant, SMS gateway/provider console, private recipient directory, HR/duty roster, or restricted records system because no such source or approved access reference is identified in the repository evidence. No identities or services are inferred.
+
+### 8.1 ORG-02 — Email and SMS services, recipient authorization, delivery
+
+| Required evidence | Evidence observed | Reconciliation |
+|---|---|---|
+| Institutional email service, tenant, designated mailbox, ownership/admin | The operator runbook says the monitor currently writes GitHub Actions job summary and logs; it explicitly does not provide guaranteed email or other out-of-band delivery. No institutional email service or mailbox is identified in the reviewed records. | **MISSING / UNRESOLVED** |
+| SMS service/provider, sender identity, configuration and account ownership | Owner approved SMS as a secondary notification channel. No SMS provider, sender ID/number, gateway, account, configuration, or delivery evidence appears in the reviewed records. | **MISSING / UNRESOLVED** |
+| Authorized recipient roster and authorization basis | No actual recipient roster, restricted roster reference, role-to-person authorization record, or recipient acceptance evidence is present in the reviewed records. | **MISSING / UNRESOLVED** |
+| Email and SMS delivery controls and test evidence | No channel-control proof, synthetic email/SMS delivery receipt, bounce/failure record, or delivery audit evidence is present. | **MISSING / NOT VERIFIED** |
+
+**Finding:** The approved design is email-primary plus SMS-secondary, but neither channel is established operationally. GitHub job summary/stdout remains the only repository-evidenced output. No notification integration or test was performed.
+
+### 8.2 ORG-03 — Responder coverage and acknowledgement / escalation
+
+| Required evidence | Evidence observed | Reconciliation |
+|---|---|---|
+| Primary and backup responder identities and role authorization | No accepted primary/backup roster or restricted identity reference is present. | **MISSING / UNRESOLVED** |
+| Coverage hours, timezone, holiday rota, handover and absence coverage | No approved duty schedule or acceptance/availability evidence is present. | **MISSING / UNRESOLVED** |
+| Approved acknowledgement targets | Owner approved Critical/actively exploitable: 4 hours; High: 1 business day; Medium: 2 business days; Low/informational: 3 business days. | **POLICY EVIDENCE PRESENT; OPERATIONAL ENFORCEMENT NOT VERIFIED** |
+| Acknowledgement event, evidence source, escalation triggers and routes | No configured acknowledgement mechanism, escalation destination, timeout behavior, or delivery/acknowledgement records are present. | **MISSING / NOT VERIFIED** |
+| Responder acceptance and authority boundaries | No signed/recorded acceptance or role authority definition is present. | **MISSING / UNRESOLVED** |
+
+**Finding:** The role-based coverage model and acknowledgement targets are approved policy, not an assigned or accepted rota. No human acknowledgement or escalation path is demonstrated.
+
+### 8.3 ORG-04 — Restricted exception-record custody
+
+| Required evidence | Evidence observed | Reconciliation |
+|---|---|---|
+| Selected restricted system / tenant and accountable system owner | No named or opaque-referenced restricted system, tenant, or system owner is identified. | **MISSING / UNRESOLVED** |
+| Primary/backup custodians and authorized access groups | No custodian assignment, access group, or restricted authorization record is present. | **MISSING / UNRESOLVED** |
+| Least privilege, MFA, encryption and audit logging configuration | Policy is approved, but no configuration export, control attestation, or audit sample is provided. | **POLICY APPROVED; CONTROL IMPLEMENTATION NOT VERIFIED** |
+| Retention, secure disposal, backup and recovery | No approved schedule, procedure, configuration, or recovery evidence is present. | **MISSING / UNRESOLVED** |
+| Access review and evidence-handling procedure | No review cadence, completed review evidence, or controlled evidence-handling record is present. | **MISSING / UNRESOLVED** |
+
+**Finding:** The committed public exception register is schema version 1 with an empty `exceptions` array. This confirms there are no committed exception entries; it does not establish custody of any external or future restricted records. No real exception or restricted record was created or changed.
+
+### 8.4 Consolidated reconciliation status
+
+| Area | Owner policy decision | Evidence status | Readiness disposition |
+|---|---|---|---|
+| ORG-02 email + SMS and recipients | **APPROVED** | Actual services, owners, roster, and delivery tests absent | **PARTIAL / NOT VERIFIED** |
+| ORG-03 responder coverage | **APPROVED** | Targets approved; actual responders, accepted coverage, escalation and acknowledgement evidence absent | **NOT VERIFIED** |
+| ORG-04 restricted-record custody | **APPROVED** | System, custodians, configured controls, retention and audit evidence absent | **NOT VERIFIED** |
+| Operational readiness | — | Material controls remain unevidenced | **NOT VERIFIED** |
+| Production readiness | — | Production gates remain unmet | **NOT READY** |
+
+### 8.5 Required evidence to resolve the gaps
+
+Provide evidence through an approved restricted channel; do not put private details or confidential records in this public repository:
+
+1. **ORG-02:** email provider/tenant/mailbox ownership evidence; SMS provider/account/sender configuration evidence; authorized recipient roster and authorization/acceptance reference; synthetic email and SMS delivery receipts including failure-path handling.
+2. **ORG-03:** accepted primary/backup responder roster; coverage calendar including timezone and holidays; role authority boundaries; configured acknowledgement and escalation rules; redacted delivery and human-acknowledgement evidence.
+3. **ORG-04:** selected restricted system and accountable owner; primary/backup custodian assignments; access-group and MFA/least-privilege evidence; encryption/audit configuration evidence; retention/disposal policy; backup/recovery evidence; periodic access-review record.
+
+Use only opaque evidence IDs and non-sensitive status in this register. Actual identities, addresses, telephone numbers, credentials, and restricted records must remain in the restricted system.
+
+### 8.6 Scope and authorization boundary
+
+This was a repository evidence reconciliation and documentation update only. It did not access external mail/SMS services or restricted systems, contact recipients/responders, configure integrations, create secrets, change permissions or workflows, modify the exception register, or run delivery tests or rehearsal.
+
+No production activation, schedule activation, merge, default-branch integration, deployment, publication, signing, or A5 is authorized or performed. A controlled rehearsal remains **NOT AUTHORIZED / NOT RUN** and requires separate Owner authorization after the required evidence is supplied and reviewed.
