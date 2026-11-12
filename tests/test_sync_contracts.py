@@ -71,7 +71,9 @@ class SyncEvaluationTests(SimpleTestCase):
 
 class SyncStateTransitionTests(SimpleTestCase):
     def test_normal_queue_and_retry_recovery_transitions(self):
-        self.assertTrue(can_transition_sync_state(SyncState.QUEUED, SyncState.IN_FLIGHT))
+        self.assertTrue(
+            can_transition_sync_state(SyncState.QUEUED, SyncState.IN_FLIGHT)
+        )
         self.assertTrue(
             can_transition_sync_state(
                 SyncState.IN_FLIGHT, SyncState.RETRYABLE_FAILURE
