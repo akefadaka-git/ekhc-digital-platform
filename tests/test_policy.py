@@ -46,3 +46,26 @@ class AuthorizationBoundaryTests(SimpleTestCase):
                 resource_type="document",
                 resource_reference="document-001",
             )
+
+    def test_request_rejects_wrong_actor_type(self):
+        with self.assertRaisesMessage(TypeError, "actor must be an AccountReference"):
+            AuthorizationRequest(
+                actor="account-001",
+                action="read",
+                resource_type="document",
+                resource_reference="document-001",
+            )
+
+    def test_request_rejects_blank_scope(self):
+        with self.assertRaisesMessage(ValueError, "scope_reference must be absent"):
+            AuthorizationRequest(
+                actor=AccountReference("account-001"),
+                action="read",
+                resource_type="document",
+                resource_reference="document-001",
+                scope_reference=" ",
+            )
+
+    def test_evaluator_rejects_untyped_request(self):
+        with self.assertRaisesMessage(TypeError, "request must be an AuthorizationRequest"):
+            evaluate_authorization(object())
