@@ -84,7 +84,9 @@ class SessionObservation:
             raise ValueError("last_activity_at must not precede issued_at.")
         if self.absolute_expires_at <= self.issued_at:
             raise ValueError("absolute_expires_at must follow issued_at.")
-        if not isinstance(self.authenticated, bool) or not isinstance(self.revoked, bool):
+        if not isinstance(self.authenticated, bool) or not isinstance(
+            self.revoked, bool
+        ):
             raise TypeError("authenticated and revoked must be booleans.")
 
 
