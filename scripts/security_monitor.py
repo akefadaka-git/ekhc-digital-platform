@@ -12,6 +12,7 @@ import json
 import os
 import re
 import socket
+import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 from html import escape as escape_html
@@ -25,8 +26,7 @@ MAX_OSV_RESPONSE_BYTES = 2 * 1024 * 1024
 OSV_REQUEST_TIMEOUT_SECONDS = 20
 OSV_MAX_ATTEMPTS = 3
 OSV_RETRY_BACKOFF_SECONDS = (1, 2)
-# Nominal configured socket-timeout plus retry-sleep budget only. urllib's
-# timeout is an inactivity timeout, not a hard end-to-end wall-clock deadline.
+# The subprocess supervisor enforces this as a hard end-to-end deadline.
 OSV_RETRY_BUDGET_SECONDS = OSV_MAX_ATTEMPTS * OSV_REQUEST_TIMEOUT_SECONDS + sum(
     OSV_RETRY_BACKOFF_SECONDS
 )
@@ -252,6 +252,59 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
     return findings
 
 
+def query_osv_with_deadline(packages: list[dict[str, str]]) -> list[dict]:
+    """Run OSV lookup in a killable worker with a hard wall-clock deadline.
+
+    urllib's socket timeout is an inactivity timeout. A separate process lets
+    the parent terminate a worker even if a peer continuously streams bytes.
+    """
+    command = [sys.executable, str(Path(__file__).resolve()), "--osv-worker"]
+    try:
+        completed = subprocess.run(
+            command,
+            input=json.dumps(packages),
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=OSV_RETRY_BUDGET_SECONDS,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise TimeoutError(
+            f"OSV worker exceeded the {OSV_RETRY_BUDGET_SECONDS}-second hard deadline"
+        ) from error
+    if completed.returncode != 0:
+        worker_error = completed.stderr.strip() or "unspecified worker error"
+        raise ValueError(f"OSV worker failed: {worker_error}")
+    try:
+        findings = json.loads(completed.stdout)
+    except json.JSONDecodeError as error:
+        raise ValueError("OSV worker returned malformed output") from error
+    if not isinstance(findings, list) or any(
+        not isinstance(item, dict) for item in findings
+    ):
+        raise ValueError("OSV worker returned an invalid findings collection")
+    return findings
+
+
+def osv_worker_main() -> int:
+    """Private subprocess entry point; emits JSON only on stdout."""
+    try:
+        packages = json.load(sys.stdin)
+        if not isinstance(packages, list) or any(
+            not isinstance(item, dict)
+            or not isinstance(item.get("name"), str)
+            or not isinstance(item.get("version"), str)
+            for item in packages
+        ):
+            raise ValueError("Worker input must be a list of pinned package objects")
+        findings = query_osv(packages)
+    except (OSError, ValueError, TypeError) as error:
+        print(type(error).__name__, file=sys.stderr)
+        return 1
+    sys.stdout.write(json.dumps(findings, separators=(",", ":")))
+    return 0
+
+
 def escape_table_cell(value: object) -> str:
     escaped = escape_html(str(value).replace("\\", "\\\\"), quote=True)
     for character in ("|", "`", "[", "]", "*", "_"):
@@ -277,7 +330,7 @@ def main() -> int:
         packages = parse_lockfile(Path(args.lock).read_text(encoding="utf-8"))
         register = json.loads(Path(args.exceptions).read_text(encoding="utf-8"))
         reminders = evaluate_exceptions(register, now)
-        findings = query_osv(packages)
+        findings = query_osv_with_deadline(packages)
     except (OSError, ValueError) as error:
         message = (
             "## Security monitoring — INCOMPLETE\n\n"
@@ -357,4 +410,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--osv-worker"]:
+        sys.exit(osv_worker_main())
     sys.exit(main())

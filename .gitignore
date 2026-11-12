@@ -1,0 +1,4 @@
+# Synthetic-only notification ledger state; never commit runtime databases.
+var/notifications/*.sqlite3
+var/notifications/*.sqlite3-wal
+var/notifications/*.sqlite3-shm

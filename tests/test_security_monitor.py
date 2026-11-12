@@ -1,4 +1,5 @@
 import io
+import subprocess
 import tempfile
 import unittest
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ from scripts.security_monitor import (
     parse_lockfile,
     parse_utc,
     query_osv,
+    query_osv_with_deadline,
 )
 
 
@@ -254,7 +256,7 @@ class SecurityMonitorTests(unittest.TestCase):
         mocked_sleep.assert_not_called()
 
     @patch("scripts.security_monitor.write_summary")
-    @patch("scripts.security_monitor.query_osv")
+    @patch("scripts.security_monitor.query_osv_with_deadline")
     def test_main_renders_synthetic_positive_advisory_and_returns_finding_status(
         self, mocked_query, mocked_summary
     ):
@@ -316,7 +318,7 @@ class SecurityMonitorTests(unittest.TestCase):
 
     @patch("scripts.security_monitor.write_summary")
     @patch(
-        "scripts.security_monitor.query_osv",
+        "scripts.security_monitor.query_osv_with_deadline",
         side_effect=URLError("temporary network failure"),
     )
     @patch(
@@ -353,6 +355,44 @@ class SecurityMonitorTests(unittest.TestCase):
         mocked_parse.assert_called_once()
         mocked_evaluate.assert_called_once()
         mocked_query.assert_called_once()
+
+    @patch("scripts.security_monitor.subprocess.run")
+    def test_osv_worker_enforces_hard_wall_clock_deadline(self, mocked_run):
+        mocked_run.side_effect = subprocess.TimeoutExpired(
+            cmd=["security_monitor.py", "--osv-worker"],
+            timeout=OSV_RETRY_BUDGET_SECONDS,
+        )
+        with self.assertRaisesRegex(TimeoutError, "hard deadline"):
+            query_osv_with_deadline([{"name": "Django", "version": "5.2.19"}])
+        self.assertEqual(
+            mocked_run.call_args.kwargs["timeout"], OSV_RETRY_BUDGET_SECONDS
+        )
+        self.assertEqual(OSV_RETRY_BUDGET_SECONDS, 63)
+
+    @patch("scripts.security_monitor.subprocess.run")
+    def test_osv_worker_returns_validated_json_findings(self, mocked_run):
+        mocked_run.return_value = subprocess.CompletedProcess(
+            args=["security_monitor.py", "--osv-worker"],
+            returncode=0,
+            stdout='[{"id":"GHSA-SYNTHETIC"}]',
+            stderr="",
+        )
+        result = query_osv_with_deadline([{"name": "Django", "version": "5.2.19"}])
+        self.assertEqual(result, [{"id": "GHSA-SYNTHETIC"}])
+        self.assertEqual(
+            mocked_run.call_args.kwargs["timeout"], OSV_RETRY_BUDGET_SECONDS
+        )
+
+    @patch("scripts.security_monitor.subprocess.run")
+    def test_osv_worker_rejects_nonzero_exit_without_exposing_output(self, mocked_run):
+        mocked_run.return_value = subprocess.CompletedProcess(
+            args=["security_monitor.py", "--osv-worker"],
+            returncode=1,
+            stdout="",
+            stderr="URLError",
+        )
+        with self.assertRaisesRegex(ValueError, "OSV worker failed: URLError"):
+            query_osv_with_deadline([{"name": "Django", "version": "5.2.19"}])
 
     def test_lock_parser_accepts_only_sha256_hash_options(self):
         valid_hash = "a" * 64

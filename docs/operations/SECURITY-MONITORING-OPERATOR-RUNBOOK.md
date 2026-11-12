@@ -27,7 +27,7 @@ The workflow is also configured with a daily 06:15 UTC schedule, but GitHub sche
 | 1 | Query completed and at least one advisory finding or exception reminder/expiry signal was reported | Review the complete job summary and logs. Preserve the signal; refer exception approval, renewal, or risk acceptance to the Owner. Do not change dependencies or exception status as an automated response. |
 | 2 | Monitoring is INCOMPLETE or encountered an input/API/transport error | Treat the result as unknown, not clean. Inspect the error class and run logs; correct a confirmed non-sensitive input problem or rerun after a transient external-service failure. Do not suppress the failure or record it as zero findings. |
 
-OSV retries only transient transport failures and HTTP 429/5xx, with at most three total attempts and 1-second then 2-second backoff. Other HTTP statuses and malformed, incomplete, or oversized responses are not retried. Each attempt has a 20-second timeout; the configured request/backoff budget is at most 63 seconds, excluding local processing and runner overhead.
+OSV retries only transient transport failures and HTTP 429/5xx, with at most three total attempts and 1-second then 2-second backoff. Other HTTP statuses and malformed, incomplete, or oversized responses are not retried. Each attempt uses a 20-second socket timeout. The complete OSV operation runs in a supervised worker process with a hard 63-second wall-clock deadline, including request handling, response streaming, retries, and backoff. If the deadline expires, the parent terminates the worker and reports INCOMPLETE. This process boundary is the hard deadline; the per-socket timeout alone is not.
 
 ## 4. Exception reminder handling
 
@@ -37,7 +37,11 @@ The monitor stores no delivery/acknowledgement state. An overdue or expired sign
 
 The committed exception register is empty. Do not add a real exception merely to test the monitor. Synthetic records belong only in isolated tests and must not be committed to the register.
 
-## 5. Escalation and unresolved operations
+## 5. Mock notification persistence boundary
+
+The repository also contains a separate fail-closed mock notification package. If explicitly configured with `EKHC_NOTIFICATION_LEDGER_PATH`, it can persist synthetic receipts and redacted audit metadata in a local SQLite database. The ledger is optional and mock-only; it is not connected to this OSV workflow, does not send email or SMS, and does not prove provider delivery or human acknowledgement. The database contains synthetic identifiers only and must not be used as a live-delivery ledger. Runtime database files are excluded from version control.
+
+## 6. Escalation and unresolved operations
 
 The Owner retains authority for exception approval, renewal, revocation, and risk acceptance. This runbook does not assign authority to an unverified role or name a responder. Where a finding or exception signal requires a decision, preserve the evidence and seek Owner direction through an independently established and authorized communication route.
 
