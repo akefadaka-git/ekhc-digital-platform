@@ -331,7 +331,7 @@ def main() -> int:
         packages = parse_lockfile(Path(args.lock).read_text(encoding="utf-8"))
         register = json.loads(Path(args.exceptions).read_text(encoding="utf-8"))
         reminders = evaluate_exceptions(register, now)
-        findings = query_osv(packages)
+        findings = query_osv_with_deadline(packages)
     except (OSError, ValueError) as error:
         message = (
             "## Security monitoring — INCOMPLETE\n\n"
