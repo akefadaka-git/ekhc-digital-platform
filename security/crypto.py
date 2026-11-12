@@ -10,7 +10,6 @@ import secrets
 from dataclasses import dataclass, field
 from typing import Protocol
 
-
 AES_256_GCM_SUITE = "AES-256-GCM"
 AES_GCM_NONCE_BYTES = 12
 AES_GCM_TAG_BYTES = 16
@@ -25,9 +24,10 @@ class GeneratedDataKey:
     key_version: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.plaintext_key, bytearray) or len(
-            self.plaintext_key
-        ) != AES_256_KEY_BYTES:
+        if (
+            not isinstance(self.plaintext_key, bytearray)
+            or len(self.plaintext_key) != AES_256_KEY_BYTES
+        ):
             raise ValueError("plaintext data key must be a 32-byte mutable buffer.")
         if not isinstance(self.wrapped_key, bytes) or not self.wrapped_key:
             raise ValueError("wrapped data key must be non-empty bytes.")
@@ -48,9 +48,10 @@ class EncryptionEnvelope:
     aad_sha256: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.ciphertext, bytes) or len(
-            self.ciphertext
-        ) < AES_GCM_TAG_BYTES:
+        if (
+            not isinstance(self.ciphertext, bytes)
+            or len(self.ciphertext) < AES_GCM_TAG_BYTES
+        ):
             raise ValueError("ciphertext must include an authentication tag.")
         if not isinstance(self.nonce, bytes) or len(self.nonce) != AES_GCM_NONCE_BYTES:
             raise ValueError("AES-GCM nonce must contain 12 bytes.")
@@ -73,9 +74,7 @@ class KeyEncryptionProvider(Protocol):
 
     def generate_data_key(self, key_reference: str) -> GeneratedDataKey: ...
 
-    def unwrap_data_key(
-        self, wrapped_key: bytes, key_reference: str
-    ) -> bytearray: ...
+    def unwrap_data_key(self, wrapped_key: bytes, key_reference: str) -> bytearray: ...
 
     def rewrap_data_key(
         self, wrapped_key: bytes, old_key_reference: str, new_key_reference: str
@@ -108,7 +107,6 @@ class EncryptedObjectStore(Protocol):
     ) -> None: ...
 
     def get(self, immutable_object_reference: str) -> bytes: ...
-
 
 
 def _zeroize(value: bytearray) -> None:
