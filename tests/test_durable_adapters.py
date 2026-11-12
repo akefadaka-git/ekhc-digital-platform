@@ -668,7 +668,7 @@ class SyncRetryAndInterruptionTests(SimpleTestCase):
             RuntimeError, "commit acknowledgement loss"
         ):
             apply_sync_command(command, store, FixedClock())
-        # The synthetic context committed its state before simulating lost acknowledgement.
+        # The synthetic context committed before simulating lost acknowledgement.
         replay = apply_sync_command(command, store, FixedClock())
         self.assertTrue(replay.replayed)
         self.assertEqual(replay.status, "applied")
