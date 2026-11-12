@@ -4,7 +4,9 @@ No cryptographic primitive or key provider is implemented here. Production adapt
 must pass independent AES-256-GCM and KMS/HSM conformance tests before activation.
 """
 
+import hashlib
 import re
+import secrets
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -71,7 +73,9 @@ class KeyEncryptionProvider(Protocol):
 
     def generate_data_key(self, key_reference: str) -> GeneratedDataKey: ...
 
-    def unwrap_data_key(self, wrapped_key: bytes, key_reference: str) -> bytes: ...
+    def unwrap_data_key(
+        self, wrapped_key: bytes, key_reference: str
+    ) -> bytearray: ...
 
     def rewrap_data_key(
         self, wrapped_key: bytes, old_key_reference: str, new_key_reference: str
@@ -104,3 +108,71 @@ class EncryptedObjectStore(Protocol):
     ) -> None: ...
 
     def get(self, immutable_object_reference: str) -> bytes: ...
+
+
+
+def _zeroize(value: bytearray) -> None:
+    for index in range(len(value)):
+        value[index] = 0
+
+
+def encrypt_payload(
+    plaintext: bytes,
+    key_provider: KeyEncryptionProvider,
+    cipher: PayloadCipher,
+    *,
+    key_reference: str,
+    associated_data: bytes,
+) -> EncryptionEnvelope:
+    """Create a fresh per-payload DEK and AES-GCM envelope via injected adapters."""
+    if not isinstance(plaintext, bytes):
+        raise TypeError("plaintext must be bytes.")
+    if not isinstance(associated_data, bytes) or not associated_data:
+        raise ValueError("associated_data must be non-empty bytes.")
+    generated = key_provider.generate_data_key(key_reference)
+    try:
+        nonce = secrets.token_bytes(AES_GCM_NONCE_BYTES)
+        ciphertext = cipher.encrypt(
+            plaintext, bytes(generated.plaintext_key), nonce, associated_data
+        )
+        return EncryptionEnvelope(
+            ciphertext=ciphertext,
+            nonce=nonce,
+            wrapped_key=generated.wrapped_key,
+            key_reference=generated.key_reference,
+            key_version=generated.key_version,
+            algorithm_suite=AES_256_GCM_SUITE,
+            aad_sha256=hashlib.sha256(associated_data).hexdigest(),
+        )
+    finally:
+        _zeroize(generated.plaintext_key)
+
+
+def decrypt_payload(
+    envelope: EncryptionEnvelope,
+    key_provider: KeyEncryptionProvider,
+    cipher: PayloadCipher,
+    *,
+    associated_data: bytes,
+) -> bytes:
+    """Decrypt only when the caller supplies the exact authenticated AAD."""
+    if not isinstance(envelope, EncryptionEnvelope):
+        raise TypeError("envelope must be an EncryptionEnvelope.")
+    if not isinstance(associated_data, bytes) or not associated_data:
+        raise ValueError("associated_data must be non-empty bytes.")
+    if hashlib.sha256(associated_data).hexdigest() != envelope.aad_sha256:
+        raise ValueError("associated_data does not match the encryption envelope.")
+    plaintext_key = key_provider.unwrap_data_key(
+        envelope.wrapped_key, envelope.key_reference
+    )
+    if not isinstance(plaintext_key, bytearray) or len(plaintext_key) != AES_256_KEY_BYTES:
+        raise ValueError("KMS provider returned an invalid data key.")
+    try:
+        return cipher.decrypt(
+            envelope.ciphertext,
+            bytes(plaintext_key),
+            envelope.nonce,
+            associated_data,
+        )
+    finally:
+        _zeroize(plaintext_key)
