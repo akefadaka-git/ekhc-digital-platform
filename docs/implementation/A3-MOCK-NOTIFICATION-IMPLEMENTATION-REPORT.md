@@ -67,3 +67,31 @@ The default mock sleeper performs no real waiting or network operation. Retry/id
 **A4 status:** NOT STARTED — SEPARATE AUTHORIZATION REQUIRED.  
 **Operational readiness:** NOT VERIFIED.  
 **Production readiness:** NOT READY.
+
+
+## A4-F01/F02 corrective increment — A3-C
+
+**Corrective branch:** `a3/mock-notification-a4-corrections`  
+**Exact source/test head:** `5878462a00630da53133d32b43d09d961013520f`  
+**Parent implementation head:** `b3c417f011d9e484683b875d80e839f60ab771c5`
+
+### Corrections
+- **A4-MN-F01:** Idempotency remains keyed by event/channel, but a replay for that key with a different destination now fails closed with an explicit idempotency-conflict error. A same-destination replay returns the original receipt. No exactly-once claim is made.
+- **A4-MN-F02:** Every supplied channel and synthetic destination is preflight-validated before any request audit event, attempt, or receipt is emitted. Existing receipt/destination conflicts are also checked for the entire request before processing begins.
+- Added regression tests for changed-destination replay, invalid later destination causing zero partial processing, and an existing destination conflict in a multi-channel request.
+
+### Exact-head CI
+Both workflows passed on exact corrective source/test head `5878462a00630da53133d32b43d09d961013520f`:
+
+1. **A3 quality checks — run #232, ID `43202521961`, SUCCESS**  
+   [GitHub Actions run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43202521961)
+   - Django system check: PASS
+   - Django test suite: PASS — **90 tests**
+   - Ruff lint: PASS
+   - Ruff format: PASS
+   - pip-audit: PASS
+
+2. **Read-only security monitor — run #117, ID `43202521980`, SUCCESS**  
+   [GitHub Actions run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43202521980)
+
+This corrective increment is limited to the notification implementation and its tests plus this report. It does not add providers, credentials, network calls, secrets, variables, workflow changes, dependency changes, or production behavior. A4 independent re-verification is still required before A4 can close.
