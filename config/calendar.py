@@ -20,11 +20,15 @@ class EthiopianDate:
     day: int
 
     def __post_init__(self) -> None:
-        if isinstance(self.year, bool) or self.year < 1:
+        if isinstance(self.year, bool) or not isinstance(self.year, int) or self.year < 1:
             raise ValueError("year must be a positive integer.")
-        if isinstance(self.month, bool) or not 1 <= self.month <= 13:
+        if (
+            isinstance(self.month, bool)
+            or not isinstance(self.month, int)
+            or not 1 <= self.month <= 13
+        ):
             raise ValueError("month must be between 1 and 13.")
-        if isinstance(self.day, bool) or self.day < 1:
+        if isinstance(self.day, bool) or not isinstance(self.day, int) or self.day < 1:
             raise ValueError("day must be positive.")
         final_month_days = 6 if (self.year + 1) % 4 == 0 else 5
         maximum = final_month_days if self.month == 13 else 30
