@@ -211,21 +211,22 @@ class NotificationOrchestrator:
         destinations: Mapping[Channel, str] | None = None,
     ) -> list[DeliveryReceipt]:
         """Process only explicitly supplied synthetic destinations."""
-        self.audit_events.append(
-            {
-                "event": "notification_requested",
-                "event_id": notification.event_id,
-                "severity": notification.severity,
-                "event_code": notification.event_code,
-            }
-        )
         if not destinations or self.fixtures is None:
+            self.audit_events.append(
+                {
+                    "event": "notification_requested",
+                    "event_id": notification.event_id,
+                    "severity": notification.severity,
+                    "event_code": notification.event_code,
+                }
+            )
             self.audit_events.append(
                 {"event": "no_synthetic_recipients", "event_id": notification.event_id}
             )
             return []
 
-        receipts: list[DeliveryReceipt] = []
+        # Preflight the complete request before emitting attempts, receipts, or
+        # request audit events. This prevents partial processing on bad input.
         for channel, destination in destinations.items():
             if not isinstance(channel, Channel):
                 raise ValueError("Unsupported notification channel")
@@ -238,6 +239,26 @@ class NotificationOrchestrator:
                 raise ValueError(
                     "Destination must be a channel-matched synthetic reference"
                 )
+            prior_receipt = self._receipts.get((notification.event_id, channel))
+            if (
+                prior_receipt is not None
+                and prior_receipt.destination_reference != destination
+            ):
+                raise ValueError(
+                    "Idempotency conflict: event/channel is already bound "
+                    "to a different destination"
+                )
+
+        self.audit_events.append(
+            {
+                "event": "notification_requested",
+                "event_id": notification.event_id,
+                "severity": notification.severity,
+                "event_code": notification.event_code,
+            }
+        )
+        receipts: list[DeliveryReceipt] = []
+        for channel, destination in destinations.items():
             key = (notification.event_id, channel)
             if key in self._receipts:
                 self.audit_events.append(
