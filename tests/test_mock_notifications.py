@@ -176,10 +176,8 @@ class MockNotificationTests(unittest.TestCase):
                 event(), {Channel.EMAIL: "synthetic-email-recipient-02"}
             )
         self.assertEqual(len(orchestrator._receipts), 1)
-        self.assertEqual(
-            orchestrator._receipts[(event().event_id, Channel.EMAIL)].destination_reference,
-            "synthetic-email-recipient-01",
-        )
+        receipt = orchestrator._receipts[(event().event_id, Channel.EMAIL)]
+        self.assertEqual(receipt.destination_reference, "synthetic-email-recipient-01")
 
     def test_destination_mapping_is_preflighted_before_any_attempt(self):
         orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
