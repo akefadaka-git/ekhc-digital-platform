@@ -2,6 +2,7 @@
 
 import socket
 import stat
+import threading
 import tempfile
 import unittest
 from pathlib import Path
@@ -342,6 +343,68 @@ class MockNotificationTests(unittest.TestCase):
             self.assertIs(stored[0]["simulated"], True)
             self.assertEqual(stored[0]["display_label"], "SIMULATED — NOT DELIVERED")
             orchestrator.ledger.close()
+
+    def test_sqlite_ledger_serializes_concurrent_orchestrators(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "mock-ledger.sqlite3"
+            first_ledger = SQLiteNotificationLedger(str(path))
+            second_ledger = SQLiteNotificationLedger(str(path))
+            first_attempt = threading.Event()
+            release_first = threading.Event()
+            fixtures = FixtureSet(
+                outcomes={
+                    Channel.EMAIL: (MockOutcome.TIMEOUT, MockOutcome.ACCEPTED)
+                }
+            )
+
+            def pause_between_attempts(_seconds):
+                first_attempt.set()
+                if not release_first.wait(5):
+                    raise TimeoutError("test did not release first mock transaction")
+
+            first = NotificationOrchestrator(
+                config(), fixtures, sleeper=pause_between_attempts, ledger=first_ledger
+            )
+            second = NotificationOrchestrator(
+                config(), FixtureSet.accepted(), ledger=second_ledger
+            )
+            results = []
+            errors = []
+
+            def notify(orchestrator):
+                try:
+                    results.append(
+                        orchestrator.notify(
+                            event(),
+                            {Channel.EMAIL: "synthetic-email-recipient-01"},
+                        )
+                    )
+                except Exception as error:
+                    errors.append(error)
+
+            first_thread = threading.Thread(target=notify, args=(first,))
+            second_thread = threading.Thread(target=notify, args=(second,))
+            first_thread.start()
+            self.assertTrue(first_attempt.wait(3))
+            second_thread.start()
+            release_first.set()
+            first_thread.join(5)
+            second_thread.join(5)
+
+            self.assertFalse(first_thread.is_alive())
+            self.assertFalse(second_thread.is_alive())
+            self.assertEqual(errors, [])
+            self.assertEqual(len(results), 2)
+            self.assertEqual(results[0], results[1])
+            audit = first_ledger.load_audit_events()
+            self.assertEqual(
+                [item["event"] for item in audit].count("mock_attempted"), 2
+            )
+            self.assertEqual(
+                [item["event"] for item in audit].count("duplicate_suppressed"), 1
+            )
+            first_ledger.close()
+            second_ledger.close()
 
     def test_sqlite_ledger_rejects_non_simulated_receipts(self):
         from notifications.mock import DeliveryReceipt
