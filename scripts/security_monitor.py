@@ -288,7 +288,8 @@ def main() -> int:
             [
                 "",
                 "### Exception expiry signals",
-                "| Exception | Signal | Days remaining | Overdue threshold | Days overdue |",
+                "| Exception | Signal | Days remaining | "
+                "Overdue threshold | Days overdue |",
                 "|---|---|---:|---:|---:|",
             ]
         )
