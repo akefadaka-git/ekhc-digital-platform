@@ -2,9 +2,10 @@
 
 import re
 from dataclasses import dataclass
+from collections.abc import Iterable
 from datetime import datetime
 from enum import StrEnum
-from typing import Iterable, Protocol
+from typing import Protocol
 from uuid import UUID
 
 _HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -119,9 +120,17 @@ class EncryptedLocalRecord:
     def __post_init__(self) -> None:
         if not isinstance(self.ciphertext, bytes) or not self.ciphertext:
             raise ValueError("ciphertext must be non-empty bytes.")
-        if not isinstance(self.key_reference, str) or not self.key_reference:
+        if (
+            not isinstance(self.key_reference, str)
+            or not self.key_reference
+            or self.key_reference != self.key_reference.strip()
+        ):
             raise ValueError("key_reference must be a non-empty opaque reference.")
-        if not isinstance(self.algorithm_suite, str) or not self.algorithm_suite:
+        if (
+            not isinstance(self.algorithm_suite, str)
+            or not self.algorithm_suite
+            or self.algorithm_suite != self.algorithm_suite.strip()
+        ):
             raise ValueError("algorithm_suite must identify a reviewed suite.")
 
 
