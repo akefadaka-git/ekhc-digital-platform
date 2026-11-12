@@ -656,8 +656,8 @@ class SyncRetryAndInterruptionFaultTests(SimpleTestCase):
             apply_sync_command(command, store, FixedClock())
         self.assert_clean_rollback(store)
 
-        store.transaction = lambda: FakeUnitOfWork.transaction(store)
-        result = apply_sync_command(command, store, FixedClock())
+        retry_store = FakeUnitOfWork()
+        result = apply_sync_command(command, retry_store, FixedClock())
         self.assertEqual(result.status, "applied")
         self.assertEqual(len(store.state["mutations"]), 1)
         self.assertEqual(len(store.state["receipts"]), 1)
