@@ -377,18 +377,14 @@ class SecurityMonitorTests(unittest.TestCase):
             stdout='[{"id":"GHSA-SYNTHETIC"}]',
             stderr="",
         )
-        result = query_osv_with_deadline(
-            [{"name": "Django", "version": "5.2.19"}]
-        )
+        result = query_osv_with_deadline([{"name": "Django", "version": "5.2.19"}])
         self.assertEqual(result, [{"id": "GHSA-SYNTHETIC"}])
         self.assertEqual(
             mocked_run.call_args.kwargs["timeout"], OSV_RETRY_BUDGET_SECONDS
         )
 
     @patch("scripts.security_monitor.subprocess.run")
-    def test_osv_worker_rejects_nonzero_exit_without_exposing_output(
-        self, mocked_run
-    ):
+    def test_osv_worker_rejects_nonzero_exit_without_exposing_output(self, mocked_run):
         mocked_run.return_value = subprocess.CompletedProcess(
             args=["security_monitor.py", "--osv-worker"],
             returncode=1,
@@ -396,9 +392,7 @@ class SecurityMonitorTests(unittest.TestCase):
             stderr="URLError",
         )
         with self.assertRaisesRegex(ValueError, "OSV worker failed: URLError"):
-            query_osv_with_deadline(
-                [{"name": "Django", "version": "5.2.19"}]
-            )
+            query_osv_with_deadline([{"name": "Django", "version": "5.2.19"}])
 
     def test_lock_parser_accepts_only_sha256_hash_options(self):
         valid_hash = "a" * 64
