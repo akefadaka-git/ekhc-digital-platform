@@ -68,6 +68,12 @@ class NotificationConfig:
         unsafe_keys.update(
             key
             for key in environ
+            if key.startswith(("EKHC_EMAIL_", "EKHC_SMS_"))
+            and key not in {"EKHC_EMAIL_MODE", "EKHC_SMS_MODE"}
+        )
+        unsafe_keys.update(
+            key
+            for key in environ
             if key.startswith("EKHC_")
             and re.search(r"(CREDENTIAL|TOKEN|API_KEY|ENDPOINT|SENDER_IDENTITY)$", key)
         )
