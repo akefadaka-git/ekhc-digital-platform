@@ -8,7 +8,11 @@ from uuid import uuid4
 from django.test import SimpleTestCase
 
 from audit.events import AuditEvent, AuditOutcome
-from audit.storage import AuditChainEntry, canonical_event_digest, verify_audit_chain
+from audit.storage import (
+    AuditChainEntry,
+    canonical_event_digest,
+    verify_audit_chain,
+)
 from identity.references import AccountReference
 from security.crypto import (
     AES_256_GCM_SUITE,
@@ -17,7 +21,6 @@ from security.crypto import (
 )
 from sync.application import (
     SyncCommand,
-    SyncReceipt,
     apply_sync_command,
 )
 from sync.contracts import SyncEnvelope
@@ -44,8 +47,13 @@ class FakeTransaction:
     def get_aggregate_version_for_update(self, aggregate_reference):
         return self.state["versions"].get(aggregate_reference, 0)
 
-    def apply_aggregate_mutation(self, aggregate_reference, expected_version, payload, occurred_at):
-        if self.get_aggregate_version_for_update(aggregate_reference) != expected_version:
+    def apply_aggregate_mutation(
+        self, aggregate_reference, expected_version, payload, occurred_at
+    ):
+        if (
+            self.get_aggregate_version_for_update(aggregate_reference)
+            != expected_version
+        ):
             raise RuntimeError("concurrent version changed")
         new_version = expected_version + 1
         self.state["versions"][aggregate_reference] = new_version
@@ -60,8 +68,12 @@ class FakeTransaction:
         if self.state.get("fail_audit"):
             raise RuntimeError("injected audit insert failure")
 
-    def enqueue_outbox(self, event_id, aggregate_reference, resulting_version, occurred_at):
-        self.state["outbox"].append((event_id, aggregate_reference, resulting_version, occurred_at))
+    def enqueue_outbox(
+        self, event_id, aggregate_reference, resulting_version, occurred_at
+    ):
+        self.state["outbox"].append(
+            (event_id, aggregate_reference, resulting_version, occurred_at)
+        )
         if self.state.get("fail_outbox"):
             raise RuntimeError("injected outbox insert failure")
 
@@ -205,7 +217,12 @@ class AuditChainTests(SimpleTestCase):
         second = AuditChainEntry(2, first_digest, second_event, second_digest)
         self.assertTrue(verify_audit_chain((first, second)))
         self.assertFalse(
-            verify_audit_chain((first, AuditChainEntry(2, first_digest, second_event, "f" * 64)))
+            verify_audit_chain(
+                (
+                    first,
+                    AuditChainEntry(2, first_digest, second_event, "f" * 64),
+                )
+            )
         )
 
     def test_sequence_gap_is_rejected(self):
