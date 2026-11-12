@@ -165,7 +165,10 @@ def decrypt_payload(
     plaintext_key = key_provider.unwrap_data_key(
         envelope.wrapped_key, envelope.key_reference
     )
-    if not isinstance(plaintext_key, bytearray) or len(plaintext_key) != AES_256_KEY_BYTES:
+    if (
+        not isinstance(plaintext_key, bytearray)
+        or len(plaintext_key) != AES_256_KEY_BYTES
+    ):
         raise ValueError("KMS provider returned an invalid data key.")
     try:
         return cipher.decrypt(
