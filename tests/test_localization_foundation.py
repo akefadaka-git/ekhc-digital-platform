@@ -68,3 +68,26 @@ class CalendarAdapterTests(SimpleTestCase):
             self.FakeAdapter(),
         )
         self.assertEqual(result, EthiopianDate(2016, 1, 1))
+
+
+
+class LanguageNegotiationTests(SimpleTestCase):
+    def test_missing_preference_defaults_to_amharic(self):
+        from config.localization import resolve_platform_language
+
+        self.assertEqual(resolve_platform_language(""), "am")
+
+    def test_explicit_english_preference_is_supported(self):
+        from config.localization import resolve_platform_language
+
+        self.assertEqual(resolve_platform_language("en-US,en;q=0.9,am;q=0.8"), "en")
+
+    def test_highest_quality_supported_language_wins(self):
+        from config.localization import resolve_platform_language
+
+        self.assertEqual(resolve_platform_language("en;q=0.5,am;q=0.9"), "am")
+
+    def test_unsupported_language_falls_back_to_amharic(self):
+        from config.localization import resolve_platform_language
+
+        self.assertEqual(resolve_platform_language("fr-CA,sw;q=0.8"), "am")
