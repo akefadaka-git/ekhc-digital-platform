@@ -664,9 +664,7 @@ class SyncRetryAndInterruptionTests(SimpleTestCase):
 
         store = LostAcknowledgementUnitOfWork()
         command = make_command()
-        with self.assertRaisesMessage(
-            RuntimeError, "commit acknowledgement loss"
-        ):
+        with self.assertRaisesMessage(RuntimeError, "commit acknowledgement loss"):
             apply_sync_command(command, store, FixedClock())
         # The synthetic context committed before simulating lost acknowledgement.
         replay = apply_sync_command(command, store, FixedClock())
