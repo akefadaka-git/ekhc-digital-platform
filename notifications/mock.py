@@ -55,9 +55,27 @@ class NotificationConfig:
         cls, environ: Mapping[str, str]
     ) -> NotificationConfig:
         """Load only the explicitly supported mock configuration contract."""
-        if LIVE_CONFIGURATION_KEYS.intersection(environ):
+        unsafe_keys = LIVE_CONFIGURATION_KEYS.intersection(environ)
+        unsafe_keys.update(
+            key
+            for key in environ
+            if key.startswith("EKHC_NOTIFICATION_")
+            and key
+            not in {
+                "EKHC_NOTIFICATION_MODE",
+                "EKHC_NOTIFICATION_FIXTURE_SET",
+                "EKHC_NOTIFICATION_LOG_LEVEL",
+            }
+        )
+        unsafe_keys.update(
+            key
+            for key in environ
+            if key.startswith("EKHC_")
+            and re.search(r"(CREDENTIAL|TOKEN|API_KEY|ENDPOINT|SENDER_IDENTITY)$", key)
+        )
+        if unsafe_keys:
             raise NotificationConfigurationError(
-                "Live-provider configuration is not supported in mock mode"
+                "Live-provider or unsupported notification configuration is not permitted"
             )
         values = {
             "EKHC_NOTIFICATION_MODE": environ.get("EKHC_NOTIFICATION_MODE"),
@@ -170,10 +188,10 @@ class NotificationOrchestrator:
             self.config.sms_mode != "mock"
         ):
             raise NotificationConfigurationError("Only mock mode is permitted")
-        if self.max_attempts < 1 or len(self.backoff_seconds) < self.max_attempts - 1:
-            raise ValueError("Retry policy must have bounded attempts and backoff")
-        if any(delay < 0 for delay in self.backoff_seconds):
-            raise ValueError("Backoff values cannot be negative")
+        if self.max_attempts != 3 or self.backoff_seconds != (1, 2):
+            raise ValueError("Mock retry policy is fixed at three attempts with 1s/2s backoff")
+        if not callable(self.sleeper):
+            raise ValueError("Mock sleeper must be an injected callable")
 
     def notify(
         self,
@@ -199,6 +217,13 @@ class NotificationOrchestrator:
         for channel, destination in destinations.items():
             if not isinstance(channel, Channel):
                 raise ValueError("Unsupported notification channel")
+            expected_prefix = f"synthetic-{channel.value}-recipient-"
+            if (
+                not isinstance(destination, str)
+                or not DESTINATION_PATTERN.fullmatch(destination)
+                or not destination.startswith(expected_prefix)
+            ):
+                raise ValueError("Destination must be a channel-matched synthetic reference")
             key = (notification.event_id, channel)
             if key in self._receipts:
                 self.audit_events.append(
