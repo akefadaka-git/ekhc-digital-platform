@@ -1,6 +1,5 @@
 """Tests for fail-closed synthetic notification behavior and durable ledger."""
 
-import os
 import socket
 import stat
 import tempfile
