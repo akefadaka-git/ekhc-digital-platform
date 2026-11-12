@@ -7,7 +7,7 @@ trusted clock before these contracts can govern real sessions.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from identity.references import AccountReference
@@ -130,4 +130,4 @@ def evaluate_session(
 
 def utc_now() -> datetime:
     """Convenience clock for non-production callers; inject trusted time in tests."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
