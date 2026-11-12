@@ -8,14 +8,32 @@ trusted clock before these contracts can govern real sessions.
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from enum import StrEnum
+from typing import Protocol
 
 from identity.references import AccountReference
 
 
-class SessionDecision(StrEnum):
-    ACCEPT = "accept"
-    DENY = "deny"
+@dataclass(frozen=True, slots=True)
+class SessionCookiePolicy:
+    """Safe cookie requirements for a future browser-session adapter."""
+
+    secure: bool = True
+    http_only: bool = True
+    same_site: str = "Lax"
+    path: str = "/"
+    domain: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.secure:
+            raise ValueError("session cookies must require HTTPS.")
+        if not self.http_only:
+            raise ValueError("session cookies must be HttpOnly.")
+        if self.same_site not in {"Strict", "Lax"}:
+            raise ValueError("same_site must be Strict or Lax.")
+        if self.path != "/":
+            raise ValueError("session cookie path must be root-scoped.")
+        if self.domain is not None:
+            raise ValueError("session cookie domain must remain host-only.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +44,10 @@ class SessionPolicy:
     rotate_on_security_boundary_change: bool = True
 
     def __post_init__(self) -> None:
+        if not isinstance(self.idle_timeout, timedelta) or not isinstance(
+            self.absolute_timeout, timedelta
+        ):
+            raise TypeError("session timeouts must be timedeltas.")
         if self.idle_timeout <= timedelta(0):
             raise ValueError("idle_timeout must be positive.")
         if self.absolute_timeout <= timedelta(0):
@@ -68,8 +90,14 @@ class SessionObservation:
 
 @dataclass(frozen=True, slots=True)
 class SessionEvaluation:
-    decision: SessionDecision
+    accepted: bool
     reason_code: str
+
+
+class AuthenticationProvider(Protocol):
+    """External verifier boundary; no password or token implementation is selected."""
+
+    def authenticate(self, credential_exchange: bytes) -> AccountReference | None: ...
 
 
 def evaluate_session(
@@ -96,8 +124,8 @@ def evaluate_session(
     elif now - observation.last_activity_at >= policy.idle_timeout:
         reason = "SESSION_IDLE_TIMEOUT"
     else:
-        return SessionEvaluation(SessionDecision.ACCEPT, "SESSION_VALID")
-    return SessionEvaluation(SessionDecision.DENY, reason)
+        return SessionEvaluation(True, "SESSION_VALID")
+    return SessionEvaluation(False, reason)
 
 
 def utc_now() -> datetime:
