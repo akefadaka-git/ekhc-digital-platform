@@ -675,6 +675,8 @@ class SyncRetryAndInterruptionTests(SimpleTestCase):
         self.assertEqual(len(store.state["audit"]), 1)
         self.assertEqual(len(store.state["outbox"]), 1)
 
+
+class AuditGenesisCheckpointTests(SimpleTestCase):
     def test_genesis_checkpoint_accepts_empty_chain(self):
         self.assertTrue(
             verify_audit_chain(
