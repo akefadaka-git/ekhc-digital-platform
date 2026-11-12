@@ -7,21 +7,21 @@ Mock receipts are synthetic test evidence, never evidence of delivery.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Mapping
+from enum import StrEnum
 
 
 class NotificationConfigurationError(ValueError):
     """Raised when notification configuration is missing or unsafe."""
 
 
-class Channel(str, Enum):
+class Channel(StrEnum):
     EMAIL = "email"
     SMS = "sms"
 
 
-class MockOutcome(str, Enum):
+class MockOutcome(StrEnum):
     ACCEPTED = "SIMULATED_ACCEPTED"
     REJECTED = "SIMULATED_REJECTED"
     TIMEOUT = "SIMULATED_TIMEOUT"
@@ -75,7 +75,8 @@ class NotificationConfig:
         )
         if unsafe_keys:
             raise NotificationConfigurationError(
-                "Live-provider or unsupported notification configuration is not permitted"
+                "Live-provider or unsupported notification configuration "
+                "is not permitted"
             )
         values = {
             "EKHC_NOTIFICATION_MODE": environ.get("EKHC_NOTIFICATION_MODE"),
@@ -164,7 +165,9 @@ class MockNotificationAdapter:
             or not DESTINATION_PATTERN.fullmatch(destination_reference)
             or not destination_reference.startswith(expected_prefix)
         ):
-            raise ValueError("Destination must be a channel-matched synthetic reference")
+            raise ValueError(
+                "Destination must be a channel-matched synthetic reference"
+            )
         outcomes = self.fixtures.outcomes.get(self.channel, ())
         if not outcomes:
             raise ValueError("No synthetic outcomes are configured for this channel")
@@ -189,7 +192,9 @@ class NotificationOrchestrator:
         ):
             raise NotificationConfigurationError("Only mock mode is permitted")
         if self.max_attempts != 3 or self.backoff_seconds != (1, 2):
-            raise ValueError("Mock retry policy is fixed at three attempts with 1s/2s backoff")
+            raise ValueError(
+                "Mock retry policy is fixed at three attempts with 1s/2s backoff"
+            )
         if not callable(self.sleeper):
             raise ValueError("Mock sleeper must be an injected callable")
 
@@ -223,7 +228,9 @@ class NotificationOrchestrator:
                 or not DESTINATION_PATTERN.fullmatch(destination)
                 or not destination.startswith(expected_prefix)
             ):
-                raise ValueError("Destination must be a channel-matched synthetic reference")
+                raise ValueError(
+                    "Destination must be a channel-matched synthetic reference"
+                )
             key = (notification.event_id, channel)
             if key in self._receipts:
                 self.audit_events.append(
