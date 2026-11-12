@@ -215,10 +215,7 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
             if not retryable or attempt == OSV_MAX_ATTEMPTS:
                 raise
         except OSError as error:
-            if (
-                not is_transient_transport_error(error)
-                or attempt == OSV_MAX_ATTEMPTS
-            ):
+            if not is_transient_transport_error(error) or attempt == OSV_MAX_ATTEMPTS:
                 raise
         sleep(OSV_RETRY_BACKOFF_SECONDS[attempt - 1])
     if raw_response is None:
