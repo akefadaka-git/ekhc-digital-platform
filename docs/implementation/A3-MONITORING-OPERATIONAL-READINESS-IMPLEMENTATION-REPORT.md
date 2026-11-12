@@ -5,7 +5,7 @@
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **A3 branch:** `a3/monitoring-operational-readiness`  
 **A2 governing baseline:** `15c971ce703d51adf1db83a340c5dc3c2a987058`  
-**Implementation/tested source head:** `f91cbca5c20cd21b7a55551cad23f5495d903e9c`  
+**A3 final implementation branch head independently checked by the original A4 review:** `a8042051824ddb50592492ee75d5aad24d1bb03a`  
 **Main observed unchanged:** `adfa62eccda93c8b261e5abd3cbdb22cf28c8823`  
 **Accepted A4 branch observed unchanged:** `9d77f91dbdbca0b220b5e0d0d735caa525a0c9ec`
 
@@ -20,7 +20,7 @@ The implementation is confined to the separate A3 branch. No merge, default-bran
 | Work package | Result | Implementation/evidence |
 |---|---|---|
 | OR-01 Positive advisory simulation | PASS | Added a mocked end-to-end `main()` test covering synthetic advisory rendering, Markdown escaping, and finding exit status 1. No live vulnerability or public disclosure was used. |
-| OR-02 Bounded OSV retry | PASS | At most 3 total attempts; retry only recognized transient socket/transport failures (connection resets/refusals/aborts, timeouts, temporary DNS resolution) and HTTP 429/5xx; permanent URL/TLS/input failures are not retried; 20-second per-attempt timeout; 1-second then 2-second backoff; configured request/backoff budget 63 seconds. Exhaustion remains INCOMPLETE/non-zero. |
+| OR-02 Bounded OSV retry | PASS | At most 3 total attempts; retry only recognized transient socket/transport failures (connection resets/refusals/aborts, timeouts, temporary DNS resolution) and HTTP 429/5xx; permanent URL/TLS/input failures are not retried; 20-second per-attempt socket inactivity timeout; 1-second then 2-second backoff. The nominal sum is 63 seconds, not a hard end-to-end wall-clock deadline; see A3 corrective record for the explicit slow-stream limitation. |
 | OR-03 Missed reminder catch-up | PASS | For positive days remaining, report the smallest configured threshold strictly greater than current days remaining, with threshold and days overdue. Preserve exact-threshold reminders, expiry-day signal, and repeated EXPIRED signals after expiry. Only APPROVED entries are eligible; no register mutation or delivery state. |
 | OR-04 Operator runbook | PASS — DOCUMENTED | Added manual execution, exit-code interpretation, INCOMPLETE handling, Owner escalation boundary, and explicit notification/coverage limitations. No responder, channel, rota, or acknowledgement path was invented. |
 | OR-05 Production activation gate | PASS — DOCUMENTED / ACTIVATION BLOCKED | Added mandatory separate approval/evidence checklist. Daily schedule remains on the workflow but inactive off the default branch. No schedule or trigger activation was performed. |
@@ -37,15 +37,15 @@ The implementation is confined to the separate A3 branch. No merge, default-bran
 
 ## 4. Exact-head GitHub Actions evidence
 
-Both workflows completed successfully on the implementation/tested source head `1126bcad218a0391efea1c3ac22bdb29c87a0017`:
+Both workflows completed successfully on the final A3 implementation branch head `a8042051824ddb50592492ee75d5aad24d1bb03a`:
 
-- Quality run #178, ID `43130192707`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43129406546
+- Quality run #179, ID `43130314519`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43130314519
   - Django system check: PASS
   - Django test suite: PASS — 72 tests
   - Ruff lint: PASS
   - Ruff format check: PASS
   - pip-audit: PASS
-- Security monitor run #63, ID `43130192672`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43129406350
+- Security monitor run #64, ID `43130314540`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43130314540
   - 32 locked PyPI packages queried
   - 0 OSV advisories returned
   - 0 approved exception reminders/expiries (register remains empty)
@@ -69,7 +69,7 @@ No changes to `requirements-lock.txt`, `requirements.txt`, `requirements-dev.txt
 - No real exception entry exists; no real exception reminder was exercised.
 - No live positive OSV advisory was returned; only synthetic test coverage exists.
 - OSV availability, SLA, rate-limit behavior beyond the tested HTTP responses, and network-path guarantees are not established.
-- The 63-second figure is the configured per-attempt-timeout plus backoff budget, excluding runner and local-processing overhead; it is not an OS-level hard real-time guarantee.
+- The 63-second figure is only the nominal sum of socket inactivity timeouts and backoff sleeps; urllib does not enforce a hard end-to-end deadline and a continuously streaming response can exceed it. The corrective branch removes any implication that this is a hard wall-clock cap.
 - A successful GitHub run is not human acknowledgement or guaranteed out-of-band delivery.
 
 ## 7. Disposition and next stage
@@ -78,7 +78,7 @@ No changes to `requirements-lock.txt`, `requirements.txt`, `requirements-dev.txt
 **A3 exact-head automated verification:** PASS on the implementation/tested source head.  
 **Operational readiness:** NOT VERIFIED — unresolved human notification and response controls remain.  
 **Production readiness:** NOT READY.  
-**A4:** NOT STARTED; requires separate verification against the final A3 branch head and review of the evidence record.  
+**A4:** Original verification is PARTIAL with findings recorded; corrective work is in progress on `a3/monitoring-operational-readiness-a4-corrections` and requires fresh exact-head CI plus a repeat independent A4 review.  
 **Merge/default-branch integration, deployment, production operation, schedule activation, and A5:** NOT AUTHORIZED.
 
-Immediate next step: perform A4 independent verification of the final A3 branch head, preserving all listed operational limitations and keeping the production schedule inactive.
+Immediate next step: complete exact-head CI for the corrective branch, then repeat independent A4 verification. The production schedule remains inactive.
