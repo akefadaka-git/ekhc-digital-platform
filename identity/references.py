@@ -13,9 +13,13 @@ def _validate_reference(value: str, field_name: str) -> None:
     if not isinstance(value, str):
         raise TypeError(f"{field_name} must be a string.")
     if not value or value != value.strip():
-        raise ValueError(f"{field_name} must be non-empty and have no outer whitespace.")
+        raise ValueError(
+            f"{field_name} must be non-empty and have no outer whitespace."
+        )
     if len(value) > _MAX_REFERENCE_LENGTH:
-        raise ValueError(f"{field_name} must not exceed {_MAX_REFERENCE_LENGTH} characters.")
+        raise ValueError(
+            f"{field_name} must not exceed {_MAX_REFERENCE_LENGTH} characters."
+        )
     if any(character.isspace() for character in value):
         raise ValueError(f"{field_name} must not contain whitespace.")
 

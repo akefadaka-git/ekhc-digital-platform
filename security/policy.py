@@ -32,7 +32,9 @@ class AuthorizationRequest:
         for name in ("action", "resource_type", "resource_reference"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value or value != value.strip():
-                raise ValueError(f"{name} must be a non-empty string without outer whitespace.")
+                raise ValueError(
+                    f"{name} must be a non-empty string without outer whitespace."
+                )
         if self.scope_reference is not None and (
             not isinstance(self.scope_reference, str)
             or not self.scope_reference
