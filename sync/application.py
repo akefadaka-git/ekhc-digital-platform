@@ -1,6 +1,7 @@
 """Transactional synchronization application service and database adapter ports."""
 
 import hashlib
+import json
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import datetime
@@ -176,11 +177,11 @@ def sync_associated_data(envelope: SyncEnvelope) -> bytes:
     """Bind ciphertext to one idempotency key, device, aggregate, and base version."""
     if not isinstance(envelope, SyncEnvelope):
         raise TypeError("envelope must be a SyncEnvelope.")
-    fields = (
+    fields = [
         "ekhc-sync-v1",
         envelope.aggregate_reference,
         envelope.device_reference,
         str(envelope.base_version),
         str(envelope.idempotency_key),
-    )
-    return "|".join(fields).encode("utf-8")
+    ]
+    return json.dumps(fields, separators=(",", ":")).encode("utf-8")
