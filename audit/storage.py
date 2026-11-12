@@ -96,10 +96,7 @@ def verify_audit_chain(
         previous = entry.digest
 
     if expected_head_sequence is not None:
-        return (
-            len(entries) == expected_head_sequence
-            and previous == expected_head_digest
-        )
+        return len(entries) == expected_head_sequence and previous == expected_head_digest
     return True
 
 
