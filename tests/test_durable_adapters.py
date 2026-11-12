@@ -60,8 +60,8 @@ class FakeTransaction:
         if self.state.get("fail_audit"):
             raise RuntimeError("injected audit insert failure")
 
-    def enqueue_outbox(self, event_id, payload, occurred_at):
-        self.state["outbox"].append((event_id, payload, occurred_at))
+    def enqueue_outbox(self, event_id, aggregate_reference, resulting_version, occurred_at):
+        self.state["outbox"].append((event_id, aggregate_reference, resulting_version, occurred_at))
         if self.state.get("fail_outbox"):
             raise RuntimeError("injected outbox insert failure")
 
@@ -225,7 +225,7 @@ class AuditChainTests(SimpleTestCase):
 class CryptographicContractTests(SimpleTestCase):
     def test_generated_data_key_is_256_bits_and_wrapped(self):
         value = GeneratedDataKey(
-            plaintext_key=b"k" * 32,
+            plaintext_key=bytearray(b"k" * 32),
             wrapped_key=b"wrapped-test-key",
             key_reference="kms-key-ref",
             key_version="v1",
