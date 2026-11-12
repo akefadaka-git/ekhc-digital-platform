@@ -11,10 +11,10 @@ import json
 import os
 import re
 import sys
-from time import sleep
 from datetime import UTC, datetime, timedelta
 from html import escape as escape_html
 from pathlib import Path
+from time import sleep
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
