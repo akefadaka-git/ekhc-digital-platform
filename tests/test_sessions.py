@@ -6,7 +6,7 @@ from django.test import SimpleTestCase
 
 from identity.references import AccountReference
 from security.sessions import (
-    SessionDecision,
+    SessionCookiePolicy,
     SessionObservation,
     SessionPolicy,
     evaluate_session,
@@ -31,7 +31,7 @@ class SessionPolicyTests(SimpleTestCase):
 
     def test_valid_observation_is_accepted(self):
         result = evaluate_session(self.observation, self.policy, now=NOW)
-        self.assertEqual(result.decision, SessionDecision.ACCEPT)
+        self.assertTrue(result.accepted)
         self.assertEqual(result.reason_code, "SESSION_VALID")
 
     def test_revoked_session_is_denied(self):
@@ -44,7 +44,7 @@ class SessionPolicyTests(SimpleTestCase):
             revoked=True,
         )
         result = evaluate_session(observation, self.policy, now=NOW)
-        self.assertEqual(result.decision, SessionDecision.DENY)
+        self.assertFalse(result.accepted)
         self.assertEqual(result.reason_code, "SESSION_REVOKED")
 
     def test_unauthenticated_observation_is_denied(self):
@@ -112,3 +112,11 @@ class SessionPolicyTests(SimpleTestCase):
                 absolute_timeout=timedelta(hours=1),
                 rotate_on_authentication=False,
             )
+
+    def test_browser_cookie_policy_requires_secure_host_only_cookie(self):
+        self.assertTrue(SessionCookiePolicy().secure)
+        self.assertTrue(SessionCookiePolicy().http_only)
+        with self.assertRaisesMessage(ValueError, "HttpOnly"):
+            SessionCookiePolicy(http_only=False)
+        with self.assertRaisesMessage(ValueError, "host-only"):
+            SessionCookiePolicy(domain=".example.invalid")
