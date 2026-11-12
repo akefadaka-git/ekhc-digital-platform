@@ -286,5 +286,17 @@ class SecurityMonitorTests(unittest.TestCase):
         self.assertNotIn("<script>", report)
 
 
+    def test_lock_parser_accepts_only_sha256_hash_options(self):
+        valid_hash = "a" * 64
+        parsed = parse_lockfile(f"Django==5.2.19 --hash=sha256:{valid_hash}")
+        self.assertEqual(parsed, [{"name": "Django", "version": "5.2.19"}])
+        for invalid in (
+            "Django==5.2.19 --index-url=https://example.invalid",
+            "Django==5.2.19 --hash=sha256:abcd",
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                parse_lockfile(invalid)
+
+
 if __name__ == "__main__":
     unittest.main()
