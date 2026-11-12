@@ -5,7 +5,6 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
-from uuid import UUID
 
 from audit.events import AuditEvent
 from audit.records import DocumentVersion
