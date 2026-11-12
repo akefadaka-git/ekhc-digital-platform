@@ -430,10 +430,17 @@ class SyncFailureEdgeTests(SimpleTestCase):
     def test_aggregate_adapter_wrong_version_rolls_back(self):
         class WrongVersionTransaction(FakeTransaction):
             def apply_aggregate_mutation(
-                self, aggregate_reference, expected_version, encrypted_payload, occurred_at
+                self,
+                aggregate_reference,
+                expected_version,
+                encrypted_payload,
+                occurred_at,
             ):
                 super().apply_aggregate_mutation(
-                    aggregate_reference, expected_version, encrypted_payload, occurred_at
+                    aggregate_reference,
+                    expected_version,
+                    encrypted_payload,
+                    occurred_at,
                 )
                 return expected_version
 
