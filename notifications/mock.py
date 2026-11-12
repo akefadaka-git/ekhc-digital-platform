@@ -51,9 +51,7 @@ class NotificationConfig:
     log_level: str = "summary"
 
     @classmethod
-    def from_environment(
-        cls, environ: Mapping[str, str]
-    ) -> NotificationConfig:
+    def from_environment(cls, environ: Mapping[str, str]) -> NotificationConfig:
         """Load only the explicitly supported mock configuration contract."""
         unsafe_keys = LIVE_CONFIGURATION_KEYS.intersection(environ)
         unsafe_keys.update(
