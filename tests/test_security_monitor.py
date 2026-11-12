@@ -322,14 +322,19 @@ class SecurityMonitorTests(unittest.TestCase):
         "scripts.security_monitor.query_osv",
         side_effect=URLError("temporary network failure"),
     )
+    @patch(
+        "scripts.security_monitor.parse_lockfile",
+        return_value=[{"name": "Django", "version": "5.2.19"}],
+    )
+    @patch("scripts.security_monitor.evaluate_exceptions", return_value=[])
     def test_main_reports_incomplete_and_returns_two_on_osv_failure(
-        self, mocked_query, mocked_summary
+        self, mocked_evaluate, mocked_parse, mocked_query, mocked_summary
     ):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             lockfile = root / "requirements-lock.txt"
             register = root / "exception-register.json"
-            lockfile.write_text("Django==5.2.19\\n", encoding="utf-8")
+            lockfile.write_text("Django==5.2.19", encoding="utf-8")
             register.write_text(
                 '{"schema_version":1,"exceptions":[]}', encoding="utf-8"
             )
@@ -348,7 +353,7 @@ class SecurityMonitorTests(unittest.TestCase):
         report = mocked_summary.call_args.args[0]
         self.assertIn("Security monitoring — INCOMPLETE", report)
         self.assertIn("Monitoring could not complete", report)
-        mocked_query.assert_called_once()
+        mocked_parse.assert_called_once()\n        mocked_evaluate.assert_called_once()\n        mocked_query.assert_called_once()
 
     def test_lock_parser_accepts_only_sha256_hash_options(self):
         valid_hash = "a" * 64
