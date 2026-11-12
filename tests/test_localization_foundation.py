@@ -70,7 +70,6 @@ class CalendarAdapterTests(SimpleTestCase):
         self.assertEqual(result, EthiopianDate(2016, 1, 1))
 
 
-
 class LanguageNegotiationTests(SimpleTestCase):
     def test_missing_preference_defaults_to_amharic(self):
         from config.localization import resolve_platform_language
