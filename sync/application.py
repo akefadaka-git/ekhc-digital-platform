@@ -174,7 +174,6 @@ def apply_sync_command(
         return SyncResult("applied", new_version, "APPLIED")
 
 
-
 def sync_associated_data(envelope: SyncEnvelope) -> bytes:
     """Bind ciphertext to one idempotency key, device, aggregate, and base version."""
     if not isinstance(envelope, SyncEnvelope):
