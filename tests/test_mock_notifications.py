@@ -126,9 +126,7 @@ class MockNotificationTests(unittest.TestCase):
 
     def test_permanent_rejection_is_not_retried(self):
         sleeps = []
-        fixtures = FixtureSet(
-            outcomes={Channel.EMAIL: (MockOutcome.REJECTED,)}
-        )
+        fixtures = FixtureSet(outcomes={Channel.EMAIL: (MockOutcome.REJECTED,)})
         orchestrator = NotificationOrchestrator(
             config(), fixtures, sleeper=sleeps.append
         )
