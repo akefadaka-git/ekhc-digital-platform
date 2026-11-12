@@ -166,6 +166,52 @@ class MockNotificationTests(unittest.TestCase):
             [item["event"] for item in orchestrator.audit_events],
         )
 
+    def test_duplicate_event_with_changed_destination_is_rejected(self):
+        orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
+        orchestrator.notify(
+            event(), {Channel.EMAIL: "synthetic-email-recipient-01"}
+        )
+        with self.assertRaisesRegex(ValueError, "Idempotency conflict"):
+            orchestrator.notify(
+                event(), {Channel.EMAIL: "synthetic-email-recipient-02"}
+            )
+        self.assertEqual(len(orchestrator._receipts), 1)
+        self.assertEqual(
+            orchestrator._receipts[(event().event_id, Channel.EMAIL)].destination_reference,
+            "synthetic-email-recipient-01",
+        )
+
+    def test_destination_mapping_is_preflighted_before_any_attempt(self):
+        orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
+        with self.assertRaisesRegex(ValueError, "channel-matched synthetic reference"):
+            orchestrator.notify(
+                event(),
+                {
+                    Channel.EMAIL: "synthetic-email-recipient-01",
+                    Channel.SMS: "synthetic-email-recipient-02",
+                },
+            )
+        self.assertEqual(orchestrator._receipts, {})
+        self.assertEqual(orchestrator.audit_events, [])
+
+    def test_existing_destination_conflict_is_preflighted_atomically(self):
+        orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
+        orchestrator.notify(
+            event(), {Channel.SMS: "synthetic-sms-recipient-01"}
+        )
+        prior_receipts = dict(orchestrator._receipts)
+        prior_audit = list(orchestrator.audit_events)
+        with self.assertRaisesRegex(ValueError, "Idempotency conflict"):
+            orchestrator.notify(
+                event(),
+                {
+                    Channel.EMAIL: "synthetic-email-recipient-01",
+                    Channel.SMS: "synthetic-sms-recipient-02",
+                },
+            )
+        self.assertEqual(orchestrator._receipts, prior_receipts)
+        self.assertEqual(orchestrator.audit_events, prior_audit)
+
     def test_simulated_acknowledgement_is_never_human_acknowledgement(self):
         orchestrator = NotificationOrchestrator(config())
         orchestrator.record_simulated_acknowledgement(
