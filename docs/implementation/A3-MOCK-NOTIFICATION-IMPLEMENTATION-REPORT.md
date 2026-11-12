@@ -4,7 +4,7 @@
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Implementation branch:** `a3/mock-notification-implementation`  
 **Specification baseline:** `03ae65da832906db2cad890d22af6caca49ed0ec`  
-**Exact code/test head verified by CI:** `0894c06988dec92f1162b3435f5c1ad93ee634a4`
+**Exact code/test head verified by CI:** `0609ee826ea7a0c44810213d406af7d6925230d4`
 
 ## 1. Authorized scope
 
@@ -12,7 +12,7 @@ This increment implements only the mock notification architecture specified in P
 
 ## 2. Implemented work packages
 
-- **A3.1 Configuration and fail-closed validation:** all three mode selectors must explicitly equal `mock`; unsupported fixture sets, invalid log levels, reserved live-provider credential/sender configuration, and unknown notification-prefixed configuration keys are rejected.
+- **A3.1 Configuration and fail-closed validation:** all three mode selectors must explicitly equal `mock`; unsupported fixture sets, invalid log levels, reserved live-provider credential/sender configuration, all unapproved email/SMS provider settings, and unknown notification-prefixed configuration keys are rejected.
 - **A3.2 Mock email adapter:** synthetic email destination references only; deterministic fixture outcomes.
 - **A3.3 Mock SMS adapter:** synthetic SMS destination references only; deterministic fixture outcomes.
 - **A3.4 Orchestration and receipts:** only explicitly supplied, channel-matched synthetic destinations are accepted; absent fixture configuration yields no recipients. Every receipt sets `simulated=true`, `delivery_claim=false`, and `SIMULATED — NOT DELIVERED`.
@@ -22,10 +22,10 @@ This increment implements only the mock notification architecture specified in P
 
 ## 3. Exact-head CI evidence
 
-Both successful workflows ran against `0894c06988dec92f1162b3435f5c1ad93ee634a4`:
+Both successful workflows ran against `0609ee826ea7a0c44810213d406af7d6925230d4`:
 
-1. **A3 quality checks — run #222, ID `43199267393`, SUCCESS**  
-   [GitHub Actions run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43199267393)
+1. **A3 quality checks — run #226, ID `43199602034`, SUCCESS**  
+   [GitHub Actions run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43199602034)
    - Required-file gate: PASS
    - Pinned dependency installation: PASS
    - Django system check: PASS
@@ -34,8 +34,8 @@ Both successful workflows ran against `0894c06988dec92f1162b3435f5c1ad93ee634a4`
    - Ruff format check: PASS — **65 files already formatted**
    - pip-audit: PASS — **no known vulnerabilities found**
 
-2. **Read-only security advisory and exception monitor — run #107, ID `43199266724`, SUCCESS**  
-   [GitHub Actions run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43199266724)
+2. **Read-only security advisory and exception monitor — run #111, ID `43199601908`, SUCCESS**  
+   [GitHub Actions run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43199601908)
    - Read-only OSV advisory and exception-expiry monitor job: PASS.
 
 The A3 implementation report is committed after the tested source head as a documentation-only update. It does not modify the implementation or test files. The exact CI evidence above applies to the unchanged code/test tree at the stated SHA.
