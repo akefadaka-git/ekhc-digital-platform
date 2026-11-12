@@ -143,8 +143,6 @@ class SecurityMonitorTests(unittest.TestCase):
             evaluate_exceptions(
                 {"schema_version": 1, "exceptions": []}, datetime(2026, 11, 11)
             )
-
-
     def test_missed_reminder_reports_nearest_threshold_and_overdue_days(self):
         now = datetime(2026, 11, 11, 12, tzinfo=UTC)
         register = {
@@ -194,9 +192,7 @@ class SecurityMonitorTests(unittest.TestCase):
             ),
             successful_response,
         ]
-        self.assertEqual(
-            query_osv([{"name": "Django", "version": "5.2.19"}]), []
-        )
+        self.assertEqual(query_osv([{"name": "Django", "version": "5.2.19"}]), [])
         self.assertEqual(mocked_urlopen.call_count, OSV_MAX_ATTEMPTS)
         self.assertEqual(
             [call.args[0] for call in mocked_sleep.call_args_list],
@@ -236,9 +232,7 @@ class SecurityMonitorTests(unittest.TestCase):
 
     @patch("scripts.security_monitor.sleep")
     @patch("scripts.security_monitor.urlopen")
-    def test_osv_does_not_retry_malformed_response(
-        self, mocked_urlopen, mocked_sleep
-    ):
+    def test_osv_does_not_retry_malformed_response(self, mocked_urlopen, mocked_sleep):
         mocked_urlopen.return_value = io.BytesIO(b"not-json")
         with self.assertRaises(ValueError):
             query_osv([{"name": "Django", "version": "5.2.19"}])
@@ -284,7 +278,6 @@ class SecurityMonitorTests(unittest.TestCase):
         self.assertIn("Django", report)
         self.assertIn("&lt;script&gt;", report)
         self.assertNotIn("<script>", report)
-
 
     def test_lock_parser_accepts_only_sha256_hash_options(self):
         valid_hash = "a" * 64
