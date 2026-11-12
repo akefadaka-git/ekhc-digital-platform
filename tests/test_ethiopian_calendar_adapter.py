@@ -77,8 +77,10 @@ class IcuEthiopianCalendarAdapterTests(SimpleTestCase):
         # independent ICU conformance oracle.
         for year in range(1900, 2101):
             for month in range(1, 14):
-                last_day = 6 if month == 13 and (year + 1) % 4 == 0 else (
-                    5 if month == 13 else 30
+                last_day = (
+                    6
+                    if month == 13 and (year + 1) % 4 == 0
+                    else (5 if month == 13 else 30)
                 )
                 for day in {1, last_day}:
                     value = EthiopianDate(year, month, day)
