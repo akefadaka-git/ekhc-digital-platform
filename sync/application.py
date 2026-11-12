@@ -9,6 +9,7 @@ from uuid import UUID
 
 from audit.events import AuditEvent, AuditOutcome
 from identity.references import AccountReference
+from security.crypto import EncryptionEnvelope
 from sync.contracts import SyncEnvelope
 
 
@@ -20,18 +21,21 @@ class TrustedClock(Protocol):
 class SyncCommand:
     envelope: SyncEnvelope
     actor: AccountReference
-    payload: bytes
+    encrypted_payload: EncryptionEnvelope
 
     def __post_init__(self) -> None:
         if not isinstance(self.envelope, SyncEnvelope):
             raise TypeError("envelope must be a SyncEnvelope.")
         if not isinstance(self.actor, AccountReference):
             raise TypeError("actor must be an AccountReference.")
-        if not isinstance(self.payload, bytes):
-            raise TypeError("payload must be bytes.")
-        actual_digest = hashlib.sha256(self.payload).hexdigest()
+        if not isinstance(self.encrypted_payload, EncryptionEnvelope):
+            raise TypeError("encrypted_payload must be an EncryptionEnvelope.")
+        actual_digest = hashlib.sha256(self.encrypted_payload.ciphertext).hexdigest()
         if actual_digest != self.envelope.payload_sha256:
-            raise ValueError("payload digest does not match the sync envelope.")
+            raise ValueError("ciphertext digest does not match the sync envelope.")
+        aad = sync_associated_data(self.envelope)
+        if hashlib.sha256(aad).hexdigest() != self.encrypted_payload.aad_sha256:
+            raise ValueError("encryption envelope AAD does not bind this sync operation.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,7 +57,7 @@ class SyncTransaction(Protocol):
         self,
         aggregate_reference: str,
         expected_version: int,
-        payload: bytes,
+        encrypted_payload: EncryptionEnvelope,
         occurred_at: datetime,
     ) -> int: ...
 
@@ -136,7 +140,7 @@ def apply_sync_command(
         new_version = transaction.apply_aggregate_mutation(
             envelope.aggregate_reference,
             current_version,
-            command.payload,
+            command.encrypted_payload,
             occurred_at,
         )
         if new_version != current_version + 1:
@@ -165,3 +169,18 @@ def apply_sync_command(
             event.event_id, envelope.aggregate_reference, new_version, occurred_at
         )
         return SyncResult("applied", new_version, "APPLIED")
+
+
+
+def sync_associated_data(envelope: SyncEnvelope) -> bytes:
+    """Bind ciphertext to one idempotency key, device, aggregate, and base version."""
+    if not isinstance(envelope, SyncEnvelope):
+        raise TypeError("envelope must be a SyncEnvelope.")
+    fields = (
+        "ekhc-sync-v1",
+        envelope.aggregate_reference,
+        envelope.device_reference,
+        str(envelope.base_version),
+        str(envelope.idempotency_key),
+    )
+    return "|".join(fields).encode("utf-8")
