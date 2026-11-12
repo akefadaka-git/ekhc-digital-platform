@@ -1,19 +1,20 @@
 import io
 import tempfile
 import unittest
+from datetime import UTC, datetime
+from pathlib import Path
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from datetime import UTC, datetime
 from unittest.mock import patch
 
 from scripts.security_monitor import (
     MAX_OSV_RESPONSE_BYTES,
-    main,
     OSV_MAX_ATTEMPTS,
     OSV_MAX_WALL_CLOCK_SECONDS,
     OSV_REQUEST_TIMEOUT_SECONDS,
     OSV_RETRY_BACKOFF_SECONDS,
     escape_table_cell,
+    main,
     evaluate_exceptions,
     parse_lockfile,
     parse_utc,
