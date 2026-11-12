@@ -1,142 +1,138 @@
 # EKHC OS — Owner Operational-Readiness Input Register
 
-**Status:** OWNER-APPROVED TEMPLATE ONLY — NOT OPERATIONAL EVIDENCE  
-**Approval date:** 2026-11-12  
-**Approval scope:** Use this register as the controlled structure for capturing ORG-02, ORG-03, and ORG-04 decisions and evidence.  
+**Status:** OWNER-APPROVED POLICY DECISIONS RECORDED — IMPLEMENTATION EVIDENCE INCOMPLETE  
+**Decision date:** 2026-11-12  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
-**Related reconciliation:** `docs/operations/MONITORING-OPERATIONAL-READINESS-GAP-RECONCILIATION.md`  
-**Purpose:** Capture the explicit decisions and evidence required to resolve ORG-02, ORG-03, and ORG-04 before proposing a controlled synthetic rehearsal.
+**Related reconciliation:** `docs/operations/MONITORING-OPERATIONAL-READINESS-GAP-RECONCILIATION.md`
 
-> **Approval boundary:** Owner approval applies to this template and its use as a decision/evidence register only. It does not select a notification channel, identify recipients or responders, assign custodians, establish an SLA, approve an integration, or authorize a rehearsal, production operation, merge, deployment, schedule activation, or A5.
+> **Decision scope:** On 2026-11-12, the Owner approved ORG-02, ORG-03, and ORG-04 proposals with no amendments or conditions, and explicitly directed that SMS also be included for notifications. This records policy decisions only. It does not claim that channels, accounts, recipients, responders, systems, custodians, or controls have been provisioned, configured, accepted, or tested.
 
-> **Confidentiality rule:** This file is in a public repository. Do not enter personal names, email addresses, telephone numbers, account identifiers, private URLs, credentials, confidential exception rationales, or restricted-record contents here. Store those details in the separately approved restricted system. This public register may contain only non-sensitive decision status, generic role labels, and opaque evidence references that disclose no protected information.
+> **Confidentiality:** This public file must not contain personal names, email addresses, telephone numbers, account identifiers, private URLs, credentials, confidential exception rationales, or restricted-record contents. Keep those details in the approved restricted system. Public records may contain generic roles and opaque evidence references only.
 
 ## 1. Owner decision record
 
-- Owner decision reference: **CHAT APPROVAL — 2026-11-12**
-- Decision date: **2026-11-12**
+- Owner decision reference: **CHAT OWNER DECISION — 2026-11-12**
 - Approving authority: **OWNER**
-- Scope approved: **TEMPLATE STRUCTURE AND USE ONLY**
-- Public evidence reference: **THIS COMMIT**
-- Restricted evidence location/reference: **NOT PROVIDED**
+- ORG-02: **APPROVED — institutional email primary; SMS included as a notification channel**
+- ORG-03: **APPROVED — role-based primary/backup coverage and acknowledgement targets as written below**
+- ORG-04: **APPROVED — controlled institutional records and custody/access-control policy as written below**
+- Amendments / conditions: **NONE SPECIFIED**, except the explicit SMS inclusion for ORG-02.
+- Supporting decision evidence: **Owner's explicit chat decisions dated 2026-11-12**
+- Implementation/control evidence: **NOT PROVIDED; unresolved items remain open**
 
-All operational decision fields below remain unresolved. Blank fields are unresolved, not accepted defaults.
+Approval is evidence of the policy decisions, not proof of implementation or operational effectiveness.
 
 ## 2. ORG-02 — Notification destination and recipients
 
-### 2.1 Channel decision
+**Owner decision: APPROVED. Institutional email is the primary notification channel; SMS is also approved for notifications as the secondary channel.**
 
-- Selected channel / service: **OWNER TO SPECIFY**
-- Purpose and alert classes supported: **OWNER TO SPECIFY**
-- Account / tenant owner: **RESTRICTED RECORD REQUIRED**
-- Service administration authority: **OWNER TO SPECIFY**
-- Delivery mechanism and endpoint type: **OWNER TO SPECIFY**
-- Credential owner and custody procedure: **RESTRICTED RECORD REQUIRED**
-- Data classification permitted in notifications: **OWNER TO APPROVE**
-- Prohibited notification content: **OWNER TO SPECIFY**
-- Delivery failure / bounce / unavailable-channel handling: **OWNER TO SPECIFY**
-- Evidence of channel control and test delivery: **RESTRICTED EVIDENCE REQUIRED**
+Approved policy:
+- Primary: designated institutional security / operations email mailbox.
+- Secondary: SMS notification to authorized duty responders.
+- Recipients: role-based authorized distribution; actual identities and contact routes must be held in a restricted record.
+- Notification content: severity, affected package, advisory reference, workflow run link, timestamp, and required action.
+- Prohibited content: credentials, secrets, and confidential exception details.
+- Delivery failure, bounce, or unavailable channel must be recorded as a notification failure. A successful GitHub workflow is not proof of notification delivery.
 
-### 2.2 Recipient authorization
+Implementation and evidence:
+- Actual email service, tenant, and mailbox: **NOT PROVIDED — UNRESOLVED**
+- Actual SMS provider, sender/service configuration, and endpoint: **NOT PROVIDED — UNRESOLVED**
+- Account / tenant owner and channel administrators: **NOT PROVIDED — UNRESOLVED**
+- Authorized recipient roster and authorization basis: **NOT PROVIDED — RESTRICTED EVIDENCE REQUIRED**
+- Credential / sender-ID custody and rotation procedure: **NOT PROVIDED — RESTRICTED EVIDENCE REQUIRED**
+- Recipient acceptance and roster review / joiner-leaver process: **NOT PROVIDED — UNRESOLVED**
+- Email and SMS channel control and successful synthetic delivery evidence: **NOT PROVIDED — NOT VERIFIED**
 
-For each intended recipient, record the actual identity and contact route only in the restricted system.
-
-- Authorized recipient roster reference: **NOT PROVIDED**
-- Authorization basis and scope: **NOT PROVIDED**
-- Recipient acceptance / acknowledgement of responsibility: **NOT PROVIDED**
-- Roster owner and review frequency: **NOT PROVIDED**
-- Joiner / leaver and access-revocation procedure: **NOT PROVIDED**
-
-**ORG-02 disposition:** UNRESOLVED until the channel, account ownership, authorized recipients, delivery controls, and evidence are approved and verified.
+**ORG-02 disposition: POLICY APPROVED (EMAIL PRIMARY + SMS); IMPLEMENTATION PARTIAL / NOT VERIFIED.** SMS is an approved channel choice, but no SMS provider, sender identity, recipient number, account, or delivery test is evidenced.
 
 ## 3. ORG-03 — Responders, acknowledgement, and escalation
 
-### 3.1 Coverage model
+**Owner decision: APPROVED — role-based primary and backup coverage, with Owner or explicitly delegated escalation authority.**
 
-- Primary responder role and restricted identity reference: **NOT PROVIDED**
-- Backup responder role and restricted identity reference: **NOT PROVIDED**
-- Coverage window and timezone: **NOT PROVIDED**
-- Non-working day / holiday coverage: **NOT PROVIDED**
-- Unavailability and handover procedure: **NOT PROVIDED**
-- Responder authority boundaries: **OWNER TO DEFINE**
-- Explicitly prohibited responder actions: **OWNER TO DEFINE**
+Approved coverage policy:
+- Primary responder: designated security / operations duty role.
+- Backup responder: separately designated alternate role.
+- Escalation authority: Owner or explicitly delegated authority.
+- Coverage must account for approved operating hours, non-working days, holidays, unavailability, and handover.
+- Responders must operate within expressly approved authority limits; this approval does not grant unbounded remediation or production privileges.
 
-### 3.2 Acknowledgement and escalation policy
+Approved acknowledgement targets:
 
-- Acknowledgement event definition (what constitutes receipt): **OWNER TO DEFINE**
-- Required acknowledgement interval by severity / signal class: **OWNER TO DEFINE**
-- Evidence source for delivery and acknowledgement: **OWNER TO DEFINE**
-- First escalation trigger and destination: **OWNER TO DEFINE**
-- Subsequent escalation trigger and destination: **OWNER TO DEFINE**
-- Owner escalation trigger and route: **OWNER TO DEFINE**
-- Failure mode when no responder acknowledges: **OWNER TO DEFINE**
-- Incident / decision record location: **RESTRICTED RECORD REQUIRED**
+| Finding priority | Acknowledgement target |
+|---|---|
+| Critical / actively exploitable | **4 hours** |
+| High | **1 business day** |
+| Medium | **2 business days** |
+| Low / informational | **3 business days** |
 
-Do not use a GitHub workflow success state as proof of human receipt or acknowledgement.
+Acknowledgement means a human confirms receipt; it does not mean investigation or remediation is complete.
 
-**ORG-03 disposition:** NOT VERIFIED until named people are authorized in the restricted record, coverage is accepted, measurable acknowledgement/escalation rules are approved, and evidence demonstrates the route works.
+Implementation and evidence:
+- Actual primary and backup responder identities: **NOT PROVIDED — RESTRICTED EVIDENCE REQUIRED**
+- Responder acceptance of responsibility: **NOT PROVIDED — NOT VERIFIED**
+- Coverage hours, timezone, holiday rota, handover, and unavailability procedure: **NOT PROVIDED — UNRESOLVED**
+- Responder authority boundaries and prohibited actions: **NOT PROVIDED — UNRESOLVED**
+- Operational acknowledgement definition and evidence source: **NOT CONFIGURED / NOT VERIFIED**
+- Escalation triggers, routes, and failure-to-acknowledge handling: **NOT CONFIGURED / NOT VERIFIED**
+- Restricted incident / decision record location: **NOT PROVIDED**
+- Delivery and human acknowledgement test evidence: **NOT PROVIDED — NOT RUN**
+
+**ORG-03 disposition: POLICY AND TARGETS APPROVED; RESPONDER ASSIGNMENT, COVERAGE, ROUTING, AND OPERATIONAL EVIDENCE NOT VERIFIED.** GitHub workflow success is not proof of human receipt or acknowledgement.
 
 ## 4. ORG-04 — Restricted exception-record custody
 
-- Approved restricted system of record: **OWNER TO SELECT**
-- System / tenant owner: **RESTRICTED RECORD REQUIRED**
-- Primary custodian role and identity reference: **NOT PROVIDED**
-- Backup custodian role and identity reference: **NOT PROVIDED**
-- Authorized access groups / identity references: **RESTRICTED RECORD REQUIRED**
-- Access approval authority: **OWNER TO DEFINE**
-- Access review cadence and evidence: **OWNER TO DEFINE**
-- Retention and secure disposal requirements: **OWNER TO DEFINE**
-- Audit logging and access-review evidence: **OWNER TO DEFINE**
-- Confidential evidence handling procedure: **OWNER TO DEFINE**
-- Public-repository reference convention (opaque IDs only): **OWNER TO APPROVE**
-- Recovery / continuity procedure: **OWNER TO DEFINE**
+**Owner decision: APPROVED — controlled institutional records system and the proposed custody, access-control, audit, retention, and confidentiality policy.**
 
-No full exception rationale, exploit evidence, personal data, credentials, or restricted documents may be copied into this public repository.
+Approved policy requirements:
+- Use a controlled institutional system of record separate from the public repository.
+- Designate primary and backup custodians.
+- Enforce least-privilege access and MFA.
+- Require Owner or explicitly delegated-authority approval for access.
+- Maintain audit trails for viewing, creation, modification, export, and deletion where supported.
+- Encrypt records in transit and at rest.
+- Provide controlled backup and recovery.
+- Establish documented retention and secure disposal.
+- Conduct periodic access reviews.
+- Keep only opaque evidence references and non-sensitive status in the public repository.
 
-**ORG-04 disposition:** NOT VERIFIED until the restricted system, custodians, access controls, retention, audit evidence, and handling procedure are approved and evidenced.
+Implementation and evidence:
+- Actual restricted system / tenant: **NOT SELECTED — UNRESOLVED**
+- System owner and primary / backup custodians: **NOT PROVIDED — RESTRICTED EVIDENCE REQUIRED**
+- Authorized access groups and access-approval configuration: **NOT PROVIDED — NOT VERIFIED**
+- MFA, encryption, audit logging, backup / recovery configuration: **NOT PROVIDED — NOT VERIFIED**
+- Retention and secure disposal schedule: **NOT PROVIDED — UNRESOLVED**
+- Access-review cadence and completed review evidence: **NOT PROVIDED — UNRESOLVED**
+- Confidential evidence-handling procedure and opaque-reference convention: **NOT PROVIDED — UNRESOLVED**
 
-## 5. Rehearsal entry gate — separate authorization required
+**ORG-04 disposition: POLICY APPROVED; SYSTEM SELECTION, CUSTODIAN ASSIGNMENT, CONTROL CONFIGURATION, AND EVIDENCE NOT VERIFIED.**
 
-A controlled rehearsal may be proposed only after ORG-02, ORG-03, and ORG-04 are approved and evidenced.
+## 5. Rehearsal and activation boundary
 
-- ORG-02 evidence reference and verification result: **PENDING**
-- ORG-03 evidence reference and verification result: **PENDING**
-- ORG-04 evidence reference and verification result: **PENDING**
-- Rehearsal scope and synthetic fixtures: **TO BE PROPOSED**
-- Participants and availability acceptance: **TO BE VERIFIED IN RESTRICTED RECORD**
-- Rehearsal date / window: **NOT SCHEDULED**
-- Rehearsal observer / evidence recorder: **OWNER TO APPROVE**
-- Rehearsal-specific Owner authorization reference: **NOT PROVIDED**
+- Controlled synthetic rehearsal: **NOT AUTHORIZED / NOT RUN**
+- Production notification integration: **NOT AUTHORIZED**
+- Scheduled workflow activation: **NOT AUTHORIZED**
+- Production operation: **NOT AUTHORIZED**
+- Merge / default-branch integration: **NOT AUTHORIZED**
+- Deployment, publication, or signing: **NOT AUTHORIZED**
+- A5: **NOT AUTHORIZED**
 
-Proposed rehearsal scenarios, once separately authorized:
-1. Synthetic positive-advisory notification and human acknowledgement.
-2. Retry exhaustion / monitoring INCOMPLETE notification and escalation.
-3. Overdue exception reminder notification and handling.
-4. Delivery failure or unavailable responder path.
-
-Use synthetic, non-sensitive fixtures only. Do not create or modify a real exception to test this process. Do not activate the daily schedule as part of a rehearsal unless separately authorized.
+Any future rehearsal requires a separate explicit Owner authorization after the implementation evidence is assembled. Use synthetic, non-sensitive fixtures only; do not create or modify a real exception to test the process.
 
 ## 6. Current gate status
 
-| Gate | Status | Closure evidence required |
+| Gate | Owner decision | Implementation / evidence status |
 |---|---|---|
-| ORG-02 notification destination and recipients | **UNRESOLVED** | Owner decision, channel control, authorized recipient roster, test-delivery evidence |
-| ORG-03 acknowledgement and escalation coverage | **NOT VERIFIED** | Accepted responder coverage, measurable rules, delivery/acknowledgement evidence |
-| ORG-04 restricted exception-record custody | **NOT VERIFIED** | Approved restricted system, custodians, access review, retention and audit evidence |
-| Controlled synthetic rehearsal | **NOT AUTHORIZED / NOT RUN** | ORG-02–04 evidence plus separate Owner authorization |
-| Operational readiness | **NOT VERIFIED** | All applicable operational controls evidenced and rehearsal accepted |
-| Production readiness | **NOT READY** | Separate production-readiness assessment and approvals |
+| ORG-02 email + SMS notification policy | **APPROVED** | **PARTIAL / NOT VERIFIED** — services, account control, recipients, and delivery tests missing |
+| ORG-03 responder coverage and acknowledgement targets | **APPROVED** | **NOT VERIFIED** — actual roster, accepted coverage, routing, and acknowledgement evidence missing |
+| ORG-04 restricted-record custody policy | **APPROVED** | **NOT VERIFIED** — system, custodians, configured controls, and audit/retention evidence missing |
+| Controlled synthetic rehearsal | Not approved | **NOT AUTHORIZED / NOT RUN** |
+| Operational readiness | — | **NOT VERIFIED** |
+| Production readiness | — | **NOT READY** |
 
-## 7. Governance and scope boundary
+## 7. Governance
 
-This register is a decision-capture template only. It does not itself approve a channel, recipient, responder, custodian, SLA, policy, rehearsal, integration, or production operation.
+This register records the Owner's approved policy decisions and preserves outstanding implementation evidence as unresolved. It does not itself provision accounts, authorize people, configure controls, or demonstrate delivery, acknowledgement, or custody.
 
-It does not authorize:
-- external notification integration or secret creation;
-- changes to repository permissions or workflow triggers;
-- changes to the exception register or dependency state;
-- default-branch integration, merge, deployment, publication, or signing;
-- scheduled workflow activation or production operation;
-- A5.
+No credentials, secrets, private contact details, or restricted records may be copied into this public repository. No external integration, secret creation, permission expansion, workflow-trigger change, exception-register mutation, schedule activation, production operation, merge, deployment, publication, signing, or A5 is authorized by these decisions.
 
-A4 technical verification remains **VERIFIED-CLOSED WITH EXPLICIT LIMITATIONS**. The operational-readiness reconciliation remains **PARTIAL** until the required Owner decisions and independent evidence are supplied.
+A4 technical verification remains **VERIFIED-CLOSED WITH EXPLICIT LIMITATIONS**. Operational readiness remains **NOT VERIFIED** until the implementation evidence above is supplied and assessed.
