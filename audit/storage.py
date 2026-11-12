@@ -8,6 +8,7 @@ from typing import Protocol
 from uuid import UUID
 
 from audit.events import AuditEvent
+from audit.records import DocumentVersion
 
 
 _GENESIS_DIGEST = "0" * 64
@@ -83,7 +84,9 @@ class AuditEventRepository(Protocol):
 class DocumentMetadataRepository(Protocol):
     """Append-only versions and compare-and-swap manifest updates."""
 
-    def append_version(self, document_reference: str, version: object) -> None: ...
+    def append_version(
+        self, document_reference: str, version: DocumentVersion
+    ) -> None: ...
 
     def compare_and_swap_current_version(
         self, document_reference: str, expected_version: int, new_version: int
