@@ -124,7 +124,9 @@ class DocumentMetadataStore(Protocol):
 
     def get(self, document_reference: str) -> DocumentMetadata | None: ...
 
-    def append_version(self, document_reference: str, version: DocumentVersion) -> None: ...
+    def append_version(
+        self, document_reference: str, version: DocumentVersion
+    ) -> None: ...
 
 
 class DenyAllDocumentAccess:
