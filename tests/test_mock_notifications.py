@@ -152,7 +152,10 @@ class MockNotificationTests(unittest.TestCase):
         second = orchestrator.notify(event(), destination)
         self.assertEqual(first, second)
         self.assertEqual(
-            sum(item["event"] == "mock_attempted" for item in orchestrator.audit_events),
+            sum(
+                item["event"] == "mock_attempted"
+                for item in orchestrator.audit_events
+            ),
             1,
         )
         self.assertIn(
@@ -186,10 +189,18 @@ class MockNotificationTests(unittest.TestCase):
         self.assertNotIn("synthetic-email-recipient-01", summary)
         self.assertNotIn("person@", str(orchestrator.audit_events))
 
+    def test_retry_policy_cannot_be_expanded(self):
+        with self.assertRaises(ValueError):
+            NotificationOrchestrator(config(), max_attempts=4)
+        with self.assertRaises(ValueError):
+            NotificationOrchestrator(config(), backoff_seconds=(1, 2, 3))
+
     def test_mock_execution_performs_no_network_or_dns_calls(self):
         orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
         with (
-            patch.object(socket, "socket", side_effect=AssertionError("network blocked")),
+            patch.object(
+                socket, "socket", side_effect=AssertionError("network blocked")
+            ),
             patch.object(
                 socket, "getaddrinfo", side_effect=AssertionError("DNS blocked")
             ),
