@@ -4,6 +4,7 @@ No cryptographic primitive or key provider is implemented here. Production adapt
 must pass independent AES-256-GCM and KMS/HSM conformance tests before activation.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -45,8 +46,6 @@ class EncryptionEnvelope:
     aad_sha256: str
 
     def __post_init__(self) -> None:
-        import re
-
         if not isinstance(self.ciphertext, bytes) or len(
             self.ciphertext
         ) < AES_GCM_TAG_BYTES:
@@ -100,6 +99,8 @@ class EncryptedObjectStore(Protocol):
         self, staged_reference: str, expected_sha256: str, expected_size: int
     ) -> bool: ...
 
-    def promote(self, staged_reference: str, immutable_object_reference: str) -> None: ...
+    def promote(
+        self, staged_reference: str, immutable_object_reference: str
+    ) -> None: ...
 
     def get(self, immutable_object_reference: str) -> bytes: ...
