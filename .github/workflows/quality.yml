@@ -8,7 +8,6 @@ on:
   pull_request:
     branches:
       - main
-      - a3/ci-verification-base
   workflow_dispatch:
 
 permissions:
