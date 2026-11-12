@@ -36,7 +36,9 @@ class SyncCommand:
             raise ValueError("ciphertext digest does not match the sync envelope.")
         aad = sync_associated_data(self.envelope)
         if hashlib.sha256(aad).hexdigest() != self.encrypted_payload.aad_sha256:
-            raise ValueError("encryption envelope AAD does not bind this sync operation.")
+            raise ValueError(
+                "encryption envelope AAD does not bind this sync operation."
+            )
 
 
 @dataclass(frozen=True, slots=True)
