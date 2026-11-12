@@ -274,7 +274,9 @@ class SQLiteNotificationLedger:
     def record_audit(self, events: list[dict[str, object]]) -> None:
         for event in events:
             event_id = event.get("event_id")
-            if not isinstance(event_id, str) or not EVENT_ID_PATTERN.fullmatch(event_id):
+            if not isinstance(event_id, str) or not EVENT_ID_PATTERN.fullmatch(
+                event_id
+            ):
                 raise ValueError("Only synthetic event IDs may enter the audit ledger")
             self._connection.execute(
                 "INSERT INTO notification_audit (event_id, event_json) VALUES (?, ?)",
