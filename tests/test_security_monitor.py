@@ -9,9 +9,9 @@ from urllib.error import HTTPError, URLError
 from scripts.security_monitor import (
     MAX_OSV_RESPONSE_BYTES,
     OSV_MAX_ATTEMPTS,
-    OSV_RETRY_BUDGET_SECONDS,
     OSV_REQUEST_TIMEOUT_SECONDS,
     OSV_RETRY_BACKOFF_SECONDS,
+    OSV_RETRY_BUDGET_SECONDS,
     escape_table_cell,
     evaluate_exceptions,
     main,
@@ -205,7 +205,7 @@ class SecurityMonitorTests(unittest.TestCase):
                 for call in mocked_urlopen.call_args_list
             )
         )
-        self.assertEqual(OSV_RETRY_BUDGET_SECONDS, 63)  # nominal budget, not a hard deadline
+        self.assertEqual(OSV_RETRY_BUDGET_SECONDS, 63)  # Nominal, not a hard deadline.
 
     @patch("scripts.security_monitor.sleep")
     @patch("scripts.security_monitor.urlopen")
