@@ -293,7 +293,6 @@ class SecurityMonitorTests(unittest.TestCase):
         self.assertIn("&lt;script&gt;", report)
         self.assertNotIn("<script>", report)
 
-
     @patch("scripts.security_monitor.sleep")
     @patch("scripts.security_monitor.urlopen")
     def test_osv_http_429_and_5xx_exhaustion_uses_exactly_three_attempts(
@@ -313,9 +312,7 @@ class SecurityMonitorTests(unittest.TestCase):
         with self.assertRaises(HTTPError):
             query_osv([{"name": "Django", "version": "5.2.19"}])
         self.assertEqual(mocked_urlopen.call_count, 3)
-        self.assertEqual(
-            [call.args[0] for call in mocked_sleep.call_args_list], [1, 2]
-        )
+        self.assertEqual([call.args[0] for call in mocked_sleep.call_args_list], [1, 2])
 
     @patch("scripts.security_monitor.write_summary")
     @patch(
