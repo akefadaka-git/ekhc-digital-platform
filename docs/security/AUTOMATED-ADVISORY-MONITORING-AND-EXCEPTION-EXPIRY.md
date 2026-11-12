@@ -6,9 +6,9 @@
 
 ## 1. Controls and boundaries
 
-The scheduled workflow queries the public OSV batch API for each exact PyPI name/version in `requirements-lock.txt`. It validates and reads the exception metadata register, then reports approved exceptions at the 30-, 14-, 7-, 3-, and 1-day thresholds, on the expiry date, and after expiry.
+The scheduled workflow queries the public OSV batch API for each exact PyPI name/version in `requirements-lock.txt`. It validates and reads the exception metadata register, then reports approved exceptions at the 30-, 14-, 7-, 3-, and 1-day thresholds, on the expiry date, and after expiry. If a run misses a threshold, the next successful run reports the nearest passed threshold as EXPIRY_REMINDER_OVERDUE, including the threshold and days overdue. Only APPROVED records are eligible. No delivery state is stored, so overdue/expired signals can repeat on later runs; no exactly-once delivery or human acknowledgement is claimed.
 
-The workflow is deliberately read-only:
+The OSV client makes at most three total attempts. It retries transient transport failures and HTTP 429/5xx only, with a 20-second per-attempt timeout and bounded 1-second then 2-second backoff. It does not retry other 4xx responses, malformed JSON/schema, incomplete batches, oversized responses, or local input errors. The configured request/backoff budget is 63 seconds (three 20-second attempts plus three seconds of backoff), excluding runner and local-processing overhead. Exhaustion is reported as INCOMPLETE with a non-zero exit status.\n\nThe workflow is deliberately read-only:
 - workflow and job permissions are `contents: read` only;
 - no issue, pull request, repository, package, deployment, or OIDC write permissions;
 - no dependency installation or update;
@@ -16,7 +16,7 @@ The workflow is deliberately read-only:
 - no automatic severity assignment, risk acceptance, approval, revocation, expiry-status mutation, merge, or deployment;
 - no artifact upload or publication.
 
-A due reminder or advisory finding produces a non-zero workflow result and a job summary. A query, parsing, or API failure is reported as INCOMPLETE and fails closed. The workflow does not guarantee email, mobile push, or out-of-band delivery; GitHub notification settings and recipient subscription must be verified separately.
+A due reminder, overdue reminder, expiry signal, or advisory finding produces a non-zero workflow result and a job summary. Exit status 0 means no findings/signals, 1 means findings/reminders, and 2 means INCOMPLETE/error. A query, parsing, or API failure is reported as INCOMPLETE and fails closed. The workflow does not guarantee email, mobile push, or out-of-band delivery; GitHub notification settings and recipient subscription must be verified separately.
 
 ## 2. Exception metadata and confidentiality
 
@@ -46,4 +46,4 @@ Acceptance requires:
 5. a controlled test with a synthetic, non-sensitive exception entry, followed by removal of that test entry;
 6. explicit review/approval before any merge to the default branch.
 
-No real exception currently exists in the committed register. No real advisory intake, exception approval, or notification delivery is claimed.
+No real exception currently exists in the committed register. No real advisory intake, exception approval, or notification delivery is claimed. The manual operator procedure is documented in docs/operations/SECURITY-MONITORING-OPERATOR-RUNBOOK.md; production activation prerequisites and the separate Owner gate are documented in docs/operations/SECURITY-MONITORING-PRODUCTION-ACTIVATION-GATE.md. The daily schedule remains inactive while this workflow is not on the default branch.
