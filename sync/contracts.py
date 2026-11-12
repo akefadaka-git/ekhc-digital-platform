@@ -1,8 +1,8 @@
 """Provider-neutral offline synchronization contracts; no local persistence."""
 
 import re
-from dataclasses import dataclass
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from typing import Protocol
@@ -35,7 +35,9 @@ class SyncEnvelope:
             value = getattr(self, name)
             if not isinstance(value, str) or not value or value != value.strip():
                 raise ValueError(f"{name} must be non-empty and normalized.")
-        if isinstance(self.base_version, bool) or not isinstance(self.base_version, int):
+        if isinstance(self.base_version, bool) or not isinstance(
+            self.base_version, int
+        ):
             raise TypeError("base_version must be an integer.")
         if self.base_version < 0:
             raise ValueError("base_version must not be negative.")
