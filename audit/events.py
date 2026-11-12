@@ -45,7 +45,10 @@ class AuditEvent:
             or self.resource_reference != self.resource_reference.strip()
         ):
             raise ValueError("resource_reference must be non-empty and normalized.")
-        if not isinstance(self.occurred_at, datetime) or self.occurred_at.tzinfo is None:
+        if (
+            not isinstance(self.occurred_at, datetime)
+            or self.occurred_at.tzinfo is None
+        ):
             raise ValueError("occurred_at must be timezone-aware.")
         if not isinstance(self.correlation_id, UUID) or not isinstance(
             self.event_id, UUID
