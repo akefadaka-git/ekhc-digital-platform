@@ -170,9 +170,7 @@ class MockNotificationTests(unittest.TestCase):
 
     def test_summary_and_audit_do_not_include_destination_or_payload(self):
         orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
-        orchestrator.notify(
-            event(), {Channel.EMAIL: "synthetic-email-recipient-01"}
-        )
+        orchestrator.notify(event(), {Channel.EMAIL: "synthetic-email-recipient-01"})
         summary = orchestrator.redacted_summary()
         self.assertIn("SIMULATED — NOT DELIVERED", summary)
         self.assertNotIn("synthetic-email-recipient-01", summary)
