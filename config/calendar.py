@@ -20,7 +20,11 @@ class EthiopianDate:
     day: int
 
     def __post_init__(self) -> None:
-        if isinstance(self.year, bool) or not isinstance(self.year, int) or self.year < 1:
+        if (
+            isinstance(self.year, bool)
+            or not isinstance(self.year, int)
+            or self.year < 1
+        ):
             raise ValueError("year must be a positive integer.")
         if (
             isinstance(self.month, bool)
