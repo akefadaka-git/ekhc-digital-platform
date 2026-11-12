@@ -300,9 +300,15 @@ class SecurityMonitorTests(unittest.TestCase):
         self, mocked_urlopen, mocked_sleep
     ):
         mocked_urlopen.side_effect = [
-            HTTPError("https://api.osv.dev/v1/querybatch", 429, "Rate limited", {}, None),
-            HTTPError("https://api.osv.dev/v1/querybatch", 503, "Unavailable", {}, None),
-            HTTPError("https://api.osv.dev/v1/querybatch", 500, "Server error", {}, None),
+            HTTPError(
+                "https://api.osv.dev/v1/querybatch", 429, "Rate limited", {}, None
+            ),
+            HTTPError(
+                "https://api.osv.dev/v1/querybatch", 503, "Unavailable", {}, None
+            ),
+            HTTPError(
+                "https://api.osv.dev/v1/querybatch", 500, "Server error", {}, None
+            ),
         ]
         with self.assertRaises(HTTPError):
             query_osv([{"name": "Django", "version": "5.2.19"}])
@@ -312,7 +318,10 @@ class SecurityMonitorTests(unittest.TestCase):
         )
 
     @patch("scripts.security_monitor.write_summary")
-    @patch("scripts.security_monitor.query_osv", side_effect=URLError("temporary network failure"))
+    @patch(
+        "scripts.security_monitor.query_osv",
+        side_effect=URLError("temporary network failure"),
+    )
     def test_main_reports_incomplete_and_returns_two_on_osv_failure(
         self, mocked_query, mocked_summary
     ):
