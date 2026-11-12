@@ -180,9 +180,7 @@ class NotificationOrchestrator:
     backoff_seconds: tuple[int, ...] = (1, 2)
     sleeper: object = lambda _seconds: None
     audit_events: list[dict[str, object]] = field(default_factory=list)
-    _receipts: dict[tuple[str, Channel], DeliveryReceipt] = field(
-        default_factory=dict
-    )
+    _receipts: dict[tuple[str, Channel], DeliveryReceipt] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.config.mode != "mock" or self.config.email_mode != "mock" or (
