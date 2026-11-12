@@ -282,10 +282,9 @@ class MockNotificationTests(unittest.TestCase):
             )
             self.assertEqual(second_receipts, first_receipts)
             self.assertEqual(
-                [
-                    item["event"]
-                    for item in second.ledger.load_audit_events()
-                ].count("mock_attempted"),
+                [item["event"] for item in second.ledger.load_audit_events()].count(
+                    "mock_attempted"
+                ),
                 1,
             )
             self.assertIn(
@@ -301,27 +300,21 @@ class MockNotificationTests(unittest.TestCase):
             first = NotificationOrchestrator(
                 config(ledger_path=path), FixtureSet.accepted()
             )
-            first.notify(
-                event(), {Channel.EMAIL: "synthetic-email-recipient-01"}
-            )
+            first.notify(event(), {Channel.EMAIL: "synthetic-email-recipient-01"})
             first.ledger.close()
 
             second = NotificationOrchestrator(
                 config(ledger_path=path), FixtureSet.accepted()
             )
             with self.assertRaisesRegex(ValueError, "Idempotency conflict"):
-                second.notify(
-                    event(), {Channel.EMAIL: "synthetic-email-recipient-02"}
-                )
+                second.notify(event(), {Channel.EMAIL: "synthetic-email-recipient-02"})
             self.assertEqual(len(second._receipts), 1)
             second.ledger.close()
 
     def test_sqlite_ledger_rolls_back_all_channels_on_processing_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "mock-ledger.sqlite3"
-            fixtures = FixtureSet(
-                outcomes={Channel.EMAIL: (MockOutcome.ACCEPTED,)}
-            )
+            fixtures = FixtureSet(outcomes={Channel.EMAIL: (MockOutcome.ACCEPTED,)})
             orchestrator = NotificationOrchestrator(config(ledger_path=path), fixtures)
             with self.assertRaisesRegex(ValueError, "No synthetic outcomes"):
                 orchestrator.notify(
@@ -347,9 +340,7 @@ class MockNotificationTests(unittest.TestCase):
             stored = orchestrator.ledger.load_audit_events()
             self.assertEqual(len(stored), 1)
             self.assertIs(stored[0]["simulated"], True)
-            self.assertEqual(
-                stored[0]["display_label"], "SIMULATED — NOT DELIVERED"
-            )
+            self.assertEqual(stored[0]["display_label"], "SIMULATED — NOT DELIVERED")
             orchestrator.ledger.close()
 
     def test_sqlite_ledger_rejects_non_simulated_receipts(self):
