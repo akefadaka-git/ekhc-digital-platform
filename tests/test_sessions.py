@@ -120,3 +120,59 @@ class SessionPolicyTests(SimpleTestCase):
             SessionCookiePolicy(http_only=False)
         with self.assertRaisesMessage(ValueError, "host-only"):
             SessionCookiePolicy(domain=".example.invalid")
+
+    def test_idle_timeout_accepts_just_before_boundary(self):
+        observation = SessionObservation(
+            account=self.observation.account,
+            issued_at=NOW - timedelta(minutes=20),
+            last_activity_at=NOW - timedelta(minutes=14, seconds=59),
+            absolute_expires_at=NOW + timedelta(hours=1),
+            authenticated=True,
+        )
+        self.assertTrue(evaluate_session(observation, self.policy, now=NOW).accepted)
+
+    def test_absolute_timeout_precedes_idle_timeout(self):
+        observation = SessionObservation(
+            account=self.observation.account,
+            issued_at=NOW - timedelta(hours=8),
+            last_activity_at=NOW - timedelta(minutes=30),
+            absolute_expires_at=NOW,
+            authenticated=True,
+        )
+        self.assertEqual(
+            evaluate_session(observation, self.policy, now=NOW).reason_code,
+            "SESSION_ABSOLUTE_TIMEOUT",
+        )
+
+    def test_future_issue_time_fails_closed(self):
+        observation = SessionObservation(
+            account=self.observation.account,
+            issued_at=NOW + timedelta(seconds=1),
+            last_activity_at=NOW + timedelta(seconds=1),
+            absolute_expires_at=NOW + timedelta(hours=1),
+            authenticated=True,
+        )
+        self.assertEqual(
+            evaluate_session(observation, self.policy, now=NOW).reason_code,
+            "SESSION_TIME_OBSERVATION_INVALID",
+        )
+
+    def test_idle_timeout_must_not_exceed_absolute_timeout(self):
+        with self.assertRaisesMessage(ValueError, "must not exceed"):
+            SessionPolicy(
+                idle_timeout=timedelta(hours=2),
+                absolute_timeout=timedelta(hours=1),
+            )
+
+    def test_cookie_policy_rejects_same_site_none(self):
+        with self.assertRaisesMessage(ValueError, "same_site"):
+            SessionCookiePolicy(same_site="None")
+
+    def test_naive_trusted_clock_is_rejected(self):
+        observation = self.observation
+        with self.assertRaisesMessage(ValueError, "timezone-aware trusted datetime"):
+            evaluate_session(
+                observation,
+                self.policy,
+                now=datetime(2026, 11, 12, 12, 0),
+            )
