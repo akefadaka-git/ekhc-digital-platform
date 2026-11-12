@@ -37,9 +37,7 @@ class IcuEthiopianCalendarAdapter:
         if days_since_epoch < 0:
             raise ValueError("Gregorian date predates the Amete Mihret epoch.")
 
-        cycle, remainder = divmod(
-            days_since_epoch, _DAYS_PER_FOUR_YEAR_CYCLE
-        )
+        cycle, remainder = divmod(days_since_epoch, _DAYS_PER_FOUR_YEAR_CYCLE)
         year = 4 * cycle + remainder // 365 - remainder // 1460
         day_of_year = 365 if remainder == 1460 else remainder % 365
         month = day_of_year // 30 + 1
