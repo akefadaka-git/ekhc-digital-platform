@@ -168,9 +168,7 @@ class MockNotificationTests(unittest.TestCase):
 
     def test_duplicate_event_with_changed_destination_is_rejected(self):
         orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
-        orchestrator.notify(
-            event(), {Channel.EMAIL: "synthetic-email-recipient-01"}
-        )
+        orchestrator.notify(event(), {Channel.EMAIL: "synthetic-email-recipient-01"})
         with self.assertRaisesRegex(ValueError, "Idempotency conflict"):
             orchestrator.notify(
                 event(), {Channel.EMAIL: "synthetic-email-recipient-02"}
@@ -194,9 +192,7 @@ class MockNotificationTests(unittest.TestCase):
 
     def test_existing_destination_conflict_is_preflighted_atomically(self):
         orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
-        orchestrator.notify(
-            event(), {Channel.SMS: "synthetic-sms-recipient-01"}
-        )
+        orchestrator.notify(event(), {Channel.SMS: "synthetic-sms-recipient-01"})
         prior_receipts = dict(orchestrator._receipts)
         prior_audit = list(orchestrator.audit_events)
         with self.assertRaisesRegex(ValueError, "Idempotency conflict"):
