@@ -25,7 +25,9 @@ MAX_OSV_RESPONSE_BYTES = 2 * 1024 * 1024
 OSV_REQUEST_TIMEOUT_SECONDS = 20
 OSV_MAX_ATTEMPTS = 3
 OSV_RETRY_BACKOFF_SECONDS = (1, 2)
-OSV_MAX_WALL_CLOCK_SECONDS = OSV_MAX_ATTEMPTS * OSV_REQUEST_TIMEOUT_SECONDS + sum(
+# Nominal configured socket-timeout plus retry-sleep budget only. urllib's
+# timeout is an inactivity timeout, not a hard end-to-end wall-clock deadline.
+OSV_RETRY_BUDGET_SECONDS = OSV_MAX_ATTEMPTS * OSV_REQUEST_TIMEOUT_SECONDS + sum(
     OSV_RETRY_BACKOFF_SECONDS
 )
 TRANSIENT_OSV_ERRNOS = {

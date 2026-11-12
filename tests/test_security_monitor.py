@@ -9,9 +9,9 @@ from urllib.error import HTTPError, URLError
 from scripts.security_monitor import (
     MAX_OSV_RESPONSE_BYTES,
     OSV_MAX_ATTEMPTS,
-    OSV_MAX_WALL_CLOCK_SECONDS,
     OSV_REQUEST_TIMEOUT_SECONDS,
     OSV_RETRY_BACKOFF_SECONDS,
+    OSV_RETRY_BUDGET_SECONDS,
     escape_table_cell,
     evaluate_exceptions,
     main,
@@ -205,7 +205,7 @@ class SecurityMonitorTests(unittest.TestCase):
                 for call in mocked_urlopen.call_args_list
             )
         )
-        self.assertEqual(OSV_MAX_WALL_CLOCK_SECONDS, 63)
+        self.assertEqual(OSV_RETRY_BUDGET_SECONDS, 63)  # Nominal, not a hard deadline.
 
     @patch("scripts.security_monitor.sleep")
     @patch("scripts.security_monitor.urlopen")
@@ -292,6 +292,67 @@ class SecurityMonitorTests(unittest.TestCase):
         self.assertIn("Django", report)
         self.assertIn("&lt;script&gt;", report)
         self.assertNotIn("<script>", report)
+
+    @patch("scripts.security_monitor.sleep")
+    @patch("scripts.security_monitor.urlopen")
+    def test_osv_http_429_and_5xx_exhaustion_uses_exactly_three_attempts(
+        self, mocked_urlopen, mocked_sleep
+    ):
+        mocked_urlopen.side_effect = [
+            HTTPError(
+                "https://api.osv.dev/v1/querybatch", 429, "Rate limited", {}, None
+            ),
+            HTTPError(
+                "https://api.osv.dev/v1/querybatch", 503, "Unavailable", {}, None
+            ),
+            HTTPError(
+                "https://api.osv.dev/v1/querybatch", 500, "Server error", {}, None
+            ),
+        ]
+        with self.assertRaises(HTTPError):
+            query_osv([{"name": "Django", "version": "5.2.19"}])
+        self.assertEqual(mocked_urlopen.call_count, 3)
+        self.assertEqual([call.args[0] for call in mocked_sleep.call_args_list], [1, 2])
+
+    @patch("scripts.security_monitor.write_summary")
+    @patch(
+        "scripts.security_monitor.query_osv",
+        side_effect=URLError("temporary network failure"),
+    )
+    @patch(
+        "scripts.security_monitor.parse_lockfile",
+        return_value=[{"name": "Django", "version": "5.2.19"}],
+    )
+    @patch("scripts.security_monitor.evaluate_exceptions", return_value=[])
+    def test_main_reports_incomplete_and_returns_two_on_osv_failure(
+        self, mocked_evaluate, mocked_parse, mocked_query, mocked_summary
+    ):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            lockfile = root / "requirements-lock.txt"
+            register = root / "exception-register.json"
+            lockfile.write_text("Django==5.2.19", encoding="utf-8")
+            register.write_text(
+                '{"schema_version":1,"exceptions":[]}', encoding="utf-8"
+            )
+            with patch(
+                "sys.argv",
+                [
+                    "security_monitor.py",
+                    "--lock",
+                    str(lockfile),
+                    "--exceptions",
+                    str(register),
+                ],
+            ):
+                result = main()
+        self.assertEqual(result, 2)
+        report = mocked_summary.call_args.args[0]
+        self.assertIn("Security monitoring — INCOMPLETE", report)
+        self.assertIn("Monitoring could not complete", report)
+        mocked_parse.assert_called_once()
+        mocked_evaluate.assert_called_once()
+        mocked_query.assert_called_once()
 
     def test_lock_parser_accepts_only_sha256_hash_options(self):
         valid_hash = "a" * 64
