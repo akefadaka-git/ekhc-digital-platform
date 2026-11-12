@@ -4,7 +4,7 @@ No cryptographic primitive or key provider is implemented here. Production adapt
 must pass independent AES-256-GCM and KMS/HSM conformance tests before activation.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 
@@ -16,16 +16,16 @@ AES_256_KEY_BYTES = 32
 
 @dataclass(frozen=True, slots=True)
 class GeneratedDataKey:
-    plaintext_key: bytes
+    plaintext_key: bytearray = field(repr=False, compare=False)
     wrapped_key: bytes
     key_reference: str
     key_version: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.plaintext_key, bytes) or len(
+        if not isinstance(self.plaintext_key, bytearray) or len(
             self.plaintext_key
         ) != AES_256_KEY_BYTES:
-            raise ValueError("plaintext data key must contain 32 bytes.")
+            raise ValueError("plaintext data key must be a 32-byte mutable buffer.")
         if not isinstance(self.wrapped_key, bytes) or not self.wrapped_key:
             raise ValueError("wrapped data key must be non-empty bytes.")
         for name in ("key_reference", "key_version"):
