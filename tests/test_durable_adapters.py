@@ -1,4 +1,4 @@
-"""Transactional sync tests use an in-memory rollback-capable fake adapter."""
+"""Durable adapter contract tests with rollback and crypto test doubles."""
 
 import hashlib
 from copy import deepcopy
@@ -18,10 +18,13 @@ from security.crypto import (
     AES_256_GCM_SUITE,
     EncryptionEnvelope,
     GeneratedDataKey,
+    decrypt_payload,
+    encrypt_payload,
 )
 from sync.application import (
     SyncCommand,
     apply_sync_command,
+    sync_associated_data,
 )
 from sync.contracts import SyncEnvelope
 
@@ -48,7 +51,7 @@ class FakeTransaction:
         return self.state["versions"].get(aggregate_reference, 0)
 
     def apply_aggregate_mutation(
-        self, aggregate_reference, expected_version, payload, occurred_at
+        self, aggregate_reference, expected_version, encrypted_payload, occurred_at
     ):
         if (
             self.get_aggregate_version_for_update(aggregate_reference)
@@ -57,7 +60,9 @@ class FakeTransaction:
             raise RuntimeError("concurrent version changed")
         new_version = expected_version + 1
         self.state["versions"][aggregate_reference] = new_version
-        self.state["mutations"].append((aggregate_reference, payload, occurred_at))
+        self.state["mutations"].append(
+            (aggregate_reference, encrypted_payload, occurred_at)
+        )
         return new_version
 
     def append_receipt(self, receipt):
@@ -107,24 +112,38 @@ class FakeUnitOfWork:
         return self.TransactionContext(self)
 
 
-def make_command(key=None, base_version=3):
-    payload = b"synthetic-sync-payload"
+def make_command(key=None, base_version=3, *, aad_override=None):
+    idempotency_key = key or uuid4()
+    ciphertext = b"synthetic-encrypted-payload" + (b"t" * 16)
     envelope = SyncEnvelope(
-        idempotency_key=key or uuid4(),
+        idempotency_key=idempotency_key,
         aggregate_reference="aggregate-001",
         device_reference="device-001",
         base_version=base_version,
-        payload_sha256=hashlib.sha256(payload).hexdigest(),
+        payload_sha256=hashlib.sha256(ciphertext).hexdigest(),
         client_created_at=NOW,
     )
-    return SyncCommand(envelope, AccountReference("account-001"), payload)
+    aad = sync_associated_data(envelope)
+    encrypted_payload = EncryptionEnvelope(
+        ciphertext=ciphertext,
+        nonce=b"n" * 12,
+        wrapped_key=b"wrapped-test-key",
+        key_reference="kms-test-key",
+        key_version="v1",
+        algorithm_suite=AES_256_GCM_SUITE,
+        aad_sha256=aad_override or hashlib.sha256(aad).hexdigest(),
+    )
+    return SyncCommand(
+        envelope, AccountReference("account-001"), encrypted_payload
+    )
 
 
 class TransactionalSyncTests(SimpleTestCase):
     def test_success_commits_aggregate_receipt_audit_and_outbox_together(self):
         store = FakeUnitOfWork()
         clock = FixedClock()
-        result = apply_sync_command(make_command(), store, clock)
+        command = make_command()
+        result = apply_sync_command(command, store, clock)
         self.assertEqual(result.status, "applied")
         self.assertEqual(store.state["versions"]["aggregate-001"], 4)
         self.assertEqual(len(store.state["receipts"]), 1)
@@ -135,9 +154,13 @@ class TransactionalSyncTests(SimpleTestCase):
             store.state["mutations"][0][2],
             next(iter(store.state["receipts"].values())).occurred_at,
             store.state["audit"][0].occurred_at,
-            store.state["outbox"][0][2],
+            store.state["outbox"][0][3],
         ]
         self.assertTrue(all(value is NOW for value in timestamps))
+        self.assertIs(
+            store.state["mutations"][0][1], command.encrypted_payload
+        )
+        self.assertNotIn(command.encrypted_payload.ciphertext, store.state["outbox"])
 
     def test_duplicate_idempotency_key_returns_prior_receipt_without_mutation(self):
         store = FakeUnitOfWork()
@@ -151,7 +174,9 @@ class TransactionalSyncTests(SimpleTestCase):
 
     def test_version_conflict_records_receipt_and_audit_without_mutation(self):
         store = FakeUnitOfWork()
-        result = apply_sync_command(make_command(base_version=2), store, FixedClock())
+        result = apply_sync_command(
+            make_command(base_version=2), store, FixedClock()
+        )
         self.assertEqual(result.status, "conflict")
         self.assertEqual(store.state["versions"]["aggregate-001"], 3)
         self.assertEqual(store.state["mutations"], [])
@@ -179,18 +204,105 @@ class TransactionalSyncTests(SimpleTestCase):
         self.assertEqual(store.state["audit"], [])
         self.assertEqual(store.state["outbox"], [])
 
-    def test_payload_digest_mismatch_is_rejected_before_transaction(self):
-        payload = b"not-the-declared-payload"
-        envelope = SyncEnvelope(
-            idempotency_key=uuid4(),
-            aggregate_reference="aggregate-001",
-            device_reference="device-001",
-            base_version=3,
-            payload_sha256="a" * 64,
-            client_created_at=NOW,
+    def test_ciphertext_digest_mismatch_is_rejected_before_transaction(self):
+        command = make_command()
+        bad_envelope = EncryptionEnvelope(
+            ciphertext=b"tampered-ciphertext" + (b"t" * 16),
+            nonce=command.encrypted_payload.nonce,
+            wrapped_key=command.encrypted_payload.wrapped_key,
+            key_reference=command.encrypted_payload.key_reference,
+            key_version=command.encrypted_payload.key_version,
+            algorithm_suite=command.encrypted_payload.algorithm_suite,
+            aad_sha256=command.encrypted_payload.aad_sha256,
         )
-        with self.assertRaisesMessage(ValueError, "payload digest does not match"):
-            SyncCommand(envelope, AccountReference("account-001"), payload)
+        with self.assertRaisesMessage(ValueError, "ciphertext digest"):
+            SyncCommand(command.envelope, command.actor, bad_envelope)
+
+    def test_aad_must_bind_the_sync_operation(self):
+        with self.assertRaisesMessage(ValueError, "AAD does not bind"):
+            make_command(aad_override="f" * 64)
+
+
+class FakeKeyProvider:
+    def __init__(self):
+        self.generated = None
+
+    def generate_data_key(self, key_reference):
+        self.generated = GeneratedDataKey(
+            bytearray(b"k" * 32), b"wrapped-key", key_reference, "v1"
+        )
+        return self.generated
+
+    def unwrap_data_key(self, wrapped_key, key_reference):
+        return bytearray(b"k" * 32)
+
+    def rewrap_data_key(self, wrapped_key, old_key_reference, new_key_reference):
+        return b"rewrapped-key", "v2"
+
+
+class ReversibleTestCipher:
+    """Test-only reversible stand-in; never use as a production cipher."""
+
+    def encrypt(self, plaintext, key, nonce, associated_data):
+        transformed = bytes(
+            value ^ key[index % len(key)] for index, value in enumerate(plaintext)
+        )
+        return transformed + (b"t" * 16)
+
+    def decrypt(self, ciphertext, key, nonce, associated_data):
+        transformed = ciphertext[:-16]
+        return bytes(
+            value ^ key[index % len(key)]
+            for index, value in enumerate(transformed)
+        )
+
+
+class EnvelopeEncryptionTests(SimpleTestCase):
+    def setUp(self):
+        self.provider = FakeKeyProvider()
+        self.cipher = ReversibleTestCipher()
+        self.aad = b"document:doc-001:version:1"
+
+    def test_encrypt_creates_envelope_and_zeroizes_transient_data_key(self):
+        envelope = encrypt_payload(
+            b"synthetic document bytes",
+            self.provider,
+            self.cipher,
+            key_reference="kms-test-key",
+            associated_data=self.aad,
+        )
+        self.assertEqual(envelope.algorithm_suite, AES_256_GCM_SUITE)
+        self.assertEqual(len(envelope.nonce), 12)
+        self.assertEqual(self.provider.generated.plaintext_key, bytearray(32))
+
+    def test_decrypt_requires_exact_authenticated_data(self):
+        envelope = encrypt_payload(
+            b"synthetic document bytes",
+            self.provider,
+            self.cipher,
+            key_reference="kms-test-key",
+            associated_data=self.aad,
+        )
+        plaintext = decrypt_payload(
+            envelope, self.provider, self.cipher, associated_data=self.aad
+        )
+        self.assertEqual(plaintext, b"synthetic document bytes")
+
+    def test_decrypt_rejects_aad_substitution(self):
+        envelope = encrypt_payload(
+            b"synthetic document bytes",
+            self.provider,
+            self.cipher,
+            key_reference="kms-test-key",
+            associated_data=self.aad,
+        )
+        with self.assertRaisesMessage(ValueError, "does not match"):
+            decrypt_payload(
+                envelope,
+                self.provider,
+                self.cipher,
+                associated_data=b"document:other:version:1",
+            )
 
 
 class AuditChainTests(SimpleTestCase):
@@ -237,36 +349,3 @@ class AuditChainTests(SimpleTestCase):
         digest = canonical_event_digest(event, "0" * 64)
         entry = AuditChainEntry(2, "0" * 64, event, digest)
         self.assertFalse(verify_audit_chain((entry,)))
-
-
-class CryptographicContractTests(SimpleTestCase):
-    def test_generated_data_key_is_256_bits_and_wrapped(self):
-        value = GeneratedDataKey(
-            plaintext_key=bytearray(b"k" * 32),
-            wrapped_key=b"wrapped-test-key",
-            key_reference="kms-key-ref",
-            key_version="v1",
-        )
-        self.assertEqual(len(value.plaintext_key), 32)
-
-    def test_envelope_requires_gcm_nonce_and_tag_sized_ciphertext(self):
-        envelope = EncryptionEnvelope(
-            ciphertext=b"c" * 16,
-            nonce=b"n" * 12,
-            wrapped_key=b"wrapped-test-key",
-            key_reference="kms-key-ref",
-            key_version="v1",
-            algorithm_suite=AES_256_GCM_SUITE,
-            aad_sha256="a" * 64,
-        )
-        self.assertEqual(envelope.algorithm_suite, "AES-256-GCM")
-        with self.assertRaisesMessage(ValueError, "nonce must contain 12 bytes"):
-            EncryptionEnvelope(
-                ciphertext=b"c" * 16,
-                nonce=b"short",
-                wrapped_key=b"wrapped-test-key",
-                key_reference="kms-key-ref",
-                key_version="v1",
-                algorithm_suite=AES_256_GCM_SUITE,
-                aad_sha256="a" * 64,
-            )
