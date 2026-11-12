@@ -352,9 +352,7 @@ class MockNotificationTests(unittest.TestCase):
             first_attempt = threading.Event()
             release_first = threading.Event()
             fixtures = FixtureSet(
-                outcomes={
-                    Channel.EMAIL: (MockOutcome.TIMEOUT, MockOutcome.ACCEPTED)
-                }
+                outcomes={Channel.EMAIL: (MockOutcome.TIMEOUT, MockOutcome.ACCEPTED)}
             )
 
             def pause_between_attempts(_seconds):
