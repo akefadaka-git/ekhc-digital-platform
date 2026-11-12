@@ -143,13 +143,12 @@ class MockNotificationTests(unittest.TestCase):
         first = orchestrator.notify(event(), destination)
         second = orchestrator.notify(event(), destination)
         self.assertEqual(first, second)
-        self.assertEqual(
-            sum(
-                item["event"] == "mock_attempted"
-                for item in orchestrator.audit_events
-            ),
-            1,
-        )
+        attempted = [
+            record
+            for record in orchestrator.audit_events
+            if record["event"] == "mock_attempted"
+        ]
+        self.assertEqual(len(attempted), 1)
         self.assertIn(
             "duplicate_suppressed",
             [item["event"] for item in orchestrator.audit_events],
