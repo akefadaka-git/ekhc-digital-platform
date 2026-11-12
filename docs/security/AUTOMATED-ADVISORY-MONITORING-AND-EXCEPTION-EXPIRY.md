@@ -34,7 +34,7 @@ Expiry reminders are signals to obtain Owner review before the deadline. They do
 - Pull-request validation: pull requests targeting `main`.
 - GitHub scheduled workflows run only from the repository's default branch. Until this branch is separately reviewed and merged, the schedule is not active; manual dispatch on this branch can validate it.
 
-The OSV API is an external dependency. Results depend on OSV coverage, package identity normalization, network availability, and advisory freshness. No result is not proof that a package is safe. The current parser intentionally supports the repository's pinned PyPI lock format; it rejects unsupported entries rather than silently skipping them.
+The OSV API is an external dependency. Results depend on OSV coverage, package identity normalization, network availability, and advisory freshness. No result is not proof that a package is safe. The parser accepts one package requirement per line in the form name==version, optionally followed only by one or more --hash=sha256:<64 hex> tokens. Blank lines and full-line comments are ignored. Other pip options, markers, URLs, includes, continuations, and alternate requirement forms are rejected; the parser does not claim to implement the complete pip requirements grammar.
 
 ## 4. Acceptance and remaining operational work
 
