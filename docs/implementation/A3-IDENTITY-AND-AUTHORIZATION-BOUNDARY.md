@@ -1,22 +1,30 @@
-# A3 — Identity and Authorization Boundary Increment
+# A3 — Identity, Authentication, and Authorization Boundary
 
-**Status:** Implemented on an Owner-approved A3 work branch; exact-head CI pending.  
-**Scope:** Non-persistent, authority-independent primitives only.
+**Status:** Contract-level implementation completed on the Owner-approved A3 branch; exact-head CI and A4 verification pending.  
+**Scope:** Authority-independent and non-persistent primitives only.
 
-## Implemented
+## A3.2 — Authentication/session security design
 
-- Added distinct immutable PersonReference and AccountReference value types.
-- Added an explicit typed IdentityLink; it does not infer a relationship from matching identifiers.
-- Added an authorization request envelope using opaque resource and optional scope references.
-- Added a fail-closed authorization evaluator that denies every request while no approved policy is configured.
-- Added negative tests for type confusion, malformed references, malformed requests, and default denial.
+- A provider-neutral `AuthenticationProvider` protocol defines the verification boundary without selecting a provider or storing credentials.
+- Session observations use typed account references and trusted server-side timestamps.
+- Session evaluation uses one injected, timezone-aware clock observation and fails closed for revocation, unauthenticated state, future timestamps, idle expiry, and absolute expiry.
+- Session policy requires idle/absolute timeouts and rotation after authentication or security-boundary changes.
+- Browser cookie policy requires Secure, HttpOnly, host-only cookies with SameSite Strict/Lax.
 
-## Deliberate exclusions
+No authentication endpoints, credential verification, MFA, recovery, session persistence, session issuance, cookie middleware, or identity-provider integration is enabled. The current application has no active session backend. Provider, account lifecycle owner, and persistence/security design remain unresolved.
 
-This increment does not implement credentials, authentication, sessions, account recovery, person verification, membership status, roles, positions, office assignments, organizational hierarchy, permission grants, policy configuration, persistence, database models, migrations, APIs, or UI. It does not establish institutional identity or authority. The reference values are synthetic in tests and have no production data semantics.
+## A3.3 — Person/account separation
 
-The prior approved technical baseline defers database/schema work and requires unresolved institutional authority to remain unmodeled. This increment respects those restrictions. A real authentication provider and any authorization grants require separate security and institutional decisions.
+- Immutable `PersonReference` and `AccountReference` values are distinct types.
+- `IdentityLink` requires explicit typed references; matching values never infer a relationship.
+- Negative tests cover cross-type substitution, untyped values, immutability, malformed references, and absent inferred links.
 
-## Verification
+No persistent schemas, person verification, membership lifecycle, roles, offices, hierarchy, permission grants, or institutional authority are implemented.
 
-The Django test runner discovers the added tests. Exact-head GitHub Actions quality verification is required before this increment can be marked verified. No merge, deployment, signing, publication, or production-data use is included.
+## Authorization default
+
+The authorization evaluator remains deny-by-default until an independently approved policy is configured. This branch introduces no policy grants or institutional role model.
+
+## Verification boundary
+
+Exact-head CI must pass before technical verification can be claimed. No merge, deployment, signing, publication, or production-data use is included.
