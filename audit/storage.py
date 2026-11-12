@@ -57,8 +57,36 @@ def canonical_event_digest(event: AuditEvent, previous_digest: str) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def verify_audit_chain(entries: tuple[AuditChainEntry, ...]) -> bool:
-    """Verify sequence continuity and each event's predecessor-linked digest."""
+def verify_audit_chain(
+    entries: tuple[AuditChainEntry, ...],
+    *,
+    expected_head_sequence: int | None = None,
+    expected_head_digest: str | None = None,
+) -> bool:
+    """Verify the chain, optionally against an independently trusted head checkpoint.
+
+    A checkpoint detects tail truncation. Without one, a valid prefix is
+    indistinguishable from a complete chain using hash links alone.
+    """
+    if (expected_head_sequence is None) != (expected_head_digest is None):
+        raise ValueError("head sequence and digest must be supplied together.")
+    if expected_head_sequence is not None:
+        if (
+            isinstance(expected_head_sequence, bool)
+            or not isinstance(expected_head_sequence, int)
+            or expected_head_sequence < 0
+        ):
+            raise ValueError("expected head sequence must be a non-negative integer.")
+        if (
+            not isinstance(expected_head_digest, str)
+            or len(expected_head_digest) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in expected_head_digest
+            )
+        ):
+            raise ValueError("expected head digest must be lowercase SHA-256 hex.")
+
     previous = _GENESIS_DIGEST
     for expected_sequence, entry in enumerate(entries, start=1):
         if entry.sequence != expected_sequence or entry.previous_digest != previous:
@@ -66,6 +94,12 @@ def verify_audit_chain(entries: tuple[AuditChainEntry, ...]) -> bool:
         if canonical_event_digest(entry.event, previous) != entry.digest:
             return False
         previous = entry.digest
+
+    if expected_head_sequence is not None:
+        return (
+            len(entries) == expected_head_sequence
+            and previous == expected_head_digest
+        )
     return True
 
 
