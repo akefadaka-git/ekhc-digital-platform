@@ -70,3 +70,29 @@ class IcuEthiopianCalendarAdapterTests(SimpleTestCase):
             ),
             EthiopianDate(2012, 1, 1),
         )
+
+    def test_month_boundaries_round_trip_across_two_centuries(self):
+        # Exhaustively exercise first/last days of all months over a broad
+        # positive Amete Mihret range. This is a property sweep, not an
+        # independent ICU conformance oracle.
+        for year in range(1900, 2101):
+            for month in range(1, 14):
+                last_day = 6 if month == 13 and (year + 1) % 4 == 0 else (
+                    5 if month == 13 else 30
+                )
+                for day in {1, last_day}:
+                    value = EthiopianDate(year, month, day)
+                    with self.subTest(value=value):
+                        gregorian = self.adapter.to_gregorian(value)
+                        self.assertEqual(self.adapter.from_gregorian(gregorian), value)
+
+    def test_gregorian_weekly_samples_round_trip_across_two_centuries(self):
+        from datetime import timedelta
+
+        current = date(1900, 1, 1)
+        final = date(2100, 12, 31)
+        while current <= final:
+            with self.subTest(gregorian=current):
+                ethiopian = self.adapter.from_gregorian(current)
+                self.assertEqual(self.adapter.to_gregorian(ethiopian), current)
+            current += timedelta(days=7)
