@@ -1,63 +1,85 @@
-# EKHC OS — A4 Independent Re-verification Record: Monitoring Operational Readiness
+# EKHC OS — A4 Independent Re-verification and Technical Closure Record: Monitoring Operational Readiness
 
 **Verification date:** 2026-11-12  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
-**Verified corrective source branch:** `a3/monitoring-operational-readiness-a4-corrections`  
-**Corrective source SHA:** `1a3946284c819b7004d4a652a4bbcb02396f3389`  
+**Corrective source branch:** `a3/monitoring-operational-readiness-a4-corrections`  
+**Final validation head:** `0a845253fda11614828b71eb78446e062e394c1f`  
+**Pre-validation corrective head:** `1a3946284c819b7004d4a652a4bbcb02396f3389`  
+**Source tree SHA (identical at both heads):** `627b50edd588d7a163111e41acba02493b6c203e`  
 **A3 implementation baseline:** `a8042051824ddb50592492ee75d5aad24d1bb03a`  
 **A4 verification branch:** `a4/monitoring-operational-readiness-reverification`
 
 ## 1. A4 disposition
 
-**A4 result: PARTIAL — FOUR CORRECTIVE FINDINGS RE-VERIFIED; FINAL-HEAD CI EVIDENCE GATE REMAINS OPEN.**
+**A4 TECHNICAL VERIFICATION: VERIFIED-CLOSED WITH EXPLICIT LIMITATIONS.**
 
-The independent source review confirms that the four prior findings have been addressed in the corrective source. The prior corrective CI runs passed on source SHA `35c6cad2bae0cf7dd7400b3605e315f71c476f4b`. A direct comparison from that tested source SHA to the corrective source SHA above reports exactly two commits ahead and one changed path: the corrective implementation evidence record. The security-monitor Python source and test source are byte-for-byte identical at those two SHAs. The corrected runbook and A3 implementation report are included in the final corrective source.
+All four A4 corrective findings have been independently re-verified, and both required GitHub Actions workflows have now completed successfully on validation head `0a845253fda11614828b71eb78446e062e394c1f`. The validation commit has the exact same Git tree as pre-validation corrective head `1a3946284c819b7004d4a652a4bbcb02396f3389`; comparison reports one commit ahead, zero behind, and zero changed files. Thus the validation commit changes no source, tests, workflow, or documentation file and provides final-tree CI evidence without altering the tested implementation.
 
-The final corrective source SHA itself has no associated workflow runs or combined status checks returned by the available GitHub evidence interface. Therefore this record does not claim final-head CI. The prior CI is strong evidence for the unchanged code/tests, but it does not satisfy a strict final-head workflow-evidence gate.
+The technical verification is closed only for the documented, read-only advisory and exception-expiry monitoring scope and its stated limitations. This does **not** close operational readiness or production readiness.
 
 ## 2. Re-verification of A4 findings
 
-| Finding | Independent check | Result |
+| Finding | Independent check | Final result |
 |---|---|---|
-| A4-F01 — OSV wall-clock bound | Inspected `query_osv`: maximum three attempts; 20-second urllib socket-inactivity timeout per attempt; bounded 1s/2s sleeps; no hard total wall-clock deadline. Runbook explicitly states a continuously streaming response can exceed 20 seconds and total elapsed time can exceed 63 seconds. | **CORRECTED — PASS WITH EXPLICIT LIMITATION** |
-| A4-F02 — literal newline rendering | Inspected corrected monitoring runbook. The retry-budget paragraph is followed by real Markdown paragraph breaks; literal backslash-n sequence is absent. | **CORRECTED — PASS** |
-| A4-F03 — evidence integrity | Inspected A3 report: it identifies A3 final head `a8042051824ddb50592492ee75d5aad24d1bb03a`, quality run #179 / ID `43130314519`, and monitor run #64 / ID `43130314540`. The corrective record identifies source SHA `35c6cad2bae0cf7dd7400b3605e315f71c476f4b`, quality run #198 / ID `43157775745`, and monitor run #83 / ID `43157775696`; links and run IDs agree. The corrective record accurately explains that those runs were triggered while PR #8 targeted main and are not standalone exact-head runs. | **CORRECTED — PASS** |
-| A4-F04 — failure-path tests | Inspected tests for HTTP 429/5xx exhaustion (three attempts, two sleeps) and `main()` OSV failure (exit 2 and INCOMPLETE summary). Both tests are present. Quality run #198 reports 74 tests passed and successful Ruff lint/format and pip-audit. | **CORRECTED — PASS; FINAL-HEAD CI PENDING** |
+| A4-F01 — OSV wall-clock bound | Maximum three attempts; 20-second urllib socket-inactivity timeout per attempt; bounded 1s/2s sleeps. No hard total wall-clock deadline is implemented. Runbook explicitly states a continuously streaming response can exceed 20 seconds and total elapsed time can exceed 63 seconds. | **CORRECTED — PASS WITH EXPLICIT LIMITATION** |
+| A4-F02 — literal newline rendering | Corrected monitoring runbook uses real Markdown paragraph breaks; literal backslash-n sequence is absent. | **CORRECTED — PASS** |
+| A4-F03 — evidence integrity | A3 report identifies A3 final head `a8042051824ddb50592492ee75d5aad24d1bb03a`, quality run #179 / ID `43130314519`, and monitor run #64 / ID `43130314540`. Corrective record identifies tested source SHA `35c6cad2bae0cf7dd7400b3605e315f71c476f4b`, quality run #198 / ID `43157775745`, and monitor run #83 / ID `43157775696`, with the PR merge-ref provenance qualification. | **CORRECTED — PASS** |
+| A4-F04 — failure-path tests | Tests cover HTTP 429/5xx exhaustion (exactly three attempts and two sleeps) and `main()` OSV failure (exit 2 and INCOMPLETE summary). The tests are included in the identical validation tree and were exercised by the successful exact-tree Quality workflow. | **CORRECTED — PASS** |
 
-## 3. Corrective CI evidence inspected
+## 3. Exact-tree CI evidence
 
-- Quality workflow #198, run ID `43157775745`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43157775745
+Both workflows were triggered by a push to the corrective branch and completed on exact head `0a845253fda11614828b71eb78446e062e394c1f`.
+
+- **Quality workflow #203**, run ID `43191960075`, **SUCCESS**: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43191960075
+  - Required-file gate: PASS
+  - Approved Python setup and pinned dependency installation: PASS
   - Django system check: PASS
-  - Django tests: PASS — 74 tests
+  - Django tests: PASS
   - Ruff lint: PASS
-  - Ruff format: PASS — 57 files already formatted
-  - pip-audit: PASS — no known vulnerabilities found
-- Security monitor workflow #83, run ID `43157775696`, SUCCESS: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43157775696
-  - 32 locked PyPI packages queried
-  - 0 OSV advisories returned
-  - 0 approved exception reminders/expiries; committed register remains empty
+  - Ruff format check: PASS
+  - pip-audit dependency vulnerability audit: PASS
+- **Security monitor workflow #88**, run ID `43191960042`, **SUCCESS**: https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43191960042
+  - Read-only OSV advisory and exception-expiry monitor job: PASS
 
-The successful OSV query is a point-in-time result, not proof of a live positive advisory, OSV SLA, or notification delivery. Synthetic positive-advisory behavior remains mocked test coverage.
+The exact-head check-runs endpoint reports both checks completed with conclusion `success`. The prior corrective CI runs #198/#83 remain supplementary evidence; the final-tree runs #203/#88 now satisfy the previously open exact-head CI gate.
 
-## 4. Branch and repository integrity
+## 4. Corrective source and branch integrity
 
-- Corrective branch versus original A3 branch: 13 commits ahead, 0 behind; five changed paths.
-- Corrective source SHA `1a3946284c819b7004d4a652a4bbcb02396f3389` versus CI-tested corrective source SHA `35c6cad2bae0cf7dd7400b3605e315f71c476f4b`: two commits ahead, 0 behind; only `docs/implementation/A3C-A4-FINDINGS-CORRECTIVE-IMPLEMENTATION-RECORD.md` changed.
-- `scripts/security_monitor.py` and `tests/test_security_monitor.py` are identical at the CI-tested and final corrective source SHAs.
-- Main observed at `adfa62eccda93c8b261e5abd3cbdb22cf28c8823`; no merge or default-branch integration performed by this verification.
-- PR #8 remains the corrective PR; it has not been merged.
-- Temporary validation PR #9 was closed unmerged after discovering it would present 62 files / 225 commits relative to main; it is not used as verification evidence.
-- The accepted prior A4 verification branch/record was not changed by this review.
+- Validation commit: `0a845253fda11614828b71eb78446e062e394c1f`.
+- Parent: `1a3946284c819b7004d4a652a4bbcb02396f3389`.
+- Tree SHA is identical at parent and validation commit: `627b50edd588d7a163111e41acba02493b6c203e`.
+- Commit comparison: one commit ahead, zero behind, zero changed files.
+- Corrective branch remains separate from original A3 implementation branch.
+- PR #8 remains open and draft, targeting `a3/monitoring-operational-readiness`; it has not been merged.
+- Main remains outside this A4 verification action; no default-branch integration was performed.
+- No merge, deployment, publication, signing, production-data access, scheduled activation, or A5 action was performed.
 
-## 5. Operational and production gates remain open
+## 5. Explicit technical and operational limitations
 
-The following remain NOT VERIFIED or NOT RUN: external notification channel and recipient identities; human acknowledgement; responder/backup/holiday coverage; restricted exception-record custody; controlled human-response rehearsal; real approved exception reminder; live positive OSV advisory; OSV service SLA/rate-limit guarantees. The scheduled workflow remains inactive off the default branch.
+The following limitations remain binding and are not waived by A4 technical closure:
 
-## 6. Required next action
+1. **No hard total OSV wall-clock deadline.** The 20-second urllib timeout is a socket inactivity timeout for each attempt, not a strict cap on the entire response/read. A continuously streaming response can exceed 20 seconds; total elapsed time can exceed the nominal 63-second budget. Retry behavior remains a maximum of three total attempts with 1s/2s bounded backoff for transient transport failures and HTTP 429/5xx only.
+2. **No guaranteed out-of-band notification.** Output remains GitHub workflow summary/stdout. No external notification channel or recipient identities have been established.
+3. **No human acknowledgement or response coverage verification.** Responder, backup, holiday coverage, escalation ownership, and acknowledgement evidence remain NOT VERIFIED.
+4. **No restricted exception-record custody verification.** Access and custody controls for exception records remain NOT VERIFIED.
+5. **No controlled human-response rehearsal.** NOT RUN.
+6. **No real approved exception reminder demonstrated.** The committed exception register is empty; zero exception reminders/expiries in the workflow is not proof of positive expiry handling against a real approved record.
+7. **No live positive OSV advisory observed.** Positive-advisory behavior is covered by synthetic/mocked tests only.
+8. **No OSV service SLA, rate-limit guarantee, or uninterrupted network-path guarantee established.**
+9. **Scheduled workflow remains inactive off the default branch.** No schedule activation is authorized or implied.
 
-Obtain fresh successful Quality and Security Monitor workflow runs on the final corrective branch head `1a3946284c819b7004d4a652a4bbcb02396f3389` (or on a validation commit whose code and test tree is demonstrably identical and whose evidence provenance is explicit), then update this A4 record with the run IDs and job outcomes.
+A successful workflow run is evidence that the configured job completed; it is not proof of human acknowledgement, external notification delivery, institutional response readiness, or production operational coverage.
 
-**A4 closure:** NOT CLOSED — final-head CI evidence gate open.  
-**Operational readiness:** NOT VERIFIED.  
-**Production readiness:** NOT READY.  
-**Merge, deployment, default-branch integration, schedule activation, and A5:** NOT AUTHORIZED.
+## 6. Closure boundary and remaining status
+
+- **A4 technical verification:** **VERIFIED-CLOSED WITH EXPLICIT LIMITATIONS**.
+- **A4-F01 through A4-F04:** **PASS**, with the F01 timeout limitation preserved.
+- **Operational readiness:** **NOT VERIFIED**.
+- **Production readiness:** **NOT READY**.
+- **External notification / responder coverage / custody / rehearsal:** **UNRESOLVED or NOT RUN**, as itemized above.
+- **Merge PR #8 / default-branch integration:** **NOT AUTHORIZED**.
+- **Deployment / publication / signing / production operation:** **NOT AUTHORIZED**.
+- **Scheduled workflow activation:** **NOT AUTHORIZED**.
+- **A5:** **NOT AUTHORIZED**.
+
+A4 technical closure does not imply approval of any of these separate actions. Further work must remain within a separately approved scope and must preserve the limitations above.
