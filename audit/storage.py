@@ -9,7 +9,6 @@ from typing import Protocol
 from audit.events import AuditEvent
 from audit.records import DocumentVersion
 
-
 _GENESIS_DIGEST = "0" * 64
 
 
