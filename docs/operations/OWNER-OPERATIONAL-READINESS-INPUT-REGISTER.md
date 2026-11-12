@@ -202,3 +202,64 @@ Use only opaque evidence IDs and non-sensitive status in this register. Actual i
 This was a repository evidence reconciliation and documentation update only. It did not access external mail/SMS services or restricted systems, contact recipients/responders, configure integrations, create secrets, change permissions or workflows, modify the exception register, or run delivery tests or rehearsal.
 
 No production activation, schedule activation, merge, default-branch integration, deployment, publication, signing, or A5 is authorized or performed. A controlled rehearsal remains **NOT AUTHORIZED / NOT RUN** and requires separate Owner authorization after the required evidence is supplied and reviewed.
+
+
+## 9. Phase 1 — Owner clarification and synthetic-service decision — 2026-11-12
+
+**Owner clarification:** The institution does not yet have an available institutional email service or SMS service for this workflow. The Owner expects both services to become available in the future. Until then, use synthetic/sample notification behavior only.
+
+### 9.1 Current service identification
+
+| Item | Current confirmed status | Phase 1 disposition |
+|---|---|---|
+| Institutional email tenant/mailbox | **NOT YET AVAILABLE** | Do not select or invent a provider; retain email as the future primary channel |
+| Institutional SMS provider/gateway/sender | **NOT YET AVAILABLE** | Do not select or invent a provider; retain SMS as the future secondary channel |
+| Authorized recipient roster | **NOT YET ESTABLISHED** | Use synthetic recipient identifiers only; do not invent real recipients |
+| Primary/backup responder roster | **NOT YET ESTABLISHED** | Use synthetic roles only; no real acknowledgement or coverage claim |
+| Restricted records system/custodians | **NOT YET IDENTIFIED** | Keep only synthetic fixtures and opaque references in the repository; no real restricted records |
+| Notification testing | **SYNTHETIC ONLY** | No external network delivery and no human notification |
+
+### 9.2 Approved interim design recommendation
+
+Until institutional services are provisioned, use a **fail-closed mock notification adapter**:
+- Email and SMS adapters operate in explicit `MOCK` mode only.
+- They generate deterministic synthetic delivery receipts for tests and clearly label them `SIMULATED — NOT DELIVERED`.
+- They must not make external network calls, send to real addresses or phone numbers, or claim provider acceptance or human receipt.
+- Use synthetic addresses/numbers and fake responder IDs only; never use real contact details as test fixtures.
+- Test successful mock delivery, simulated provider failure, retry exhaustion, duplicate suppression/idempotency, and audit-event generation.
+- Production mode must remain disabled unless actual institutional services, approved credentials, recipient authorization, and a separate Owner-approved activation gate are evidenced.
+- Missing or invalid mode configuration must fail closed; it must never silently fall back to a real provider or a live delivery path.
+
+### 9.3 Repository secret handling — important distinction
+
+The Owner requested that sample configuration be kept in repository secrets. The current connected GitHub capability does not expose a repository Actions-secrets write operation, so **no repository secret has been created or changed**.
+
+Recommended handling:
+- Keep non-sensitive mock-mode selectors and synthetic fixture data in version-controlled test configuration or GitHub Actions **Variables**, not Secrets.
+- Reserve GitHub Actions **Secrets** for future real provider credentials, API tokens, sender credentials, or private endpoints once those services exist.
+- Never put real credentials, real recipient details, or real service endpoints in source files, public documentation, workflow YAML, or test fixtures.
+- If the Owner specifically requires dummy sentinel values in repository Secrets, those must be entered by an authorized repository administrator through GitHub repository Settings → Secrets and variables → Actions. Use only obviously nonfunctional values such as `MOCK_ONLY_NOT_A_CREDENTIAL`; never use a real token or endpoint. Such sentinels do not test provider connectivity and must not be mistaken for provisioned services.
+- Do not print, retrieve, or echo secret values in workflow logs. Verify only secret/variable presence where necessary, never their contents.
+
+Suggested future secret names (names only; not created):
+- `EKHC_EMAIL_PROVIDER_CREDENTIAL`
+- `EKHC_EMAIL_SENDER_IDENTITY`
+- `EKHC_SMS_PROVIDER_CREDENTIAL`
+- `EKHC_SMS_SENDER_IDENTITY`
+
+Suggested non-secret mock configuration:
+- `EKHC_NOTIFICATION_MODE=mock`
+- `EKHC_EMAIL_MODE=mock`
+- `EKHC_SMS_MODE=mock`
+
+### 9.4 Phase 1 exit assessment
+
+- Institutional email service identified: **NOT AVAILABLE YET**
+- Institutional SMS service identified: **NOT AVAILABLE YET**
+- Interim mock-only approach: **OWNER-DIRECTED; DESIGN RECOMMENDED**
+- Repository secret creation: **NOT PERFORMED — CONNECTED GITHUB SECRET-WRITE CAPABILITY UNAVAILABLE**
+- Actual delivery, recipient authorization, responder coverage, restricted custody: **NOT VERIFIED**
+- Phase 1: **PARTIAL — service non-availability established; future provider identification and evidence remain pending**
+- Production readiness: **NOT READY**
+
+This clarification authorizes only the use of sample/mock behavior as an interim design direction. It does not authorize live integrations, real notifications, rehearsal, production operation, schedule activation, merge, deployment, publication, or A5.
