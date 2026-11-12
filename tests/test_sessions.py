@@ -36,7 +36,12 @@ class SessionPolicyTests(SimpleTestCase):
 
     def test_revoked_session_is_denied(self):
         observation = SessionObservation(
-            **{**self.observation.__dict__, "revoked": True}
+            account=self.observation.account,
+            issued_at=self.observation.issued_at,
+            last_activity_at=self.observation.last_activity_at,
+            absolute_expires_at=self.observation.absolute_expires_at,
+            authenticated=True,
+            revoked=True,
         )
         result = evaluate_session(observation, self.policy, now=NOW)
         self.assertEqual(result.decision, SessionDecision.DENY)
