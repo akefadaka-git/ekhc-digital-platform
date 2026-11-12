@@ -225,11 +225,25 @@ class SecurityMonitorTests(unittest.TestCase):
     def test_osv_retries_transient_transport_errors_at_most_three_times(
         self, mocked_urlopen, mocked_sleep
     ):
-        mocked_urlopen.side_effect = URLError("temporary connection failure")
+        mocked_urlopen.side_effect = URLError(
+            ConnectionResetError("temporary connection failure")
+        )
         with self.assertRaises(URLError):
             query_osv([{"name": "Django", "version": "5.2.19"}])
         self.assertEqual(mocked_urlopen.call_count, OSV_MAX_ATTEMPTS)
         self.assertEqual(mocked_sleep.call_count, OSV_MAX_ATTEMPTS - 1)
+
+
+    @patch("scripts.security_monitor.sleep")
+    @patch("scripts.security_monitor.urlopen")
+    def test_osv_does_not_retry_non_transient_url_error(
+        self, mocked_urlopen, mocked_sleep
+    ):
+        mocked_urlopen.side_effect = URLError("certificate verification failed")
+        with self.assertRaises(URLError):
+            query_osv([{"name": "Django", "version": "5.2.19"}])
+        mocked_urlopen.assert_called_once()
+        mocked_sleep.assert_not_called()
 
     @patch("scripts.security_monitor.sleep")
     @patch("scripts.security_monitor.urlopen")
