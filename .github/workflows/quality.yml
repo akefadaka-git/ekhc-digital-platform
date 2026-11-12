@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - a3/authn-authz-security-assessment
   workflow_dispatch:
 
 permissions:
