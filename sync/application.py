@@ -61,7 +61,13 @@ class SyncTransaction(Protocol):
 
     def append_audit_event(self, event: AuditEvent) -> None: ...
 
-    def enqueue_outbox(self, event_id: UUID, payload: bytes, occurred_at: datetime) -> None: ...
+    def enqueue_outbox(
+        self,
+        event_id: UUID,
+        aggregate_reference: str,
+        resulting_version: int,
+        occurred_at: datetime,
+    ) -> None: ...
 
 
 class SyncUnitOfWork(Protocol):
@@ -155,5 +161,7 @@ def apply_sync_command(
         )
         transaction.append_receipt(receipt)
         transaction.append_audit_event(event)
-        transaction.enqueue_outbox(event.event_id, command.payload, occurred_at)
+        transaction.enqueue_outbox(
+            event.event_id, envelope.aggregate_reference, new_version, occurred_at
+        )
         return SyncResult("applied", new_version, "APPLIED")
