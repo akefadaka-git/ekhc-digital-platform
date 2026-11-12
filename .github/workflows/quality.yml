@@ -39,11 +39,12 @@ jobs:
           set -euo pipefail
           required_files=(
             .python-version requirements.txt requirements-dev.txt requirements-lock.txt manage.py
-            config/__init__.py config/settings.py config/urls.py config/wsgi.py config/asgi.py config/localization.py config/observability.py config/security.py config/runtime.py
+            config/__init__.py config/settings.py config/urls.py config/wsgi.py config/asgi.py config/localization.py config/observability.py config/security.py config/runtime.py config/unicode.py config/calendar.py
             health/__init__.py health/views.py
-            identity/__init__.py identity/references.py security/__init__.py security/policy.py
+            identity/__init__.py identity/references.py security/__init__.py security/policy.py security/sessions.py
+            audit/__init__.py audit/events.py sync/__init__.py sync/contracts.py
             tests/__init__.py tests/test_health.py tests/test_observability.py tests/test_security.py tests/test_runtime.py
-            tests/test_identity.py tests/test_policy.py pyproject.toml README.md
+            tests/test_identity.py tests/test_policy.py tests/test_sessions.py tests/test_localization_foundation.py tests/test_audit_events.py tests/test_sync_contracts.py pyproject.toml README.md
           )
           for file in "${required_files[@]}"; do
             if [[ ! -f "$file" ]]; then
