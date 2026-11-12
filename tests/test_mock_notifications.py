@@ -64,8 +64,9 @@ class MockNotificationTests(unittest.TestCase):
                 "EKHC_SMS_MODE": "mock",
                 key: "provider.example.invalid",
             }
-            with self.subTest(key=key), self.assertRaises(
-                NotificationConfigurationError
+            with (
+                self.subTest(key=key),
+                self.assertRaises(NotificationConfigurationError),
             ):
                 NotificationConfig.from_environment(unsafe_env)
         with self.assertRaises(NotificationConfigurationError):
