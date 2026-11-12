@@ -67,5 +67,7 @@ class AuthorizationBoundaryTests(SimpleTestCase):
             )
 
     def test_evaluator_rejects_untyped_request(self):
-        with self.assertRaisesMessage(TypeError, "request must be an AuthorizationRequest"):
+        with self.assertRaisesMessage(
+            TypeError, "request must be an AuthorizationRequest"
+        ):
             evaluate_authorization(object())
