@@ -508,3 +508,158 @@ class AuditAndSyncInvariantExtensionTests(SimpleTestCase):
         self.assertEqual(outbox[3], event.occurred_at)
         self.assertNotIn(command.encrypted_payload.ciphertext, outbox)
         self.assertNotIn(command.encrypted_payload.wrapped_key, outbox)
+
+
+class AuditTruncationAndSequenceFaultTests(SimpleTestCase):
+    def make_chain(self):
+        entries = []
+        previous = "0" * 64
+        for sequence, action in (
+            (1, "records.read"),
+            (2, "records.write"),
+            (3, "records.update"),
+        ):
+            event = AuditEvent(
+                action=action,
+                resource_type="document",
+                resource_reference="doc-001",
+                occurred_at=NOW,
+                correlation_id=uuid4(),
+                outcome=AuditOutcome.SUCCEEDED,
+            )
+            digest = canonical_event_digest(event, previous)
+            entries.append(AuditChainEntry(sequence, previous, event, digest))
+            previous = digest
+        return tuple(entries)
+
+    def test_interior_truncation_is_rejected_as_a_sequence_gap(self):
+        first, _second, third = self.make_chain()
+        self.assertFalse(verify_audit_chain((first, third)))
+
+    def test_duplicate_sequence_number_is_rejected(self):
+        first, second, _third = self.make_chain()
+        duplicate = AuditChainEntry(
+            second.sequence, second.previous_digest, second.event, second.digest
+        )
+        self.assertFalse(verify_audit_chain((first, second, duplicate)))
+
+    def test_repeated_first_sequence_is_rejected(self):
+        first, _second, _third = self.make_chain()
+        duplicate = AuditChainEntry(
+            first.sequence, first.previous_digest, first.event, first.digest
+        )
+        self.assertFalse(verify_audit_chain((first, duplicate)))
+
+    def test_valid_prefix_alone_cannot_prove_tail_was_not_truncated(self):
+        first, second, third = self.make_chain()
+        complete_chain = (first, second, third)
+        truncated_tail = (first, second)
+        self.assertTrue(verify_audit_chain(complete_chain))
+        # The verifier has no separately trusted terminal sequence/digest.
+        # A valid prefix therefore remains valid after undetectable tail removal.
+        self.assertTrue(verify_audit_chain(truncated_tail))
+
+
+class SyncRetryAndInterruptionFaultTests(SimpleTestCase):
+    class InterruptingTransaction(FakeTransaction):
+        def __init__(self, state, phase):
+            super().__init__(state)
+            self.phase = phase
+
+        def interrupt(self, phase):
+            if self.phase == phase:
+                raise RuntimeError(f"injected interruption after {phase}")
+
+        def apply_aggregate_mutation(
+            self, aggregate_reference, expected_version, encrypted_payload, occurred_at
+        ):
+            result = super().apply_aggregate_mutation(
+                aggregate_reference, expected_version, encrypted_payload, occurred_at
+            )
+            self.interrupt("aggregate")
+            return result
+
+        def append_receipt(self, receipt):
+            super().append_receipt(receipt)
+            self.interrupt("receipt")
+
+        def append_audit_event(self, event):
+            super().append_audit_event(event)
+            self.interrupt("audit")
+
+        def enqueue_outbox(
+            self, event_id, aggregate_reference, resulting_version, occurred_at
+        ):
+            super().enqueue_outbox(
+                event_id, aggregate_reference, resulting_version, occurred_at
+            )
+            self.interrupt("outbox")
+
+    class InterruptingUnitOfWork(FakeUnitOfWork):
+        def __init__(self, phase):
+            super().__init__()
+            self.phase = phase
+
+        class TransactionContext(FakeUnitOfWork.TransactionContext):
+            def __enter__(self):
+                self.before = deepcopy(self.owner.state)
+                return SyncRetryAndInterruptionFaultTests.InterruptingTransaction(
+                    self.owner.state, self.owner.phase
+                )
+
+        def transaction(self):
+            return self.TransactionContext(self)
+
+    def assert_clean_rollback(self, store):
+        self.assertEqual(store.state["versions"]["aggregate-001"], 3)
+        self.assertEqual(store.state["mutations"], [])
+        self.assertEqual(store.state["receipts"], {})
+        self.assertEqual(store.state["audit"], [])
+        self.assertEqual(store.state["outbox"], [])
+
+    def test_same_idempotency_key_retries_after_each_write_boundary(self):
+        for phase in ("aggregate", "receipt", "audit", "outbox"):
+            with self.subTest(phase=phase):
+                store = self.InterruptingUnitOfWork(phase)
+                command = make_command()
+                with self.assertRaisesMessage(
+                    RuntimeError, f"injected interruption after {phase}"
+                ):
+                    apply_sync_command(command, store, FixedClock())
+                self.assert_clean_rollback(store)
+
+                store.phase = None
+                retried = apply_sync_command(command, store, FixedClock())
+                replayed = apply_sync_command(command, store, FixedClock())
+                self.assertEqual(retried.status, "applied")
+                self.assertTrue(replayed.replayed)
+                self.assertEqual(store.state["versions"]["aggregate-001"], 4)
+                self.assertEqual(len(store.state["mutations"]), 1)
+                self.assertEqual(len(store.state["receipts"]), 1)
+                self.assertEqual(len(store.state["audit"]), 1)
+                self.assertEqual(len(store.state["outbox"]), 1)
+
+    def test_transaction_commit_interruption_rolls_back_and_allows_retry(self):
+        class CommitInterruptingUnitOfWork(FakeUnitOfWork):
+            class TransactionContext(FakeUnitOfWork.TransactionContext):
+                def __exit__(self, exc_type, exc, traceback):
+                    if exc_type is None:
+                        self.owner.state = self.before
+                        raise RuntimeError("injected transaction commit interruption")
+                    return super().__exit__(exc_type, exc, traceback)
+
+        store = CommitInterruptingUnitOfWork()
+        command = make_command()
+        with self.assertRaisesMessage(
+            RuntimeError, "injected transaction commit interruption"
+        ):
+            apply_sync_command(command, store, FixedClock())
+        self.assert_clean_rollback(store)
+
+        store.transaction = lambda: FakeUnitOfWork.transaction(store)
+        result = apply_sync_command(command, store, FixedClock())
+        self.assertEqual(result.status, "applied")
+        self.assertEqual(len(store.state["mutations"]), 1)
+        self.assertEqual(len(store.state["receipts"]), 1)
+        self.assertEqual(len(store.state["audit"]), 1)
+        self.assertEqual(len(store.state["outbox"]), 1)
