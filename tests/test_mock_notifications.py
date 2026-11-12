@@ -86,13 +86,9 @@ class MockNotificationTests(unittest.TestCase):
     def test_real_or_wrong_channel_destination_is_rejected(self):
         orchestrator = NotificationOrchestrator(config(), FixtureSet.accepted())
         with self.assertRaises(ValueError):
-            orchestrator.notify(
-                event(), {Channel.EMAIL: "person@example.com"}
-            )
+            orchestrator.notify(event(), {Channel.EMAIL: "person@example.com"})
         with self.assertRaises(ValueError):
-            orchestrator.notify(
-                event(), {Channel.SMS: "synthetic-email-recipient-01"}
-            )
+            orchestrator.notify(event(), {Channel.SMS: "synthetic-email-recipient-01"})
 
     def test_transient_outcomes_retry_with_bounded_backoff(self):
         sleeps = []
