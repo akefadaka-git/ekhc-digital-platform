@@ -30,7 +30,7 @@ The response-size cap, retry classification, three-attempt maximum, 1s/2s backof
   - Read-only OSV monitor job: PASS
   - The run remains a point-in-time query; it does not establish OSV SLA, live positive-advisory coverage, or notification delivery.
 
-These workflows were triggered for the corrective PR with the source head above. The PR workflow validates the PR merge ref; this evidence is not described as a standalone push-triggered exact-head run.
+At the time runs #198 and #83 were triggered, PR #8 was temporarily based on `main` at `adfa62eccda93c8b261e5abd3cbdb22cf28c8823`. After both runs succeeded, PR #8 was retargeted to `a3/monitoring-operational-readiness` at `a8042051824ddb50592492ee75d5aad24d1bb03a`. The runs therefore validate the corrective source content in the PR merge ref against `main`, not a merge ref against the A3 base, and are not standalone push-triggered exact-head runs. The final branch-head evidence record is a later documentation-only commit and was not rerun.
 
 ## Corrective disposition
 
