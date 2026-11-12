@@ -252,7 +252,6 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
     return findings
 
 
-
 def query_osv_with_deadline(packages: list[dict[str, str]]) -> list[dict]:
     """Run OSV lookup in a killable worker with a hard wall-clock deadline.
 
