@@ -2,6 +2,7 @@
 
 import hashlib
 from copy import deepcopy
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -342,3 +343,123 @@ class AuditChainTests(SimpleTestCase):
         digest = canonical_event_digest(event, "0" * 64)
         entry = AuditChainEntry(2, "0" * 64, event, digest)
         self.assertFalse(verify_audit_chain((entry,)))
+
+    def test_changed_event_field_is_detected_as_tampering(self):
+        event = AuditEvent(
+            action="records.read",
+            resource_type="document",
+            resource_reference="doc-001",
+            occurred_at=NOW,
+            correlation_id=uuid4(),
+            outcome=AuditOutcome.SUCCEEDED,
+        )
+        digest = canonical_event_digest(event, "0" * 64)
+        original = AuditChainEntry(1, "0" * 64, event, digest)
+        altered_event = replace(event, action="records.delete")
+        altered = AuditChainEntry(1, "0" * 64, altered_event, digest)
+        self.assertTrue(verify_audit_chain((original,)))
+        self.assertFalse(verify_audit_chain((altered,)))
+
+    def test_predecessor_digest_substitution_is_detected(self):
+        first_event = AuditEvent(
+            action="records.read",
+            resource_type="document",
+            resource_reference="doc-001",
+            occurred_at=NOW,
+            correlation_id=uuid4(),
+            outcome=AuditOutcome.SUCCEEDED,
+        )
+        first_digest = canonical_event_digest(first_event, "0" * 64)
+        second_event = AuditEvent(
+            action="records.write",
+            resource_type="document",
+            resource_reference="doc-001",
+            occurred_at=NOW,
+            correlation_id=uuid4(),
+            outcome=AuditOutcome.SUCCEEDED,
+        )
+        second_digest = canonical_event_digest(second_event, first_digest)
+        first = AuditChainEntry(1, "0" * 64, first_event, first_digest)
+        tampered_second = AuditChainEntry(2, "f" * 64, second_event, second_digest)
+        self.assertFalse(verify_audit_chain((first, tampered_second)))
+
+    def test_reordered_audit_entries_are_rejected(self):
+        events = []
+        previous = "0" * 64
+        for action, sequence in (("records.read", 1), ("records.write", 2)):
+            event = AuditEvent(
+                action=action,
+                resource_type="document",
+                resource_reference="doc-001",
+                occurred_at=NOW,
+                correlation_id=uuid4(),
+                outcome=AuditOutcome.SUCCEEDED,
+            )
+            digest = canonical_event_digest(event, previous)
+            events.append(AuditChainEntry(sequence, previous, event, digest))
+            previous = digest
+        self.assertFalse(verify_audit_chain(tuple(reversed(events))))
+
+    def test_invalid_previous_digest_is_rejected(self):
+        event = AuditEvent(
+            action="records.read",
+            resource_type="document",
+            resource_reference="doc-001",
+            occurred_at=NOW,
+            correlation_id=uuid4(),
+            outcome=AuditOutcome.SUCCEEDED,
+        )
+        with self.assertRaisesMessage(ValueError, "lowercase SHA-256"):
+            canonical_event_digest(event, "Z" * 64)
+
+
+class SyncFailureEdgeTests(SimpleTestCase):
+    def test_naive_clock_is_rejected_before_transaction(self):
+        class NaiveClock:
+            def now(self):
+                return datetime(2026, 11, 12, 12, 0)
+
+        store = FakeUnitOfWork()
+        with self.assertRaisesMessage(ValueError, "timezone-aware"):
+            apply_sync_command(make_command(), store, NaiveClock())
+        self.assertEqual(store.state["mutations"], [])
+        self.assertEqual(store.state["receipts"], {})
+        self.assertEqual(store.state["audit"], [])
+        self.assertEqual(store.state["outbox"], [])
+
+    def test_aggregate_adapter_wrong_version_rolls_back(self):
+        class WrongVersionTransaction(FakeTransaction):
+            def apply_aggregate_mutation(
+                self, aggregate_reference, expected_version, encrypted_payload, occurred_at
+            ):
+                super().apply_aggregate_mutation(
+                    aggregate_reference, expected_version, encrypted_payload, occurred_at
+                )
+                return expected_version
+
+        class WrongVersionUnitOfWork(FakeUnitOfWork):
+            class TransactionContext(FakeUnitOfWork.TransactionContext):
+                def __enter__(self):
+                    self.before = deepcopy(self.owner.state)
+                    return WrongVersionTransaction(self.owner.state)
+
+        store = WrongVersionUnitOfWork()
+        with self.assertRaisesMessage(RuntimeError, "advance exactly one version"):
+            apply_sync_command(make_command(), store, FixedClock())
+        self.assertEqual(store.state["versions"]["aggregate-001"], 3)
+        self.assertEqual(store.state["mutations"], [])
+        self.assertEqual(store.state["receipts"], {})
+        self.assertEqual(store.state["audit"], [])
+        self.assertEqual(store.state["outbox"], [])
+
+    def test_conflict_replay_does_not_create_duplicate_audit_or_receipt(self):
+        store = FakeUnitOfWork()
+        command = make_command(base_version=1)
+        first = apply_sync_command(command, store, FixedClock())
+        second = apply_sync_command(command, store, FixedClock())
+        self.assertEqual(first.status, "conflict")
+        self.assertTrue(second.replayed)
+        self.assertEqual(len(store.state["receipts"]), 1)
+        self.assertEqual(len(store.state["audit"]), 1)
+        self.assertEqual(store.state["mutations"], [])
+        self.assertEqual(store.state["outbox"], [])
