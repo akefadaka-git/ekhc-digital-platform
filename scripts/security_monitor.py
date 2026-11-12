@@ -248,7 +248,7 @@ def main() -> int:
         register = json.loads(Path(args.exceptions).read_text(encoding="utf-8"))
         reminders = evaluate_exceptions(register, now)
         findings = query_osv(packages)
-    except (OSError, ValueError, json.JSONDecodeError, URLError, TimeoutError) as error:
+    except (OSError, ValueError) as error:
         message = (
             "## Security monitoring — INCOMPLETE\n\n"
             f"Monitoring could not complete: {type(error).__name__}. See job logs."
