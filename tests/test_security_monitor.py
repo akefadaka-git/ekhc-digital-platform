@@ -1,13 +1,14 @@
 import io
-import sys
 import tempfile
 import unittest
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from datetime import UTC, datetime
 from unittest.mock import patch
 
 from scripts.security_monitor import (
     MAX_OSV_RESPONSE_BYTES,
+    main,
     OSV_MAX_ATTEMPTS,
     OSV_MAX_WALL_CLOCK_SECONDS,
     OSV_REQUEST_TIMEOUT_SECONDS,
@@ -17,7 +18,6 @@ from scripts.security_monitor import (
     parse_lockfile,
     parse_utc,
     query_osv,
-    main,
 )
 
 
@@ -186,10 +186,10 @@ class SecurityMonitorTests(unittest.TestCase):
     ):
         successful_response = io.BytesIO(b'{"results":[{"vulns":[]}]}')
         mocked_urlopen.side_effect = [
-            __import__("urllib.error").error.HTTPError(
+            HTTPError(
                 "https://api.osv.dev/v1/querybatch", 503, "Unavailable", {}, None
             ),
-            __import__("urllib.error").error.HTTPError(
+            HTTPError(
                 "https://api.osv.dev/v1/querybatch", 429, "Rate limited", {}, None
             ),
             successful_response,
@@ -215,8 +215,6 @@ class SecurityMonitorTests(unittest.TestCase):
     def test_osv_does_not_retry_non_retryable_http_status(
         self, mocked_urlopen, mocked_sleep
     ):
-        from urllib.error import HTTPError
-
         mocked_urlopen.side_effect = HTTPError(
             "https://api.osv.dev/v1/querybatch", 404, "Not found", {}, None
         )
@@ -230,8 +228,6 @@ class SecurityMonitorTests(unittest.TestCase):
     def test_osv_retries_transient_transport_errors_at_most_three_times(
         self, mocked_urlopen, mocked_sleep
     ):
-        from urllib.error import URLError
-
         mocked_urlopen.side_effect = URLError("temporary connection failure")
         with self.assertRaises(URLError):
             query_osv([{"name": "Django", "version": "5.2.19"}])
