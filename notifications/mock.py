@@ -183,8 +183,13 @@ class NotificationOrchestrator:
     _receipts: dict[tuple[str, Channel], DeliveryReceipt] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.config.mode != "mock" or self.config.email_mode != "mock" or (
-            self.config.sms_mode != "mock"
+        if any(
+            value != "mock"
+            for value in (
+                self.config.mode,
+                self.config.email_mode,
+                self.config.sms_mode,
+            )
         ):
             raise NotificationConfigurationError("Only mock mode is permitted")
         if self.max_attempts != 3 or self.backoff_seconds != (1, 2):
