@@ -143,6 +143,7 @@ class SecurityMonitorTests(unittest.TestCase):
             evaluate_exceptions(
                 {"schema_version": 1, "exceptions": []}, datetime(2026, 11, 11)
             )
+
     def test_missed_reminder_reports_nearest_threshold_and_overdue_days(self):
         now = datetime(2026, 11, 11, 12, tzinfo=UTC)
         register = {
