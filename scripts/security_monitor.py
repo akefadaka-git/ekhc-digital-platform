@@ -7,15 +7,17 @@ issues, changes dependencies, approves exceptions, or changes exception status.
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 import re
+import socket
 import sys
 from datetime import UTC, datetime, timedelta
 from html import escape as escape_html
 from pathlib import Path
 from time import sleep
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 OSV_QUERYBATCH_URL = "https://api.osv.dev/v1/querybatch"
@@ -26,11 +28,29 @@ OSV_RETRY_BACKOFF_SECONDS = (1, 2)
 OSV_MAX_WALL_CLOCK_SECONDS = OSV_MAX_ATTEMPTS * OSV_REQUEST_TIMEOUT_SECONDS + sum(
     OSV_RETRY_BACKOFF_SECONDS
 )
+TRANSIENT_OSV_ERRNOS = {
+    errno.ECONNABORTED,
+    errno.ECONNREFUSED,
+    errno.ECONNRESET,
+    errno.EHOSTUNREACH,
+    errno.ENETUNREACH,
+    errno.EPIPE,
+    errno.ETIMEDOUT,
+    socket.EAI_AGAIN,
+}
 PINNED_REQUIREMENT = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)$")
 SHA256_HASH_OPTION = re.compile(r"^--hash=sha256:[0-9a-fA-F]{64}$")
 REMINDER_DAYS = (30, 14, 7, 3, 1)
 VALID_SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
 VALID_STATUSES = {"PROPOSED", "APPROVED", "REJECTED", "REVOKED", "EXPIRED"}
+
+
+def is_transient_transport_error(error: OSError) -> bool:
+    """Return true only for known transient socket/transport failures."""
+    reason = error.reason if isinstance(error, URLError) else error
+    if isinstance(reason, (TimeoutError, ConnectionError)):
+        return True
+    return isinstance(reason, OSError) and reason.errno in TRANSIENT_OSV_ERRNOS
 
 
 def parse_lockfile(text: str) -> list[dict[str, str]]:
@@ -194,8 +214,11 @@ def query_osv(packages: list[dict[str, str]]) -> list[dict]:
             retryable = error.code == 429 or 500 <= error.code <= 599
             if not retryable or attempt == OSV_MAX_ATTEMPTS:
                 raise
-        except OSError:
-            if attempt == OSV_MAX_ATTEMPTS:
+        except OSError as error:
+            if (
+                not is_transient_transport_error(error)
+                or attempt == OSV_MAX_ATTEMPTS
+            ):
                 raise
         sleep(OSV_RETRY_BACKOFF_SECONDS[attempt - 1])
     if raw_response is None:
