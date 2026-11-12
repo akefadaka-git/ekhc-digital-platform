@@ -508,3 +508,160 @@ class AuditAndSyncInvariantExtensionTests(SimpleTestCase):
         self.assertEqual(outbox[3], event.occurred_at)
         self.assertNotIn(command.encrypted_payload.ciphertext, outbox)
         self.assertNotIn(command.encrypted_payload.wrapped_key, outbox)
+
+
+class AuditTruncationAndSequenceTests(SimpleTestCase):
+    def make_chain(self):
+        entries = []
+        previous = "0" * 64
+        for sequence in range(1, 4):
+            event = AuditEvent(
+                action=f"records.event_{sequence}",
+                resource_type="document",
+                resource_reference="doc-001",
+                occurred_at=NOW,
+                correlation_id=uuid4(),
+                outcome=AuditOutcome.SUCCEEDED,
+            )
+            digest = canonical_event_digest(event, previous)
+            entries.append(AuditChainEntry(sequence, previous, event, digest))
+            previous = digest
+        return tuple(entries)
+
+    def test_interior_truncation_is_rejected(self):
+        chain = self.make_chain()
+        self.assertFalse(verify_audit_chain((chain[0], chain[2])))
+
+    def test_duplicate_sequence_is_rejected(self):
+        chain = self.make_chain()
+        duplicate = replace(chain[1], sequence=1)
+        self.assertFalse(verify_audit_chain((chain[0], duplicate, chain[2])))
+
+    def test_tail_truncation_requires_independently_trusted_checkpoint(self):
+        chain = self.make_chain()
+        truncated = chain[:2]
+        # A valid prefix alone cannot prove that later entries were removed.
+        self.assertTrue(verify_audit_chain(truncated))
+        self.assertFalse(
+            verify_audit_chain(
+                truncated,
+                expected_head_sequence=3,
+                expected_head_digest=chain[-1].digest,
+            )
+        )
+        self.assertTrue(
+            verify_audit_chain(
+                chain,
+                expected_head_sequence=3,
+                expected_head_digest=chain[-1].digest,
+            )
+        )
+
+    def test_checkpoint_arguments_must_be_paired_and_well_formed(self):
+        chain = self.make_chain()
+        with self.assertRaisesMessage(ValueError, "supplied together"):
+            verify_audit_chain(chain, expected_head_sequence=3)
+        with self.assertRaisesMessage(ValueError, "non-negative integer"):
+            verify_audit_chain(
+                chain, expected_head_sequence=True, expected_head_digest=chain[-1].digest
+            )
+
+
+class SyncRetryAndInterruptionTests(SimpleTestCase):
+    def assert_single_success(self, store, command):
+        self.assertEqual(store.state["versions"]["aggregate-001"], 4)
+        self.assertEqual(len(store.state["mutations"]), 1)
+        self.assertEqual(len(store.state["receipts"]), 1)
+        self.assertEqual(len(store.state["audit"]), 1)
+        self.assertEqual(len(store.state["outbox"]), 1)
+        replay = apply_sync_command(command, store, FixedClock())
+        self.assertTrue(replay.replayed)
+        self.assertEqual(len(store.state["mutations"]), 1)
+        self.assertEqual(len(store.state["audit"]), 1)
+        self.assertEqual(len(store.state["outbox"]), 1)
+
+    def test_retry_after_audit_append_failure_applies_once(self):
+        store = FakeUnitOfWork(fail_audit=True)
+        command = make_command()
+        with self.assertRaisesMessage(RuntimeError, "injected audit insert failure"):
+            apply_sync_command(command, store, FixedClock())
+        store.state["fail_audit"] = False
+        result = apply_sync_command(command, store, FixedClock())
+        self.assertEqual(result.status, "applied")
+        self.assert_single_success(store, command)
+
+    def test_retry_after_outbox_append_failure_applies_once(self):
+        store = FakeUnitOfWork(fail_outbox=True)
+        command = make_command()
+        with self.assertRaisesMessage(RuntimeError, "injected outbox insert failure"):
+            apply_sync_command(command, store, FixedClock())
+        store.state["fail_outbox"] = False
+        result = apply_sync_command(command, store, FixedClock())
+        self.assertEqual(result.status, "applied")
+        self.assert_single_success(store, command)
+
+    def test_interruption_after_aggregate_mutation_rolls_back_then_retries(self):
+        class InterruptingTransaction(FakeTransaction):
+            def apply_aggregate_mutation(
+                self, aggregate_reference, expected_version, encrypted_payload, occurred_at
+            ):
+                version = super().apply_aggregate_mutation(
+                    aggregate_reference, expected_version, encrypted_payload, occurred_at
+                )
+                if self.state.get("interrupt_after_mutation"):
+                    self.state["interrupt_after_mutation"] = False
+                    raise RuntimeError("injected interruption after aggregate mutation")
+                return version
+
+        class InterruptingUnitOfWork(FakeUnitOfWork):
+            def __init__(self):
+                super().__init__()
+                self.state["interrupt_after_mutation"] = True
+
+            class TransactionContext(FakeUnitOfWork.TransactionContext):
+                def __enter__(self):
+                    self.before = deepcopy(self.owner.state)
+                    return InterruptingTransaction(self.owner.state)
+
+        store = InterruptingUnitOfWork()
+        command = make_command()
+        with self.assertRaisesMessage(
+            RuntimeError, "injected interruption after aggregate mutation"
+        ):
+            apply_sync_command(command, store, FixedClock())
+        self.assertEqual(store.state["versions"]["aggregate-001"], 3)
+        self.assertEqual(store.state["mutations"], [])
+        self.assertEqual(store.state["receipts"], {})
+        self.assertEqual(store.state["audit"], [])
+        self.assertEqual(store.state["outbox"], [])
+        store.state["interrupt_after_mutation"] = False
+        result = apply_sync_command(command, store, FixedClock())
+        self.assertEqual(result.status, "applied")
+        self.assert_single_success(store, command)
+
+    def test_lost_commit_acknowledgement_retries_as_idempotent_replay(self):
+        class LostAcknowledgementUnitOfWork(FakeUnitOfWork):
+            def __init__(self):
+                super().__init__()
+                self.lose_acknowledgement = True
+
+            class TransactionContext(FakeUnitOfWork.TransactionContext):
+                def __exit__(self, exc_type, exc, traceback):
+                    result = super().__exit__(exc_type, exc, traceback)
+                    if exc_type is None and self.owner.lose_acknowledgement:
+                        self.owner.lose_acknowledgement = False
+                        raise RuntimeError("simulated commit acknowledgement loss")
+                    return result
+
+        store = LostAcknowledgementUnitOfWork()
+        command = make_command()
+        with self.assertRaisesMessage(RuntimeError, "commit acknowledgement loss"):
+            apply_sync_command(command, store, FixedClock())
+        # The synthetic context committed its state before simulating lost acknowledgement.
+        replay = apply_sync_command(command, store, FixedClock())
+        self.assertTrue(replay.replayed)
+        self.assertEqual(replay.status, "applied")
+        self.assertEqual(len(store.state["mutations"]), 1)
+        self.assertEqual(len(store.state["receipts"]), 1)
+        self.assertEqual(len(store.state["audit"]), 1)
+        self.assertEqual(len(store.state["outbox"]), 1)
