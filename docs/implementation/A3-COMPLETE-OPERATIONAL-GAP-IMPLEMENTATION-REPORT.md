@@ -123,7 +123,7 @@ Both workflows completed successfully on this exact commit:
   - OSV query and exception-register monitoring workflow: PASS.
   - [Workflow run](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43215780854)
 
-The final branch read-back and comparison must still be recorded after this report commit; the implementation source/test head above is the CI-validated code head. The report-only commit does not change implementation or test files.
+The final implementation and test files were read back successfully from the branch after CI. The code/test source head remains the CI-validated commit above. The report-only commit at the time of that read-back was `718f471de759742cc2a25fa8ba7619182498ccba`; it did not change implementation or test files. The branch comparison against the monitoring A3 corrective baseline reported 23 commits ahead and 1 behind, with 10 changed paths. The one-behind relationship is the baseline's separate validation-only commit; the common source ancestor is `1a3946284c819b7004d4a652a4bbcb02396f3389`.
 
 ## 8. Acceptance and status
 
