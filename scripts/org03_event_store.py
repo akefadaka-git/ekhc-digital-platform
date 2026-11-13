@@ -260,7 +260,10 @@ class Org03EventStore:
         for index, row in enumerate(rows):
             event = json.loads(row["event_json"])
             expected_sequence = index + 1
-            if event.get("sequence") != expected_sequence or row["sequence"] != expected_sequence:
+            if (
+                event.get("sequence") != expected_sequence
+                or row["sequence"] != expected_sequence
+            ):
                 raise EventLogIntegrityError("event sequence gap or duplicate")
             if row["previous_hash"] != previous_hash:
                 raise EventLogIntegrityError("event hash-chain predecessor mismatch")
@@ -293,7 +296,8 @@ class Org03EventStore:
     ) -> dict:
         with self._connect() as connection:
             aggregate = connection.execute(
-                "SELECT priority, version, status FROM org03_aggregates WHERE alert_id = ?",
+                "SELECT priority, version, status FROM org03_aggregates "
+                "WHERE alert_id = ?",
                 (alert_id,),
             ).fetchone()
             if aggregate is None:
