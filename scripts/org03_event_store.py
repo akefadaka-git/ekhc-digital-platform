@@ -10,6 +10,8 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +32,10 @@ class IdempotencyConflict(EventStoreError):
 
 class EventLogIntegrityError(EventStoreError):
     """Stored event history failed its integrity or replay checks."""
+
+
+class EventStoreBusy(EventStoreError):
+    """SQLite remained busy beyond the configured bounded retry deadline."""
 
 
 def _canonical(value: Any) -> str:
@@ -63,22 +69,55 @@ class Org03EventStore:
 
     def __init__(self, path: str | Path, *, timeout_seconds: float = 10.0):
         self.path = str(path)
+        if timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be positive")
         self.timeout_seconds = timeout_seconds
         self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(
             self.path,
-            timeout=self.timeout_seconds,
+            timeout=min(self.timeout_seconds, 0.1),
             isolation_level=None,
         )
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute(f"PRAGMA busy_timeout = {int(self.timeout_seconds * 1000)}")
-        return connection
+        try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute(f"PRAGMA busy_timeout = {int(min(self.timeout_seconds, 0.1) * 1000)}")
+            return connection
+        except Exception:
+            connection.close()
+            raise
+
+    @contextmanager
+    def _connection(self):
+        """Own and deterministically close one SQLite connection."""
+        connection = self._connect()
+        try:
+            yield connection
+        finally:
+            connection.close()
+
+    def _begin_immediate(self, connection: sqlite3.Connection) -> None:
+        """Acquire the writer reservation with bounded lock/busy retries."""
+        deadline = time.monotonic() + self.timeout_seconds
+        delay = 0.01
+        while True:
+            try:
+                connection.execute("BEGIN IMMEDIATE")
+                return
+            except sqlite3.OperationalError as exc:
+                message = str(exc).lower()
+                if "locked" not in message and "busy" not in message:
+                    raise
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise EventStoreBusy("SQLite remained busy past the retry deadline") from exc
+                time.sleep(min(delay, remaining))
+                delay = min(delay * 2, 0.1)
 
     def _initialize(self) -> None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             connection.execute("PRAGMA journal_mode = WAL")
             connection.executescript(
                 """
@@ -295,25 +334,31 @@ class Org03EventStore:
     def load_state(
         self, alert_id: str, *, authorized_responder_refs: dict[str, str]
     ) -> dict:
-        with self._connect() as connection:
-            aggregate = connection.execute(
-                "SELECT priority, version, status FROM org03_aggregates "
-                "WHERE alert_id = ?",
-                (alert_id,),
-            ).fetchone()
-            if aggregate is None:
-                raise EventStoreError("alert does not exist")
-            state = self._replay_in_transaction(
-                connection,
-                alert_id,
-                aggregate["priority"],
-                authorized_responder_refs,
-            )
-            if aggregate["version"] != state["next_sequence"] - 1:
-                raise EventLogIntegrityError("aggregate version differs from event log")
-            if aggregate["status"] != state["status"]:
-                raise EventLogIntegrityError("aggregate status differs from event log")
-            return state
+        with self._connection() as connection:
+            connection.execute("BEGIN")
+            try:
+                aggregate = connection.execute(
+                    "SELECT priority, version, status FROM org03_aggregates "
+                    "WHERE alert_id = ?",
+                    (alert_id,),
+                ).fetchone()
+                if aggregate is None:
+                    raise EventStoreError("alert does not exist")
+                state = self._replay_in_transaction(
+                    connection,
+                    alert_id,
+                    aggregate["priority"],
+                    authorized_responder_refs,
+                )
+                if aggregate["version"] != state["next_sequence"] - 1:
+                    raise EventLogIntegrityError("aggregate version differs from event log")
+                if aggregate["status"] != state["status"]:
+                    raise EventLogIntegrityError("aggregate status differs from event log")
+                connection.commit()
+                return state
+            except Exception:
+                connection.rollback()
+                raise
 
     def event_count(self, alert_id: str) -> int:
         with self._connect() as connection:
