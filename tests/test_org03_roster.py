@@ -7,7 +7,6 @@ import unittest
 
 import scripts.org03_roster
 
-
 TEMPLATE = (
     pathlib.Path(__file__).parents[1]
     / "docs"
