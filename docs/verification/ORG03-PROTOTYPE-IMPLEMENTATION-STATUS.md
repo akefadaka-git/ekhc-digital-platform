@@ -88,3 +88,12 @@ Two follow-up commits refined the prototype:
 The final implementation head for this increment is `c8f516e1ed07110c63bc7f368b472ee87254b4c3`.
 
 The race tests are still **AUTHORED / NOT RUN**. The hash chain remains tamper-evident rather than authenticated: a database writer able to rewrite the full log can recompute an unkeyed SHA-256 chain. Independent process-level crash injection and multi-process stress testing remain outstanding.
+
+
+## 9. Additional process-level tests authored
+
+Commit `73c7c35814689a035e3c45b19985beb3d53e5a86` adds two more synthetic tests:
+- Separate OS processes racing an acknowledgement and the primary deadline against the same aggregate version; expected result is one committed event and one stale-version rejection.
+- A child process terminated abruptly with an uncommitted SQLite write; a fresh store instance must reopen, replay, and confirm the uncommitted event was rolled back.
+
+These tests are **AUTHORED / NOT RUN**. They use the POSIX `fork` multiprocessing context and therefore target the repository's Linux CI runner; portability to non-POSIX environments is not claimed. The event-store test module now contains 12 test methods. The full repository test suite and exact-head CI remain outstanding.
