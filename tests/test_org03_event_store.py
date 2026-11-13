@@ -1,5 +1,7 @@
 """Durability, concurrency, replay and rollback tests using temporary SQLite."""
 
+# ruff: noqa: E501
+
 import concurrent.futures
 import json
 import multiprocessing
