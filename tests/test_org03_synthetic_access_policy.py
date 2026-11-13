@@ -74,7 +74,7 @@ class Org03SyntheticAccessPolicyTests(unittest.TestCase):
         )
         authorize(auditor, self.record, "record.read", requested_fields={"summary"})
         with self.assertRaises(AccessDenied):
-            authorize(auditor, self.record, "record.update")
+            authorize(auditor, self.record, "record.update", requested_fields={"status"})
 
     def test_non_synthetic_principal_is_rejected(self):
         external = SyntheticPrincipal(
