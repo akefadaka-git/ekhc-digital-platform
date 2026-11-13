@@ -24,15 +24,21 @@ from scripts.org03_event_store import (
     Org03EventStore,
     StaleAggregateVersion,
     _digest,
-    DEFAULT_SYNTHETIC_KEYS,
     _digest,
 )
+
+TEST_INTEGRITY_KEYS = {"synthetic-test-v1": b"ORG03-TEST-ONLY-KEY-NOT-FOR-PRODUCTION-32"}
 
 AUTH = {
     "primary": "SYNTHETIC-PRIMARY-01",
     "backup": "SYNTHETIC-BACKUP-01",
     "owner_or_delegate": "SYNTHETIC-OWNER-01",
 }
+
+
+def make_store(path, **kwargs):
+    kwargs.setdefault("integrity_keys", TEST_INTEGRITY_KEYS)
+    return Org03EventStore(path, **kwargs)
 
 
 def make_event(sequence, name, role="SYSTEM", actor="SYNTHETIC-SYSTEM", **extra):
@@ -529,7 +535,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         rotated = Org03EventStore(
             self.path,
             integrity_keys={
-                "synthetic-test-v1": DEFAULT_SYNTHETIC_KEYS["synthetic-test-v1"],
+                "synthetic-test-v1": TEST_INTEGRITY_KEYS["synthetic-test-v1"],
                 "synthetic-test-v2": b"ORG03-ROTATED-TEST-KEY-NOT-FOR-PRODUCTION-32",
             },
             active_key_id="synthetic-test-v2",
