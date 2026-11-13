@@ -837,6 +837,26 @@ class Org03R1R3NegativeTests(unittest.TestCase):
         with self.assertRaises(CheckpointError):
             self.load()
 
+    def test_idempotent_result_snapshot_tampering_fails_hmac(self):
+        with self.store._connect() as connection:
+            connection.execute(
+                "UPDATE org03_events SET result_json = ? "
+                "WHERE alert_id = ? AND sequence = 2",
+                ('{"status":"FORGED"}', "SYNTHETIC-R1-ALERT"),
+            )
+        with self.assertRaises(EventLogIntegrityError):
+            self.load()
+
+    def test_idempotency_request_fingerprint_tampering_fails_hmac(self):
+        with self.store._connect() as connection:
+            connection.execute(
+                "UPDATE org03_events SET request_json = ? "
+                "WHERE alert_id = ? AND sequence = 2",
+                ('{"event_type":"FORGED"}', "SYNTHETIC-R1-ALERT"),
+            )
+        with self.assertRaises(EventLogIntegrityError):
+            self.load()
+
     def test_checkpoint_mac_tampering_fails_closed(self):
         checkpoint = self.store._checkpoint_path("SYNTHETIC-R1-ALERT")
         record = json.loads(checkpoint.read_text(encoding="utf-8"))
