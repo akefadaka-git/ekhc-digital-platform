@@ -196,6 +196,7 @@ class Org03EventStore:
                     result_json TEXT,
                     previous_hash TEXT NOT NULL,
                     event_hash TEXT NOT NULL,
+                    algorithm TEXT NOT NULL DEFAULT 'HMAC-SHA-256',
                     key_id TEXT NOT NULL DEFAULT 'synthetic-test-v1',
                     event_mac TEXT NOT NULL DEFAULT '',
                     UNIQUE(alert_id, sequence),
@@ -203,6 +204,13 @@ class Org03EventStore:
                 );
                 """
             )
+            event_columns = {
+                row["name"] for row in connection.execute("PRAGMA table_info(org03_events)")
+            }
+            if "algorithm" not in event_columns:
+                connection.execute(
+                    "ALTER TABLE org03_events ADD COLUMN algorithm TEXT NOT NULL DEFAULT 'HMAC-SHA-256'"
+                )
             connection.executescript("""
                 CREATE TABLE IF NOT EXISTS org03_authority_versions (
                     principal_ref TEXT NOT NULL,
@@ -263,6 +271,7 @@ class Org03EventStore:
         key_id = self.active_key_id
         payload = {
             "schema": "ORG03-CHECKPOINT-V1",
+            "algorithm": "HMAC-SHA-256",
             "alert_id": alert_id,
             "sequence": sequence,
             "event_hash": event_hash,
@@ -270,6 +279,10 @@ class Org03EventStore:
         }
         checkpoint = {**payload, "mac": self._mac(key_id, payload)}
         self.checkpoint_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        try:
+            os.chmod(self.checkpoint_dir, 0o700)
+        except OSError:
+            pass
         path = self._checkpoint_path(alert_id)
         if path.exists():
             current = json.loads(path.read_text(encoding="utf-8"))
@@ -321,6 +334,7 @@ class Org03EventStore:
         payload = payload or self._read_checkpoint(alert_id)
         if (
             payload.get("schema") != "ORG03-CHECKPOINT-V1"
+            or payload.get("algorithm") != "HMAC-SHA-256"
             or payload.get("alert_id") != alert_id
         ):
             raise CheckpointError("checkpoint identity mismatch")
@@ -571,8 +585,8 @@ class Org03EventStore:
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
                     "idempotency_key, event_json, request_json, result_json, "
-                    "previous_hash, event_hash, key_id, event_mac) "
-                    "VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "previous_hash, event_hash, algorithm, key_id, event_mac) "
+                    "VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         event_id,
                         alert_id,
@@ -591,6 +605,7 @@ class Org03EventStore:
                         _canonical(state),
                         self.GENESIS_HASH,
                         event_hash,
+                        "HMAC-SHA-256",
                         key_id,
                         event_mac,
                     ),
@@ -713,8 +728,8 @@ class Org03EventStore:
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
                     "idempotency_key, event_json, request_json, result_json, "
-                    "previous_hash, event_hash, key_id, event_mac) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "previous_hash, event_hash, algorithm, key_id, event_mac) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         event_id,
                         alert_id,
@@ -725,6 +740,7 @@ class Org03EventStore:
                         _canonical(updated),
                         previous_hash,
                         event_hash,
+                        "HMAC-SHA-256",
                         key_id,
                         event_mac,
                     ),
@@ -772,6 +788,8 @@ class Org03EventStore:
             if row["previous_hash"] != previous_hash:
                 raise EventLogIntegrityError("event hash-chain predecessor mismatch")
             self._verify_authority_event(connection, event)
+            if row["algorithm"] != "HMAC-SHA-256":
+                raise EventLogIntegrityError("unsupported event authentication algorithm")
             key_id = row["key_id"]
             calculated_mac = self._mac(
                 key_id,
