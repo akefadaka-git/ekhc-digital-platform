@@ -362,7 +362,7 @@ class Org03EventStore:
         event["authority_evidence"] = {**payload, "evidence_mac": latest["evidence_mac"]}
         return event
 
-    def _verify_authority_event(self, event):
+    def _verify_authority_event(self, connection, event):
         role = event.get("actor_role", "SYSTEM")
         evidence = event.get("authority_evidence")
         if role == "SYSTEM":
@@ -382,6 +382,19 @@ class Org03EventStore:
             raise AuthorityError("historical authority does not match event")
         if not hmac.compare_digest(evidence.get("evidence_mac", ""), self._mac(evidence.get("key_id", ""), payload)):
             raise AuthorityError("historical authority evidence authentication failed")
+        rows = connection.execute(
+            "SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version",
+            (evidence["principal_ref"],),
+        ).fetchall()
+        if not rows or evidence["version"] > rows[-1]["version"]:
+            raise AuthorityError("historical authority version is unavailable")
+        latest = rows[-1]
+        for row in rows:
+            signed = self._authority_payload(row["principal_ref"], row["role"], row["version"], row["valid_from_utc"], row["revoked_at_utc"], row["key_id"])
+            if not hmac.compare_digest(row["evidence_mac"], self._mac(row["key_id"], signed)):
+                raise AuthorityError("authority registry tampering detected")
+        if latest["revoked_at_utc"] is not None and event.get("at_utc", "") >= latest["revoked_at_utc"]:
+            raise AuthorityError("event timestamp is at or after authority revocation")
 
     def create_alert(self, alert_id: str, priority: str, received_at_utc: str) -> dict:
         state = new_alert(alert_id, priority, received_at_utc)
@@ -590,6 +603,7 @@ class Org03EventStore:
                 raise EventLogIntegrityError("event sequence gap or duplicate")
             if row["previous_hash"] != previous_hash:
                 raise EventLogIntegrityError("event hash-chain predecessor mismatch")
+            self._verify_authority_event(connection, event)
             key_id = row["key_id"]
             calculated_mac = self._mac(key_id, self._event_envelope(row["alert_id"], row["event_id"], row["sequence"], row["idempotency_key"], row["event_json"], previous_hash, key_id))
             if not hmac.compare_digest(row["event_mac"], calculated_mac):
