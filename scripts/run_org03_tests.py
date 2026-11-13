@@ -84,9 +84,7 @@ def write_junit(result: JUnitResult, destination: Path) -> None:
     failures = sum(case["status"] == "failure" for case in result.cases)
     errors = sum(case["status"] == "error" for case in result.cases)
     skipped = sum(case["status"] == "skipped" for case in result.cases)
-    total_time = sum(
-        float(case.get("duration", 0.0)) for case in result.cases
-    )
+    total_time = sum(float(case.get("duration", 0.0)) for case in result.cases)
     suite = ET.Element(
         "testsuite",
         {
@@ -126,9 +124,7 @@ def write_junit(result: JUnitResult, destination: Path) -> None:
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     ET.indent(suite, space="  ")
-    ET.ElementTree(suite).write(
-        destination, encoding="utf-8", xml_declaration=True
-    )
+    ET.ElementTree(suite).write(destination, encoding="utf-8", xml_declaration=True)
 
 
 def main() -> int:
