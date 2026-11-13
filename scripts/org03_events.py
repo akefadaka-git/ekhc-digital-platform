@@ -8,7 +8,6 @@ import copy
 import datetime
 import typing
 
-
 INITIAL_STATE = "RECEIVED"
 VALID_PRIORITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
 
@@ -55,7 +54,7 @@ def new_alert(
 
 
 def apply_event(
-    state: dict[str, Any],
+    state: dict[str, typing.Any],
     event: dict[str, Any],
     *,
     authorized_responder_refs: dict[str, str],
