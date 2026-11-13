@@ -3,8 +3,9 @@
 import copy
 import json
 import pathlib
-import scripts.org03_roster
 import unittest
+
+import scripts.org03_roster
 
 
 TEMPLATE = (
