@@ -54,8 +54,6 @@ class AuthorityError(EventStoreError):
     """Synthetic historical authority evidence is invalid."""
 
 
-DEFAULT_SYNTHETIC_KEYS = {"synthetic-test-v1": b"ORG03-TEST-ONLY-KEY-NOT-FOR-PRODUCTION-32"}
-
 
 def _canonical(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -104,7 +102,7 @@ class Org03EventStore:
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive")
         self.timeout_seconds = timeout_seconds
-        self._integrity_keys = dict(DEFAULT_SYNTHETIC_KEYS if integrity_keys is None else integrity_keys)
+        self._integrity_keys = dict(integrity_keys or {})
         self.active_key_id = active_key_id
         self.revoked_key_ids = frozenset(revoked_key_ids)
         if any(
