@@ -233,7 +233,33 @@ For each threat, document trust boundary, attack preconditions, impact, mitigati
 
 **A1 disposition: PARTIAL / DRAFT FOR OWNER DECISION.** This document is a structured architecture review, not evidence that institutional prerequisites have been met. It must not be represented as an approved production architecture.
 
-## 12. Related repository evidence
+## 12. Revised A1 package map and completion criteria
+
+This review is accompanied by the following documentation-only architecture artifacts on this branch:
+
+- `docs/architecture/ORG-03-PRODUCTION-ARCHITECTURE-ANNEX.md` — normative design requirements for trusted time, persistence/concurrency, identity/authority, key custody, and operations.
+- `docs/architecture/ORG-03-ARCHITECTURE-DIAGRAMS.md` — system context, trust-boundary/data-flow, deployment zones, and workflow sequence diagrams.
+- `docs/architecture/ORG-03-ARCHITECTURE-DECISION-REGISTER.md` — decision records, decision owners, options, evidence, and explicit unresolved status.
+- `docs/security/ORG-03-PRODUCTION-THREAT-REGISTER.md` — threat scenarios, controls, detection, residual risks, and acceptance ownership.
+- `docs/governance/ORG-03-A1-OWNER-DECISION-RECORD.md` — Owner decision proposal and stage-gate disposition.
+
+### 12.1 A1 completion criteria
+
+A1 cannot be closed solely by completing repository documentation. Closure requires:
+
+1. Each architecture decision has an identified institutional decision owner, approved option or explicit accepted deferral, supporting authoritative evidence, and recorded approval.
+2. Trusted time, persistence semantics, institutional authority, key custody, operational topology, data governance, and recovery are specified to the level required by the annex.
+3. Diagrams are reconciled with the written architecture and threat register.
+4. Every threat has a disposition: mitigated with evidence, accepted by an authorized risk owner, or explicitly blocking.
+5. Every missing institutional prerequisite has an accountable owner and evidence due condition; no missing item is silently treated as satisfied.
+6. The synthetic A3 baseline and its regression protections remain unchanged.
+7. The Owner explicitly approves the frozen A1 package before A2 can begin.
+
+### 12.2 Status of this revision
+
+The companion documents improve architectural completeness but do not supply missing institutional evidence. All vendor, institution, legal, identity, records, hosting, key-custody, roster, and operational decisions remain UNRESOLVED unless supported by an authoritative artifact. The package remains a proposal for Owner decision, not an approved architecture.
+
+## 13. Related repository evidence
 
 - Synthetic implementation: `scripts/org03_event_store.py`
 - Synthetic access policy: `scripts/org03_synthetic_access_policy.py`
