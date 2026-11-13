@@ -2,7 +2,7 @@
 
 **Document ID:** EKHC-ORG03-A1-ADR-001  
 **Status:** Proposed decisions — none approved by this register  
-**Baseline:** Synthetic A3 commit `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`
+**Baseline:** Synthetic A3 commit `225daf65eaa27182ec20749adf469436fec1f654`
 
 ## Decision protocol
 
