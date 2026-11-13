@@ -1,4 +1,5 @@
 """Durability, concurrency, replay and rollback tests using temporary SQLite."""
+
 import concurrent.futures
 import multiprocessing
 import os
@@ -297,7 +298,6 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             )
 
 
-
     def test_separate_processes_arbitrate_same_aggregate_version(self):
         context = multiprocessing.get_context("fork")
         barrier = context.Barrier(2)
@@ -305,8 +305,11 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         events = [
             (
                 make_event(
-                    3, "HUMAN_ACKNOWLEDGED", "PRIMARY_SECURITY_OPERATIONS",
-                    AUTH["primary"], disposition="ACCEPTED"
+                    3,
+                    "HUMAN_ACKNOWLEDGED",
+                    "PRIMARY_SECURITY_OPERATIONS",
+                    AUTH["primary"],
+                    disposition="ACCEPTED",
                 ),
                 "SYNTHETIC-MP-EVENT-A",
                 "SYNTHETIC-MP-IDEM-A",
