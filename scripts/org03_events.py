@@ -27,7 +27,9 @@ def _valid_utc(value: typing.Any) -> bool:
     return True
 
 
-def new_alert(alert_id: str, priority: str, received_at_utc: str) -> dict[str, typing.Any]:
+def new_alert(
+    alert_id: str, priority: str, received_at_utc: str
+) -> dict[str, typing.Any]:
     """Create an immutable-by-convention alert state with an initial event."""
     if (
         not alert_id
