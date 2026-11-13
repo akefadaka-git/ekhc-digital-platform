@@ -28,6 +28,15 @@ ROLE_ACTIONS = {
     "SYNTHETIC_CUSTODIAN": frozenset({"record.read", "record.update"}),
     "SYNTHETIC_AUDITOR": frozenset({"record.read", "audit.read"}),
 }
+ROLE_FIELD_SCOPES = {
+    "SYNTHETIC_CUSTODIAN": {
+        "record.read": frozenset({"summary", "status"}),
+        "record.update": frozenset({"status"}),
+    },
+    "SYNTHETIC_AUDITOR": {
+        "record.read": frozenset({"summary", "status"}),
+    },
+}
 
 
 class AccessDenied(PermissionError):
@@ -40,8 +49,8 @@ def authorize(
     action: str,
     *,
     requested_fields: set[str] | None = None,
-) -> None:
-    """Apply explicit synthetic role, record-scope and field-scope checks."""
+) -> frozenset[str]:
+    """Authorize an explicit field set and return the exact permitted projection."""
     if principal is None:
         raise AccessDenied("anonymous access denied")
     if not principal.synthetic or not principal.active or not principal.principal_ref:
@@ -53,5 +62,12 @@ def authorize(
         raise AccessDenied("record classification is not in the test boundary")
     if record.record_ref not in principal.allowed_record_refs:
         raise AccessDenied("principal is not scoped to this record")
-    if requested_fields is not None and not requested_fields.issubset(record.fields):
-        raise AccessDenied("requested fields exceed the record field allow-list")
+    if not isinstance(requested_fields, set) or not requested_fields:
+        raise AccessDenied("an explicit non-empty field set is required")
+    if any(not isinstance(field, str) or not field for field in requested_fields):
+        raise AccessDenied("requested field names are malformed")
+    role_fields = ROLE_FIELD_SCOPES.get(principal.role, {}).get(action, frozenset())
+    permitted = record.fields.intersection(role_fields)
+    if not requested_fields.issubset(permitted):
+        raise AccessDenied("requested fields exceed the role or record field scope")
+    return frozenset(requested_fields)
