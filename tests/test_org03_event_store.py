@@ -858,38 +858,54 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             self.load()
 
     def test_idempotent_retry_rejects_tampered_result_snapshot(self):
-        event = make_event(2, "DELIVERY_CONFIRMED")
+        event = make_event(3, "PRIMARY_ACK_DEADLINE_MISSED")
+        self.store.append_event(
+            "SYNTHETIC-R1-ALERT",
+            event,
+            expected_version=2,
+            event_id="SYNTHETIC-R1-IDEMPOTENT-RESULT",
+            idempotency_key="SYNTHETIC-R1-IDEMPOTENT-RESULT-IDEM",
+            authorized_responder_refs=AUTH,
+        )
         with self.store._connect() as connection:
             connection.execute(
                 "UPDATE org03_events SET result_json = ? "
-                "WHERE alert_id = ? AND sequence = 2",
+                "WHERE alert_id = ? AND sequence = 3",
                 ('{"status":"FORGED"}', "SYNTHETIC-R1-ALERT"),
             )
         with self.assertRaises(EventLogIntegrityError):
             self.store.append_event(
                 "SYNTHETIC-R1-ALERT",
                 event,
-                expected_version=1,
-                event_id="SYNTHETIC-R1-EVENT-02",
-                idempotency_key="SYNTHETIC-R1-IDEM-02",
+                expected_version=2,
+                event_id="SYNTHETIC-R1-IDEMPOTENT-RESULT",
+                idempotency_key="SYNTHETIC-R1-IDEMPOTENT-RESULT-IDEM",
                 authorized_responder_refs=AUTH,
             )
 
     def test_idempotent_retry_rejects_tampered_request_fingerprint(self):
-        event = make_event(2, "DELIVERY_CONFIRMED")
+        event = make_event(3, "PRIMARY_ACK_DEADLINE_MISSED")
+        self.store.append_event(
+            "SYNTHETIC-R1-ALERT",
+            event,
+            expected_version=2,
+            event_id="SYNTHETIC-R1-IDEMPOTENT-REQUEST",
+            idempotency_key="SYNTHETIC-R1-IDEMPOTENT-REQUEST-IDEM",
+            authorized_responder_refs=AUTH,
+        )
         with self.store._connect() as connection:
             connection.execute(
                 "UPDATE org03_events SET request_json = ? "
-                "WHERE alert_id = ? AND sequence = 2",
+                "WHERE alert_id = ? AND sequence = 3",
                 ('{"event_type":"FORGED"}', "SYNTHETIC-R1-ALERT"),
             )
         with self.assertRaises(EventLogIntegrityError):
             self.store.append_event(
                 "SYNTHETIC-R1-ALERT",
                 event,
-                expected_version=1,
-                event_id="SYNTHETIC-R1-EVENT-02",
-                idempotency_key="SYNTHETIC-R1-IDEM-02",
+                expected_version=2,
+                event_id="SYNTHETIC-R1-IDEMPOTENT-REQUEST",
+                idempotency_key="SYNTHETIC-R1-IDEMPOTENT-REQUEST-IDEM",
                 authorized_responder_refs=AUTH,
             )
 
