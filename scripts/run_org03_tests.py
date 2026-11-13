@@ -84,6 +84,9 @@ def write_junit(result: JUnitResult, destination: Path) -> None:
     failures = sum(case["status"] == "failure" for case in result.cases)
     errors = sum(case["status"] == "error" for case in result.cases)
     skipped = sum(case["status"] == "skipped" for case in result.cases)
+    total_time = sum(
+        float(case.get("duration", 0.0)) for case in result.cases
+    )
     suite = ET.Element(
         "testsuite",
         {
@@ -92,7 +95,7 @@ def write_junit(result: JUnitResult, destination: Path) -> None:
             "failures": str(failures),
             "errors": str(errors),
             "skipped": str(skipped),
-            "time": f"{sum(float(case.get('duration', 0.0)) for case in result.cases):.6f}",
+            "time": f"{total_time:.6f}",
         },
     )
     for case in result.cases:
