@@ -428,6 +428,29 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         with self.assertRaises(sqlite3.ProgrammingError):
             connection.execute("SELECT 1")
 
+    def test_same_idempotency_key_with_different_event_id_is_rejected(self):
+        self.append_primary()
+        with self.assertRaises(IdempotencyConflict):
+            self.append_primary(
+                event_id="SYNTHETIC-ALTERNATE-EVENT-ID",
+                key="SYNTHETIC-IDEM-03",
+            )
+
+    def test_idempotent_retry_returns_original_result_after_later_transition(self):
+        original = self.append_primary()
+        self.store.append_event(
+            "SYNTHETIC-ALERT-STORE-01",
+            make_event(4, "PRIMARY_ACK_DEADLINE_MISSED"),
+            expected_version=3,
+            event_id="SYNTHETIC-LATER-EVENT",
+            idempotency_key="SYNTHETIC-LATER-IDEM",
+            authorized_responder_refs=AUTH,
+        )
+        retry = self.append_primary()
+        self.assertEqual(original, retry)
+        self.assertEqual("ACKNOWLEDGED", retry["status"])
+        self.assertEqual(4, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
+
 
 if __name__ == "__main__":
     unittest.main()
