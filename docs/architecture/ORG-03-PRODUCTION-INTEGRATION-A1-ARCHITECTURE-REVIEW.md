@@ -3,7 +3,7 @@
 **Document ID:** EKHC-ORG03-A1-ARCH-001  
 **Date:** 2026-11-13  
 **Status:** DRAFT FOR OWNER DECISION — NOT APPROVED FOR IMPLEMENTATION  
-**Baseline:** Synthetic A3 branch head `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`  
+**Baseline:** Synthetic A3 branch head `225daf65eaa27182ec20749adf469436fec1f654`  
 **Scope:** Architecture assessment only. No runtime, database, identity, notification, or restricted-record implementation is authorized by this document.
 
 ## 1. Executive decision
@@ -27,6 +27,8 @@ The existing implementation and regression tests deliberately establish these li
 - The acknowledgement/escalation acceptance matrix records live rehearsal as NOT RUN pending separate Owner authorization.
 
 These constraints are intentional. They must remain regression-protected until a later architecture and implementation stage is explicitly approved.
+
+**Exact-head verification evidence:** commit `225daf65eaa27182ec20749adf469436fec1f654` was tested by GitHub Actions workflow run [43408303800](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43408303800) on Ubuntu 24.04. Recorded results: 158 Django tests passed; 84 dedicated ORG-03 tests passed; Ruff lint and formatting passed; dependency audit reported no known vulnerabilities; JUnit recorded 84 tests, 0 failures, 0 errors and 0 skipped. This evidence verifies the tested synthetic baseline and does not verify production architecture, institutional controls, deployment, operational readiness or external security review.
 
 ## 3. Goals and non-goals
 
@@ -216,7 +218,7 @@ For each threat, document trust boundary, attack preconditions, impact, mitigati
 
 | Review item | Disposition |
 |---|---|
-| Current A3 boundary documented | VERIFIED from repository baseline |
+| Synthetic A3 baseline and regression scope | VERIFIED for the tested synthetic scope only — exact commit `225daf65eaa27182ec20749adf469436fec1f654`; workflow run [43408303800](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43408303800): 158 Django tests, 84 dedicated ORG-03 tests, Ruff lint/format and dependency audit passed; JUnit reports 84 tests, 0 failures, 0 errors, 0 skipped. |
 | Synthetic-to-production gaps identified | DOCUMENTED |
 | Proposed trust boundaries and logical architecture | DRAFT |
 | Identity and authorization design | OPEN — institutional evidence required |
