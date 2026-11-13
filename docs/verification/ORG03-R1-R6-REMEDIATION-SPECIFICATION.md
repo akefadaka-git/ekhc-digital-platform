@@ -246,7 +246,7 @@ Please review these explicit decisions before implementation:
 |---|---|
 | Independent source review | COMPLETED |
 | R1–R6 specification | DRAFTED |
-| Acceptance-test plan | DRAFTED — 43 named acceptance cases |
+| Acceptance-test plan | DRAFTED — 44 named acceptance cases |
 | Specification reviewed by Owner | PENDING |
 | Implementation | NOT STARTED — approval gate |
 | Exact-head tests for remediation | NOT RUN |
