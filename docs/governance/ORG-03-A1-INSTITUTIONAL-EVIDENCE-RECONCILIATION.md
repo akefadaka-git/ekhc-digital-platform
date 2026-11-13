@@ -4,8 +4,8 @@
 **Review date:** 2026-11-13  
 **Status:** EVIDENCE REVIEW — A1 NOT CLOSED  
 **PR:** #24 — `a1/org03-production-architecture-review`  
-**Reviewed package HEAD:** `902e56a4cdaef03e8fd7ed38d59766a945a04921`  
-**Synthetic A3 reference:** `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`
+**Reviewed package HEAD at initial A1 review snapshot:** `902e56a4cdaef03e8fd7ed38d59766a945a04921`  
+**Synthetic A3 reference:** `225daf65eaa27182ec20749adf469436fec1f654`
 
 ## 1. Executive finding
 
