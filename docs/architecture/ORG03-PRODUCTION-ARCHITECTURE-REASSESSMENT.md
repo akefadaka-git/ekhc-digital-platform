@@ -4,6 +4,7 @@
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Assessment base:** `225daf65eaa27182ec20749adf469436fec1f654`  
 **Assessment branch:** `docs/org03-production-architecture-reassessment`  
+**Canonical status:** CONSOLIDATED DOCUMENTATION BASELINE; documentation-only  
 **System:** ORG-03 responder operations  
 **Classification:** Architecture assessment and production-readiness requirements; not an implementation specification or deployment approval
 
@@ -346,3 +347,72 @@ No institutional names, office holders, vendors, budgets, calendars or legal con
 - **A5 / deployment:** NOT AUTHORIZED.
 
 The next valid step is institutional P0 discovery and Owner review of this architecture assessment. Any subsequent architecture freeze or implementation must be separately approved. No code, configuration, database, identity integration, keys, providers, or production data were changed as part of this assessment.
+
+
+## 13. Consolidation record, residual risks and production gates
+
+### 13.1 Canonical-document status and source reconciliation
+
+This file is the canonical ORG-03 production architecture reassessment on the dedicated documentation branch, `docs/org03-production-architecture-reassessment`.
+
+It consolidates the two previously prepared assessment copies:
+- `docs/architecture/ORG03-PRODUCTION-ARCHITECTURE-REASSESSMENT.md` on the documentation branch (the canonical location);
+- `docs/assessment/ORG03-PRODUCTION-ARCHITECTURE-REASSESSMENT.md` on `a3/org-03-responder-operations` (retained unchanged as historical source material).
+
+The reconciliation preserves the more detailed domain requirements from both copies: transactional persistence and concurrency, distinct timestamp semantics and calendar policy, institutional identity versus authority, key lifecycle and separation of duties, independent monotonic checkpointing and dual-write recovery, operational monitoring and incident response, privacy/audit, resilience, threat scenarios, production decision register, migration gates, and institutional decisions required.
+
+The implementation branch and its assessment copy are intentionally not modified. PR #24 is intentionally not modified. This document does not determine the relationship, base, scope or disposition of PR #24 and does not authorize merging either assessment copy.
+
+### 13.2 Recorded prototype evidence boundary
+
+The recorded workflow evidence is:
+- Commit under test: `225daf65eaa27182ec20749adf469436fec1f654`.
+- Workflow run: [43408303800](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43408303800).
+- Results recorded for that exact head: 158 Django tests passed; 84 dedicated ORG-03 tests passed; Ruff lint and formatting passed; dependency audit reported no known vulnerabilities; JUnit reported 84 tests, zero failures, zero errors and zero skipped.
+- Artifact ID: `14028835451`.
+
+This is prototype-scope CI evidence only. It is not evidence of production security, institutional acceptance, operational readiness or independent external review. The workflow must not be described as having tested a later documentation-only commit.
+
+### 13.3 Residual risk register
+
+| ID | Residual risk | Required production treatment | Status |
+|---|---|---|---|
+| RR-01 | Database and local checkpoint sidecar share a practical compromise boundary; coordinated modification can defeat local tamper evidence | Independently administered remote monotonic anchor, separate credentials and dual control | OPEN |
+| RR-02 | Database commit and local checkpoint replacement are not atomic; crash can produce fail-closed unavailability | Durable outbox, idempotent remote anchoring, explicit integrity states and tested reconciliation | OPEN |
+| RR-03 | Synthetic caller-supplied time is not a trusted institutional acceptance timestamp | Server-generated UTC acceptance time, monitored time source and approved time semantics | OPEN |
+| RR-04 | Synthetic principals/authority evidence do not establish actual institutional identity or office authority | Institution-approved IdP and separately governed authority registry with lifecycle evidence | OPEN |
+| RR-05 | Process-held synthetic keys do not establish production custody or separation of duties | KMS/HSM-backed keys, independent administration, rotation and compromise recovery | OPEN |
+| RR-06 | Prototype CI does not prove multi-host resilience, backup recoverability or operational coverage | Multi-process/multi-host/fault-injection, restore/DR exercises, named owners and runbooks | OPEN |
+| RR-07 | Internal R1/R3 re-review is not an independent external security review | Independent reviewer, scoped report, remediation evidence and acceptance decision | OPEN |
+| RR-08 | Institutional governance, privacy, data residency, retention and service objectives remain unverified | Formal institutional decisions and evidence before architecture freeze or real-data use | OPEN |
+
+These are architecture and assurance gaps, not claims that a compromise or operational incident has occurred.
+
+### 13.4 Production acceptance gates
+
+All gates below remain OPEN. Passing prototype tests does not close them.
+
+| Gate | Required evidence | Status |
+|---|---|---|
+| P-01 Persistence | Approved production data store, atomic event/state/idempotency/outbox transaction, isolation and multi-host concurrency evidence | OPEN |
+| P-02 Trusted time | Approved time source, UTC acceptance semantics, drift monitoring and clock-failure tests | OPEN |
+| P-03 Identity | Institution-approved IdP, unique identities, MFA and lifecycle/revocation controls | OPEN |
+| P-04 Authority | Approved office/role source, grants, delegation, expiry, revocation and historical decision evidence | OPEN |
+| P-05 Key custody | KMS/HSM ownership, separated duties, rotation, archival verification and compromise recovery | OPEN |
+| P-06 Checkpoint | Independently administered monotonic anchor, dual control, rollback detection and partial-failure recovery | OPEN |
+| P-07 Operations | Named service/security/data owners, on-call coverage, runbooks, monitoring and incident response | OPEN |
+| P-08 Resilience | Approved RPO/RTO, protected backups, witnessed restore and disaster-recovery evidence | OPEN |
+| P-09 Privacy and governance | Classification, lawful basis, retention, residency, access and audit policy approvals | OPEN |
+| P-10 Independent assurance | Independent security review and closure evidence for findings | OPEN |
+| P-11 Operational acceptance | Approved responder roster, notification fallback, tabletop/technical exercises and accountable sign-off | OPEN |
+| P-12 Owner authorization | Explicit stage-specific approval for any implementation, merge, production use or deployment | OPEN |
+
+### 13.5 Consolidation disposition
+
+- Canonical assessment: this document on the dedicated documentation branch.
+- Implementation branch: unchanged by this consolidation.
+- Historical assessment copy on the implementation branch: unchanged; not canonical.
+- PR #24: unchanged; relationship and disposition remain undecided.
+- `main`: not targeted by this documentation-only change.
+- Code, configuration, migrations, credentials, keys, infrastructure and production data: not changed.
+- Production implementation, merge, activation and A5: NOT AUTHORIZED.
