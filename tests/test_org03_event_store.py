@@ -932,6 +932,45 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             with self.assertRaises(AuthorityError):
                 self.store._verify_authority_event(connection, event)
 
+    def test_historical_replay_ignores_mutated_current_responder_mapping(self):
+        self.register_primary()
+        self.store.append_event(
+            "SYNTHETIC-R1-ALERT",
+            self.human_ack("2026-11-13T07:03:00Z"),
+            expected_version=2,
+            event_id="SYNTHETIC-R3-HISTORICAL-MAPPING",
+            idempotency_key="SYNTHETIC-R3-HISTORICAL-MAPPING-IDEM",
+            authorized_responder_refs=AUTH,
+        )
+        state = self.store.load_state(
+            "SYNTHETIC-R1-ALERT",
+            authorized_responder_refs={"primary": "SYNTHETIC-REPLACED-RESPONDER"},
+        )
+        self.assertEqual("ACKNOWLEDGED", state["status"])
+
+    def test_authority_grant_cannot_be_reused_for_another_alert_scope(self):
+        self.register_primary()
+        self.store.create_alert(
+            "SYNTHETIC-OTHER-ALERT", "HIGH", "2026-11-13T07:00:00Z"
+        )
+        self.store.append_event(
+            "SYNTHETIC-OTHER-ALERT",
+            make_event(2, "DELIVERY_CONFIRMED"),
+            expected_version=1,
+            event_id="SYNTHETIC-OTHER-DELIVERY",
+            idempotency_key="SYNTHETIC-OTHER-DELIVERY-IDEM",
+            authorized_responder_refs=AUTH,
+        )
+        with self.assertRaises(AuthorityError):
+            self.store.append_event(
+                "SYNTHETIC-OTHER-ALERT",
+                self.human_ack("2026-11-13T07:03:00Z"),
+                expected_version=2,
+                event_id="SYNTHETIC-OTHER-HUMAN-ACK",
+                idempotency_key="SYNTHETIC-OTHER-HUMAN-ACK-IDEM",
+                authorized_responder_refs=AUTH,
+            )
+
     def test_authority_registry_versions_are_immutable(self):
         self.register_primary()
         with (
