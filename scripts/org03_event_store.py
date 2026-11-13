@@ -725,6 +725,31 @@ class Org03EventStore:
                     (alert_id, idempotency_key),
                 ).fetchone()
                 if prior is not None:
+                    aggregate = connection.execute(
+                        "SELECT priority, version, status FROM org03_aggregates "
+                        "WHERE alert_id = ?",
+                        (alert_id,),
+                    ).fetchone()
+                    if aggregate is None:
+                        raise EventStoreError("alert does not exist")
+                    replayed = self._replay_in_transaction(
+                        connection, alert_id, aggregate["priority"]
+                    )
+                    last_event = connection.execute(
+                        "SELECT sequence, event_hash FROM org03_events "
+                        "WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
+                        (alert_id,),
+                    ).fetchone()
+                    self._verify_checkpoint(
+                        alert_id, last_event["sequence"], last_event["event_hash"]
+                    )
+                    if (
+                        aggregate["version"] != replayed["next_sequence"] - 1
+                        or aggregate["status"] != replayed["status"]
+                    ):
+                        raise EventLogIntegrityError(
+                            "aggregate differs from authenticated event history"
+                        )
                     if (
                         prior["request_json"] != request_json
                         or prior["event_id"] != event_id
@@ -896,6 +921,10 @@ class Org03EventStore:
             )
             if calculated != row["event_hash"]:
                 raise EventLogIntegrityError("event hash mismatch")
+            if row["request_json"] is None or row["result_json"] is None:
+                raise EventLogIntegrityError(
+                    "authenticated request or result snapshot is missing"
+                )
             if index:
                 try:
                     state = apply_event(
@@ -907,6 +936,16 @@ class Org03EventStore:
                     raise EventLogIntegrityError(
                         "stored event cannot be replayed"
                     ) from exc
+            try:
+                result_snapshot = json.loads(row["result_json"])
+            except (TypeError, ValueError) as exc:
+                raise EventLogIntegrityError(
+                    "stored result snapshot is invalid"
+                ) from exc
+            if _canonical(result_snapshot) != _canonical(state):
+                raise EventLogIntegrityError(
+                    "stored result snapshot differs from replayed state"
+                )
             previous_hash = calculated
         return state
 
