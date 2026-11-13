@@ -491,15 +491,13 @@ class Org03EventStore:
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
-                event = self._authority_for_event(connection, event)
-                event_json = _canonical(event)
                 request_json = _canonical({
                     "alert_id": alert_id,
                     "event_id": event_id,
                     "idempotency_key": idempotency_key,
                     "expected_version": expected_version,
                     "event_type": event.get("event"),
-                    "event_json": event_json,
+                    "event_json": _canonical(event),
                 })
                 prior = connection.execute(
                     "SELECT event_id, event_json, request_json, result_json "
@@ -523,6 +521,8 @@ class Org03EventStore:
                     connection.commit()
                     return original_result
 
+                event = self._authority_for_event(connection, event)
+                event_json = _canonical(event)
                 aggregate = connection.execute(
                     "SELECT priority, version FROM org03_aggregates WHERE alert_id = ?",
                     (alert_id,),
