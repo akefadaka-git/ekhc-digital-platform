@@ -8,8 +8,11 @@ artifacts; this module does not configure production storage.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
+import os
 import sqlite3
+import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -36,6 +39,21 @@ class EventLogIntegrityError(EventStoreError):
 
 class EventStoreBusy(EventStoreError):
     """SQLite remained busy beyond the configured bounded retry deadline."""
+
+
+class IntegrityKeyError(EventLogIntegrityError):
+    """An integrity key is unknown, unavailable, or revoked."""
+
+
+class CheckpointError(EventLogIntegrityError):
+    """The independent authenticated checkpoint is invalid or stale."""
+
+
+class AuthorityError(EventStoreError):
+    """Synthetic historical authority evidence is invalid."""
+
+
+DEFAULT_SYNTHETIC_KEYS = {"synthetic-test-v1": b"ORG03-TEST-ONLY-KEY-NOT-FOR-PRODUCTION-32"}
 
 
 def _canonical(value: Any) -> str:
@@ -67,11 +85,19 @@ class Org03EventStore:
 
     GENESIS_HASH = "0" * 64
 
-    def __init__(self, path: str | Path, *, timeout_seconds: float = 10.0):
+    def __init__(self, path: str | Path, *, timeout_seconds: float = 10.0, integrity_keys: dict[str, bytes] | None = None, active_key_id: str = "synthetic-test-v1", revoked_key_ids: frozenset[str] = frozenset(), checkpoint_dir: str | Path | None = None):
         self.path = str(path)
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive")
         self.timeout_seconds = timeout_seconds
+        self._integrity_keys = dict(integrity_keys or DEFAULT_SYNTHETIC_KEYS)
+        self.active_key_id = active_key_id
+        self.revoked_key_ids = frozenset(revoked_key_ids)
+        if active_key_id not in self._integrity_keys or active_key_id in self.revoked_key_ids:
+            raise IntegrityKeyError("active integrity key is unavailable")
+        if any(not isinstance(key, bytes) or len(key) < 32 for key in self._integrity_keys.values()):
+            raise ValueError("integrity keys must contain at least 32 bytes")
+        self.checkpoint_dir = Path(checkpoint_dir or (self.path + ".org03-checkpoints"))
         self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
@@ -140,6 +166,8 @@ class Org03EventStore:
                     result_json TEXT,
                     previous_hash TEXT NOT NULL,
                     event_hash TEXT NOT NULL,
+                    key_id TEXT NOT NULL DEFAULT 'synthetic-test-v1',
+                    event_mac TEXT NOT NULL DEFAULT '',
                     UNIQUE(alert_id, sequence),
                     UNIQUE(alert_id, idempotency_key)
                 );
