@@ -804,7 +804,8 @@ class Org03R1R3NegativeTests(unittest.TestCase):
                 ("SYNTHETIC-R1-ALERT",),
             )
             connection.execute(
-                "UPDATE org03_aggregates SET version=1, status='AWAITING_HUMAN_ACK' WHERE alert_id=?",
+                "UPDATE org03_aggregates SET version=1, "
+                "status='AWAITING_HUMAN_ACK' WHERE alert_id=?",
                 ("SYNTHETIC-R1-ALERT",),
             )
         with self.assertRaises(CheckpointError):
@@ -813,7 +814,8 @@ class Org03R1R3NegativeTests(unittest.TestCase):
     def test_unknown_event_key_fails_closed(self):
         with self.store._connect() as connection:
             connection.execute(
-                "UPDATE org03_events SET key_id='unknown-key' WHERE alert_id=? AND sequence=2",
+                "UPDATE org03_events SET key_id='unknown-key' "
+                "WHERE alert_id=? AND sequence=2",
                 ("SYNTHETIC-R1-ALERT",),
             )
         with self.assertRaises(IntegrityKeyError):
