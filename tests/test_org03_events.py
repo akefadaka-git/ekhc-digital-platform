@@ -5,7 +5,6 @@ import unittest
 
 import scripts.org03_events
 
-
 AUTH = {
     "primary": "SYNTHETIC-PRIMARY-01",
     "backup": "SYNTHETIC-BACKUP-01",
