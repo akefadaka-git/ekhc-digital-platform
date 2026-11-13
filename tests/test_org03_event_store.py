@@ -96,10 +96,12 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             "SYNTHETIC-ALERT-STORE-01", "HIGH", "2026-11-13T07:00:00Z"
         )
         self.store.register_authority(
-            AUTH["primary"], "PRIMARY_SECURITY_OPERATIONS", "2026-11-13T06:00:00Z"
+            AUTH["primary"], "PRIMARY_SECURITY_OPERATIONS", "2026-11-13T06:00:00Z",
+            scope_ref="SYNTHETIC-ALERT-STORE-01",
         )
         self.store.register_authority(
-            AUTH["backup"], "BACKUP_SECURITY_OPERATIONS", "2026-11-13T06:00:00Z"
+            AUTH["backup"], "BACKUP_SECURITY_OPERATIONS", "2026-11-13T06:00:00Z",
+            scope_ref="SYNTHETIC-ALERT-STORE-01",
         )
         self.store.append_event(
             "SYNTHETIC-ALERT-STORE-01",
@@ -740,7 +742,8 @@ class Org03R1R3NegativeTests(unittest.TestCase):
 
     def register_primary(self):
         self.store.register_authority(
-            AUTH["primary"], "PRIMARY_SECURITY_OPERATIONS", "2026-11-13T07:00:00Z"
+            AUTH["primary"], "PRIMARY_SECURITY_OPERATIONS", "2026-11-13T07:00:00Z",
+            scope_ref="SYNTHETIC-R1-ALERT",
         )
 
     def human_ack(self, at):
@@ -909,16 +912,17 @@ class Org03R1R3NegativeTests(unittest.TestCase):
         self.register_primary()
         with self.store._connection() as connection:
             event = self.store._authority_for_event(
-                connection, self.human_ack("2026-11-13T07:03:00Z")
+                connection, self.human_ack("2026-11-13T07:03:00Z"), "SYNTHETIC-R1-ALERT"
             )
             event["authority_evidence"]["role"] = "OWNER_OR_DELEGATE"
             with self.assertRaises(AuthorityError):
-                self.store._verify_authority_event(connection, event)
+                self.store._verify_authority_event(connection, event, "SYNTHETIC-R1-ALERT")
 
     def test_cross_principal_evidence_substitution_is_rejected(self):
         self.register_primary()
         self.store.register_authority(
-            AUTH["backup"], "PRIMARY_SECURITY_OPERATIONS", "2026-11-13T07:00:00Z"
+            AUTH["backup"], "PRIMARY_SECURITY_OPERATIONS", "2026-11-13T07:00:00Z",
+            scope_ref="SYNTHETIC-R1-ALERT",
         )
         with self.store._connection() as connection:
             event = self.store._authority_for_event(
