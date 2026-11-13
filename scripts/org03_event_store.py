@@ -235,7 +235,7 @@ class Org03EventStore:
             if not hmac.compare_digest(current.get("mac", ""), self._mac(old_payload["key_id"], old_payload)):
                 raise CheckpointError("existing checkpoint authentication failed")
             if old_payload["sequence"] > sequence:
-                raise CheckpointError("refusing checkpoint rollback")
+                return
             if old_payload["sequence"] == sequence:
                 if old_payload["event_hash"] != event_hash:
                     raise CheckpointError("checkpoint fork detected")
@@ -525,10 +525,11 @@ class Org03EventStore:
                     authorized_responder_refs=authorized_responder_refs,
                 )
                 previous = connection.execute(
-                    "SELECT event_hash FROM org03_events "
+                    "SELECT sequence, event_hash FROM org03_events "
                     "WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
                     (alert_id,),
                 ).fetchone()
+                self._verify_checkpoint(alert_id, previous["sequence"], previous["event_hash"])
                 previous_hash = previous["event_hash"]
                 sequence = event["sequence"]
                 event_hash = _digest(
