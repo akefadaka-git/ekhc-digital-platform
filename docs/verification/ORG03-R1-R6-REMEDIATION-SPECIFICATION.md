@@ -266,3 +266,29 @@ Owner authorization is recorded in Section 11. The first implementation incremen
 | R6 deterministic connection closure and bounded writer-lock retry | IMPLEMENTED | Exact-head workflow pending |
 
 The first implementation increment does not close R1 or R3, and does not close A4. R1 remains the integrity/authenticity blocker; R3 remains the historical-authority blocker. Do not merge or deploy based on this increment.
+
+
+## 14. Exact-head implementation and verification record — 2026-11-13
+
+The exact-head quality workflow for source SHA `579014b5b563509914528fdef090e8a3a7cb21a1` completed SUCCESS:
+[A3 quality checks — run 43403751986](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43403751986).
+
+Evidence inspected:
+- Django check clean; 123 Django tests passed.
+- 29 ORG-03 tests passed; JUnit reports 0 failures, 0 errors, 0 skipped.
+- Ruff lint and format passed.
+- Dependency audit passed with no known vulnerabilities.
+- Artifact `org03-linux-test-evidence`, ID `14025958139`, includes JUnit XML and console log.
+
+This verification applies to R2, R4, R5 and R6 only. R1 and R3 have **not** been implemented or tested. The current unkeyed SHA-256 chain does not provide authenticated integrity against a database writer capable of rewriting the complete history. Historical authority remains dependent on caller-supplied current responder mappings. Accordingly, the specification is not closed, A4 remains OPEN, production readiness is NOT READY, and A5 remains NOT AUTHORIZED.
+
+| Requirement | Status at verified SHA |
+|---|---|
+| R1 — authenticated integrity and protected checkpoint | NOT IMPLEMENTED / NOT RUN |
+| R2 — consistent read snapshot | IMPLEMENTED / VERIFIED |
+| R3 — historical authority and revocation | NOT IMPLEMENTED / NOT RUN |
+| R4 — explicit field authorization | IMPLEMENTED / VERIFIED |
+| R5 — complete idempotency envelope | IMPLEMENTED / VERIFIED |
+| R6 — connection lifecycle and bounded contention | IMPLEMENTED / VERIFIED |
+
+No production keys, real identities, live notifications, runtime integration, merge, or deployment were introduced.
