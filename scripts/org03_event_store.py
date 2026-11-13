@@ -461,20 +461,19 @@ class Org03EventStore:
     ) -> dict:
         if not event_id or not idempotency_key:
             raise EventStoreError("event_id and idempotency_key are required")
-        event_json = _canonical(event)
-        request_json = _canonical(
-            {
-                "alert_id": alert_id,
-                "event_id": event_id,
-                "idempotency_key": idempotency_key,
-                "expected_version": expected_version,
-                "event_type": event.get("event"),
-                "event_json": event_json,
-            }
-        )
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
+                event = self._authority_for_event(connection, event)
+                event_json = _canonical(event)
+                request_json = _canonical({
+                    "alert_id": alert_id,
+                    "event_id": event_id,
+                    "idempotency_key": idempotency_key,
+                    "expected_version": expected_version,
+                    "event_type": event.get("event"),
+                    "event_json": event_json,
+                })
                 prior = connection.execute(
                     "SELECT event_id, event_json, request_json, result_json "
                     "FROM org03_events "
