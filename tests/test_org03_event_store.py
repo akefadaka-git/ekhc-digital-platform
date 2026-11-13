@@ -1,6 +1,7 @@
 """Durability, concurrency, replay and rollback tests using temporary SQLite."""
 
 import concurrent.futures
+import json
 import multiprocessing
 import os
 import sqlite3
@@ -13,12 +14,16 @@ from pathlib import Path
 from scripts.org03_event_store import (
     AuthorityError,
     CheckpointError,
+    AuthorityError,
+    CheckpointError,
     EventLogIntegrityError,
+    IntegrityKeyError,
     EventStoreBusy,
     IntegrityKeyError,
     IdempotencyConflict,
     Org03EventStore,
     StaleAggregateVersion,
+    _digest,
     DEFAULT_SYNTHETIC_KEYS,
     _digest,
 )
@@ -654,6 +659,128 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(original, retry)
         self.assertEqual("BACKUP_ROUTED", retry["status"])
         self.assertEqual(4, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
+
+
+
+class Org03R1R3NegativeTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.path = Path(self.temp.name) / "org03-integrity.sqlite3"
+        self.store = Org03EventStore(self.path)
+        self.store.create_alert("SYNTHETIC-R1-ALERT", "HIGH", "2026-11-13T07:00:00Z")
+        self.store.append_event(
+            "SYNTHETIC-R1-ALERT", make_event(2, "DELIVERY_CONFIRMED"),
+            expected_version=1, event_id="SYNTHETIC-R1-EVENT-02",
+            idempotency_key="SYNTHETIC-R1-IDEM-02",
+            authorized_responder_refs=AUTH,
+        )
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def load(self):
+        return self.store.load_state("SYNTHETIC-R1-ALERT", authorized_responder_refs=AUTH)
+
+    def register_primary(self):
+        self.store.register_authority(AUTH["primary"], "PRIMARY_SECURITY_OPERATIONS", "2026-11-13T07:00:00Z")
+
+    def human_ack(self, at):
+        return {"sequence": 3, "event": "HUMAN_ACKNOWLEDGED", "at_utc": at,
+                "actor_role": "PRIMARY_SECURITY_OPERATIONS", "actor_ref": AUTH["primary"],
+                "disposition": "ACCEPTED"}
+
+    def test_full_database_rewrite_with_recomputed_hash_fails_hmac(self):
+        with self.store._connect() as connection:
+            row=connection.execute("SELECT * FROM org03_events WHERE alert_id=? AND sequence=2",("SYNTHETIC-R1-ALERT",)).fetchone()
+            changed=json.loads(row["event_json"]); changed["event"]="DELIVERY_FAILED"
+            encoded=json.dumps(changed,sort_keys=True,separators=(",",":"),ensure_ascii=False)
+            digest=_digest(row["previous_hash"],row["alert_id"],row["event_id"],row["sequence"],row["idempotency_key"],encoded)
+            connection.execute("UPDATE org03_events SET event_json=?,event_hash=? WHERE event_id=?",(encoded,digest,row["event_id"]))
+        with self.assertRaises(EventLogIntegrityError): self.load()
+
+    def test_event_id_substitution_fails_hmac(self):
+        with self.store._connect() as connection:
+            connection.execute("UPDATE org03_events SET event_id=? WHERE alert_id=? AND sequence=2",("SYNTHETIC-SUBSTITUTED-EVENT","SYNTHETIC-R1-ALERT"))
+        with self.assertRaises(EventLogIntegrityError): self.load()
+
+    def test_truncation_with_matching_aggregate_rewrite_fails_checkpoint(self):
+        with self.store._connect() as connection:
+            connection.execute("DELETE FROM org03_events WHERE alert_id=? AND sequence=2",("SYNTHETIC-R1-ALERT",))
+            connection.execute("UPDATE org03_aggregates SET version=1,status='AWAITING_HUMAN_ACK' WHERE alert_id=?",("SYNTHETIC-R1-ALERT",))
+        with self.assertRaises(CheckpointError): self.load()
+
+    def test_unknown_event_key_fails_closed(self):
+        with self.store._connect() as connection:
+            connection.execute("UPDATE org03_events SET key_id='unknown-key' WHERE alert_id=? AND sequence=2",("SYNTHETIC-R1-ALERT",))
+        with self.assertRaises(IntegrityKeyError): self.load()
+
+    def test_revoked_key_fails_closed(self):
+        revoked=Org03EventStore(self.path,revoked_key_ids=frozenset({"synthetic-test-v1"}))
+        with self.assertRaises(IntegrityKeyError):
+            revoked.load_state("SYNTHETIC-R1-ALERT",authorized_responder_refs=AUTH)
+
+    def test_checkpoint_rollback_is_detected(self):
+        path=self.store._checkpoint_path("SYNTHETIC-R1-ALERT")
+        old=path.read_text(encoding="utf-8")
+        self.store.append_event("SYNTHETIC-R1-ALERT",make_event(3,"PRIMARY_ACK_DEADLINE_MISSED"),
+            expected_version=2,event_id="SYNTHETIC-R1-EVENT-03",idempotency_key="SYNTHETIC-R1-IDEM-03",
+            authorized_responder_refs=AUTH)
+        path.write_text(old,encoding="utf-8")
+        with self.assertRaises(CheckpointError): self.load()
+
+    def test_key_rotation_verifies_old_and_new_events(self):
+        keys={"synthetic-test-v1":b"ORG03-TEST-ONLY-KEY-NOT-FOR-PRODUCTION-32",
+              "synthetic-test-v2":b"synthetic-org03-rotated-test-key-000000000000"}
+        rotated=Org03EventStore(self.path,integrity_keys=keys,active_key_id="synthetic-test-v2")
+        rotated.append_event("SYNTHETIC-R1-ALERT",make_event(3,"PRIMARY_ACK_DEADLINE_MISSED"),
+            expected_version=2,event_id="SYNTHETIC-R1-ROTATED",idempotency_key="SYNTHETIC-R1-ROTATED-IDEM",
+            authorized_responder_refs=AUTH)
+        self.assertEqual("BACKUP_ROUTED",rotated.load_state("SYNTHETIC-R1-ALERT",authorized_responder_refs=AUTH)["status"])
+        with rotated._connection() as connection:
+            ids=[r["key_id"] for r in connection.execute("SELECT key_id FROM org03_events WHERE alert_id=? ORDER BY sequence",("SYNTHETIC-R1-ALERT",))]
+        self.assertEqual(["synthetic-test-v1","synthetic-test-v1","synthetic-test-v2"],ids)
+
+    def test_empty_keyring_is_rejected(self):
+        with self.assertRaises(IntegrityKeyError):
+            Org03EventStore(Path(self.temp.name)/"empty.sqlite3",integrity_keys={})
+
+    def test_historical_authority_before_revocation_remains_valid(self):
+        self.register_primary()
+        self.store.revoke_authority(AUTH["primary"],"2026-11-13T07:04:00Z")
+        result=self.store.append_event("SYNTHETIC-R1-ALERT",self.human_ack("2026-11-13T07:03:00Z"),
+            expected_version=2,event_id="SYNTHETIC-R3-HISTORICAL",idempotency_key="SYNTHETIC-R3-HISTORICAL-IDEM",
+            authorized_responder_refs=AUTH)
+        self.assertEqual("ACKNOWLEDGED",result["status"])
+        self.assertEqual("ACKNOWLEDGED",self.load()["status"])
+
+    def test_authority_is_rejected_at_exact_revocation_time(self):
+        self.register_primary()
+        self.store.revoke_authority(AUTH["primary"],"2026-11-13T07:04:00Z")
+        with self.assertRaises(AuthorityError):
+            self.store.append_event("SYNTHETIC-R1-ALERT",self.human_ack("2026-11-13T07:04:00Z"),
+                expected_version=2,event_id="SYNTHETIC-R3-REVOKED",idempotency_key="SYNTHETIC-R3-REVOKED-IDEM",
+                authorized_responder_refs=AUTH)
+
+    def test_altered_authority_evidence_is_rejected(self):
+        self.register_primary()
+        with self.store._connection() as connection:
+            event=self.store._authority_for_event(connection,self.human_ack("2026-11-13T07:03:00Z"))
+            event["authority_evidence"]["role"]="OWNER_OR_DELEGATE"
+            with self.assertRaises(AuthorityError): self.store._verify_authority_event(connection,event)
+
+    def test_cross_principal_evidence_substitution_is_rejected(self):
+        self.register_primary()
+        self.store.register_authority(AUTH["backup"],"PRIMARY_SECURITY_OPERATIONS","2026-11-13T07:00:00Z")
+        with self.store._connection() as connection:
+            event=self.store._authority_for_event(connection,self.human_ack("2026-11-13T07:03:00Z"))
+            event["actor_ref"]=AUTH["backup"]
+            with self.assertRaises(AuthorityError): self.store._verify_authority_event(connection,event)
+
+    def test_authority_registry_versions_are_immutable(self):
+        self.register_primary()
+        with self.store._connection() as connection:
+            with self.assertRaises(sqlite3.IntegrityError):
+                connection.execute("UPDATE org03_authority_versions SET role='OWNER_OR_DELEGATE' WHERE principal_ref=?",(AUTH["primary"],))
 
 
 if __name__ == "__main__":
