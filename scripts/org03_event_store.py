@@ -265,6 +265,8 @@ class Org03EventStore:
         event_hash = _digest(
             self.GENESIS_HASH, alert_id, event_id, 1, idempotency_key, event_json
         )
+        key_id = self.active_key_id
+        event_mac = self._mac(key_id, self._event_envelope(alert_id, event_id, 1, idempotency_key, event_json, self.GENESIS_HASH, key_id))
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
@@ -276,8 +278,8 @@ class Org03EventStore:
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
                     "idempotency_key, event_json, request_json, result_json, "
-                    "previous_hash, event_hash) "
-                    "VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)",
+                    "previous_hash, event_hash, key_id, event_mac) "
+                    "VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         event_id,
                         alert_id,
@@ -296,12 +298,15 @@ class Org03EventStore:
                         _canonical(state),
                         self.GENESIS_HASH,
                         event_hash,
+                        key_id,
+                        event_mac,
                     ),
                 )
                 connection.commit()
             except Exception:
                 connection.rollback()
                 raise
+        self._write_checkpoint(alert_id, 1, event_hash)
         return state
 
     def append_event(
@@ -420,6 +425,7 @@ class Org03EventStore:
                 if cursor.rowcount != 1:
                     raise StaleAggregateVersion("aggregate compare-and-update lost")
                 connection.commit()
+                self._write_checkpoint(alert_id, sequence, event_hash)
                 return updated
             except Exception:
                 connection.rollback()
@@ -453,6 +459,10 @@ class Org03EventStore:
                 raise EventLogIntegrityError("event sequence gap or duplicate")
             if row["previous_hash"] != previous_hash:
                 raise EventLogIntegrityError("event hash-chain predecessor mismatch")
+            key_id = row["key_id"]
+            calculated_mac = self._mac(key_id, self._event_envelope(row["alert_id"], row["event_id"], row["sequence"], row["idempotency_key"], row["event_json"], previous_hash, key_id))
+            if not hmac.compare_digest(row["event_mac"], calculated_mac):
+                raise EventLogIntegrityError("event HMAC verification failed")
             calculated = _digest(
                 previous_hash,
                 row["alert_id"],
@@ -496,6 +506,11 @@ class Org03EventStore:
                     aggregate["priority"],
                     authorized_responder_refs,
                 )
+                last_event = connection.execute(
+                    "SELECT sequence, event_hash FROM org03_events WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
+                    (alert_id,),
+                ).fetchone()
+                self._verify_checkpoint(alert_id, last_event["sequence"], last_event["event_hash"])
                 if aggregate["version"] != state["next_sequence"] - 1:
                     raise EventLogIntegrityError(
                         "aggregate version differs from event log"
