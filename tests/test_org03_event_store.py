@@ -5,8 +5,8 @@ import multiprocessing
 import os
 import sqlite3
 import tempfile
-import time
 import threading
+import time
 import unittest
 from pathlib import Path
 
