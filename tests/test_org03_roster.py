@@ -69,7 +69,8 @@ class Org03RosterValidationTests(unittest.TestCase):
         document["activation"]["production_operation_authorized"] = True
         result = validate_roster(document)
         self.assertIn(
-            "activation.production_operation_authorized must remain false in this synthetic-only increment",
+            "activation.production_operation_authorized must remain false "
+            "in this synthetic-only increment",
             result["errors"],
         )
 
