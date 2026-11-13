@@ -42,7 +42,7 @@ jobs:
             config/__init__.py config/settings.py config/urls.py config/wsgi.py config/asgi.py config/localization.py config/observability.py config/security.py config/runtime.py
             health/__init__.py health/views.py
             tests/__init__.py tests/test_health.py tests/test_observability.py tests/test_security.py tests/test_runtime.py tests/test_access_control_boundary.py tests/test_supply_chain_baseline.py tests/test_security_monitor.py
-            tests/test_org03_event_store.py tests/test_org03_synthetic_access_policy.py
+            tests/test_org03_event_store.py tests/test_org03_synthetic_access_policy.py tests/test_org03_events.py tests/test_org03_roster.py
             scripts/__init__.py scripts/run_org03_tests.py
             docs/operations/SECURITY-MONITORING-OPERATOR-RUNBOOK.md docs/operations/SECURITY-MONITORING-PRODUCTION-ACTIVATION-GATE.md docs/implementation/A3-MONITORING-OPERATIONAL-READINESS-IMPLEMENTATION-REPORT.md scripts/security_monitor.py docs/security/exception-register.json pyproject.toml README.md
           )
@@ -67,7 +67,7 @@ jobs:
       - name: Django tests
         run: python manage.py test
 
-      - name: ORG-03 concurrency, durability, recovery, replay, and access-policy tests
+      - name: ORG-03 integrity, authority, transition, roster, concurrency, durability, recovery, replay, and access-policy tests
         shell: bash
         run: |
           set -euo pipefail
