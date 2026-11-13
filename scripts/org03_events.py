@@ -3,6 +3,7 @@
 This state machine records synthetic event facts only. It does not deliver
 notifications, identify real responders, or authorize operational actions.
 """
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -83,7 +84,9 @@ def apply_event(
         "BACKUP_ACK_DEADLINE_MISSED",
     }:
         if actor_role != "SYSTEM" or actor_ref != "SYNTHETIC-SYSTEM":
-            raise TransitionError("system transition requires the synthetic system actor")
+            raise TransitionError(
+                "system transition requires the synthetic system actor"
+            )
 
     if name == "DELIVERY_CONFIRMED":
         if current not in {"RECEIVED", "DELIVERY_PENDING"}:
@@ -99,7 +102,9 @@ def apply_event(
             "BACKUP_SECURITY_OPERATIONS": ("backup", "BACKUP_ROUTED"),
         }.get(actor_role)
         if expected is None or current != expected[1]:
-            raise TransitionError("human acknowledgement is invalid for this role or state")
+            raise TransitionError(
+                "human acknowledgement is invalid for this role or state"
+            )
         if authorized_responder_refs.get(expected[0]) != actor_ref:
             raise TransitionError(
                 "actor is not the currently authorized responder for this role"
