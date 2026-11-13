@@ -256,6 +256,8 @@ class Org03EventStore:
         sequence,
         idempotency_key,
         event_json,
+        request_json,
+        result_json,
         previous_hash,
         key_id,
     ):
@@ -268,6 +270,8 @@ class Org03EventStore:
             "sequence": sequence,
             "idempotency_key": idempotency_key,
             "event_json": event_json,
+            "request_json": request_json,
+            "result_json": result_json,
             "previous_hash": previous_hash,
         }
 
@@ -624,6 +628,17 @@ class Org03EventStore:
         event_json = _canonical(initial_event)
         event_id = f"{alert_id}:1"
         idempotency_key = f"{alert_id}:initial"
+        request_json = _canonical(
+            {
+                "alert_id": alert_id,
+                "event_id": event_id,
+                "idempotency_key": idempotency_key,
+                "expected_version": 0,
+                "event_type": "RECEIVED",
+                "event_json": event_json,
+            }
+        )
+        result_json = _canonical(state)
         event_hash = _digest(
             self.GENESIS_HASH, alert_id, event_id, 1, idempotency_key, event_json
         )
@@ -636,6 +651,8 @@ class Org03EventStore:
                 1,
                 idempotency_key,
                 event_json,
+                request_json,
+                result_json,
                 self.GENESIS_HASH,
                 key_id,
             ),
@@ -658,17 +675,8 @@ class Org03EventStore:
                         alert_id,
                         idempotency_key,
                         event_json,
-                        _canonical(
-                            {
-                                "alert_id": alert_id,
-                                "event_id": event_id,
-                                "idempotency_key": idempotency_key,
-                                "expected_version": 0,
-                                "event_type": "RECEIVED",
-                                "event_json": event_json,
-                            }
-                        ),
-                        _canonical(state),
+                        request_json,
+                        result_json,
                         self.GENESIS_HASH,
                         event_hash,
                         "HMAC-SHA-256",
