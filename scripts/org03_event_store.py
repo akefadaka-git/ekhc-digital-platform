@@ -4,6 +4,7 @@ This module is not wired into Django or any runtime service. Callers must
 provide synthetic responder references. SQLite files should be temporary test
 artifacts; this module does not configure production storage.
 """
+
 from __future__ import annotations
 
 import hashlib
