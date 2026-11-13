@@ -1,12 +1,12 @@
 # ORG-03 R1–R6 Remediation Specification and Acceptance-Test Plan
 
-**Status:** DRAFT — OWNER REVIEW REQUIRED  
+**Status:** OWNER-APPROVED IMPLEMENTATION BASELINE — synthetic prototype only  
 **Prepared:** 2026-11-13  
 **Repository:** `akefadaka-git/ekhc-digital-platform`  
 **Branch:** `a3/org-03-responder-operations`  
 **Baseline reviewed:** `ab4f35f0f1839d22b0e07cce60ed0a9f6921d815`  
 **Scope:** Isolated, synthetic-only ORG-03 prototype  
-**Implementation status:** NOT AUTHORIZED / NOT STARTED
+**Implementation status:** AUTHORIZED by Owner on 2026-11-13; staged implementation in progress
 
 ## 1. Purpose and governing constraints
 
@@ -42,10 +42,7 @@ No merge, deployment, production activation, signing-key provisioning, external 
 
 ### Design decision required before implementation
 
-Choose and document one design:
-- HMAC with protected key custody and externally protected checkpoints; or
-- digital signatures with a protected signing key and independently verifiable public key; or
-- another explicitly reviewed construction with equivalent integrity and operational properties.
+**Approved implementation choice:** HMAC-SHA-256 with a caller-supplied synthetic test key held only in process memory, never stored in the SQLite database. The authenticated chain head is checkpointed to a separate checkpoint file whose directory and permissions are outside the database-writer trust boundary. This prototype tests the database-only-writer threat model only; it does not claim protection against an attacker controlling both the process/key and checkpoint boundary, and HMAC does not provide non-repudiation. No production key or external key-management service is provisioned.
 
 The design must state the threat model, algorithm and parameters, key custody boundary, checkpoint storage/trust boundary, rotation/revocation model, and recovery behavior. Do not silently choose a production key-management service.
 
@@ -225,9 +222,9 @@ The following existing behavior must remain covered after remediation:
 
 Implementation may be split into separate commits so each work package can be reviewed and reverted independently. R1 key/checkpoint architecture must be decided before implementation; R3 and R5 data-envelope decisions must be reconciled before their code changes.
 
-## 11. Owner review and approval checklist
+## 11. Owner decisions and implementation authorization
 
-Please review these explicit decisions before implementation:
+Owner message on 2026-11-13: “Start amendments and I approve implementation.” This authorizes implementation of the synthetic-only R1–R6 work packages. The following conservative defaults govern implementation:
 
 - [ ] Approve the R1 threat model and select HMAC, digital signatures, or request a revised design.
 - [ ] Approve the independently protected checkpoint concept and its trust boundary.
@@ -245,11 +242,11 @@ Please review these explicit decisions before implementation:
 | Item | Status |
 |---|---|
 | Independent source review | COMPLETED |
-| R1–R6 specification | DRAFTED |
+| R1–R6 specification | OWNER-APPROVED BASELINE |
 | Acceptance-test plan | DRAFTED — 44 named acceptance cases |
-| Specification reviewed by Owner | PENDING |
-| Implementation | NOT STARTED — approval gate |
-| Exact-head tests for remediation | NOT RUN |
+| Specification reviewed/implementation approved by Owner | APPROVED 2026-11-13 |
+| Implementation | IN PROGRESS — synthetic-only, staged |
+| Exact-head tests for remediation | NOT RUN — pending implementation commits |
 | A4 verification | OPEN |
 | Operational readiness | NOT VERIFIED |
 | Production readiness | NOT READY |
