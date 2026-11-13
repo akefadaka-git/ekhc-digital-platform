@@ -1,15 +1,23 @@
 # ORG-03 A1 Owner Decision Record
 
 **Document ID:** EKHC-ORG03-A1-DEC-001  
-**Status:** PROPOSED — NOT APPROVED  
+**Status:** OWNER DECISION RECORDED — INSTITUTIONAL CONCURRENCE PENDING  
 **Decision authority:** Owner and applicable institutional authorities  
 **Review PR:** #24  
 **Review branch:** `a1/org03-production-architecture-review`  
 **Synthetic A3 baseline:** `225daf65eaa27182ec20749adf469436fec1f654`
 
-## 1. Decision requested
+## 1. Owner decision recorded
 
-The Owner is asked to decide whether the revised A1 architecture package is accepted as a complete-enough specification for a later read-only A2 reconciliation. This document does not presume approval and must not be treated as an approval signature.
+**Owner selection:** `owner_and_institution`.
+
+The Owner has explicitly selected a joint approval model: the Owner's approval together with approval/concurrence from the relevant EKHC institutional authorities who are formally empowered for the subject matter. This governs the approval model for the ORG-03 A1 architecture package and its ADRs.
+
+**Additional Owner instruction:** None.
+
+This is an attributable record of the Owner's selection in this conversation. It is not evidence that any EKHC governing body, office or individual has approved the architecture. The institution's governing instruments, delegation schedule, named decision-makers and subject-matter concurrence remain outstanding. The identities and legal authority of the institutional approvers must be verified from authoritative institutional records before A1 can close.
+
+The Owner's selection does not approve individual ADR options, select vendors or platforms, accept residual risks, authorize A2, or authorize implementation, merge, live rehearsal, activation or deployment.
 
 ## 2. Proposed disposition
 
@@ -83,19 +91,25 @@ This decision record does not authorize:
 - production keys, secrets, notification credentials or outbound messages;
 - live rehearsal, operational activation, merge or deployment.
 
-## 8. Approval record — intentionally blank
+## 8. Approval and authority record
 
-**Owner decision:** NOT RECORDED  
-**Approving authority:** NOT RECORDED  
-**Decision date/time and timestamp assurance:** NOT RECORDED  
-**Institutional concurrence references:** NOT PROVIDED  
-**Conditions / dissent / accepted residual risks:** NOT RECORDED
+**Owner decision on final institutional approving-authority model:** RECORDED — `owner_and_institution`  
+**Owner decision meaning:** Owner approval plus concurrence/approval by relevant, formally authorized EKHC institutional authorities.  
+**Additional Owner instruction:** None.  
+**Owner decision date/time:** Conversation record date 2026-11-14; exact decision time and independently trusted timestamp NOT ESTABLISHED.  
+**Named institutional approving authority/office:** NOT VERIFIED.  
+**Authority source (constitution/bylaws/resolution/delegation):** NOT PROVIDED.  
+**Institutional concurrence references:** NOT PROVIDED.  
+**Individual ADR approvals:** NONE RECORDED.  
+**Conditions / dissent / accepted residual risks:** NOT RECORDED.
+
+The Owner's authority-model selection is recorded, but it must not be represented as institutional approval. Repository authorship, a commit, PR approval, review comment or automated check does not substitute for institutional authority evidence or explicit stage authorization.
 
 A repository commit, PR approval, review comment or automated check does not substitute for the Owner's explicit stage authorization unless the Owner expressly designates that mechanism and the approval is attributable and unambiguous.
 
 ## 9. Current disposition
 
-**A1: PARTIAL — REVISED PACKAGE PREPARED, OWNER DECISION PENDING.**  
+**A1: PARTIAL — OWNER AUTHORITY-MODEL DECISION RECORDED; INSTITUTIONAL AUTHORITY AND CONCURRENCE EVIDENCE PENDING.**  
 **A2: NOT AUTHORIZED.**  
 **Production A3: NOT AUTHORIZED.**  
 **Live rehearsal / operational activation: NOT AUTHORIZED.**  
