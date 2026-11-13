@@ -481,7 +481,8 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                     event_json,
                 )
                 connection.execute(
-                    "UPDATE org03_events SET event_json = ?, previous_hash = ?, event_hash = ? WHERE event_id = ?",
+                    "UPDATE org03_events SET event_json = ?, previous_hash = ?, "
+                    "event_hash = ? WHERE event_id = ?",
                     (event_json, previous, digest, row["event_id"]),
                 )
                 previous = digest
@@ -631,7 +632,8 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         with self.store._connect() as connection:
             connection.execute("DROP TRIGGER org03_authority_no_update")
             connection.execute(
-                "UPDATE org03_authority_versions SET evidence_mac = ? WHERE principal_ref = ?",
+                "UPDATE org03_authority_versions SET evidence_mac = ? "
+                "WHERE principal_ref = ?",
                 ("0" * 64, AUTH["primary"]),
             )
         with self.assertRaises(AuthorityError):
@@ -793,7 +795,8 @@ class Org03R1R3NegativeTests(unittest.TestCase):
                 ("SYNTHETIC-R1-ALERT",),
             )
             connection.execute(
-                "UPDATE org03_aggregates SET version=1,status='AWAITING_HUMAN_ACK' WHERE alert_id=?",
+                "UPDATE org03_aggregates SET version=1, "
+                    "status='AWAITING_HUMAN_ACK' WHERE alert_id=?",
                 ("SYNTHETIC-R1-ALERT",),
             )
         with self.assertRaises(CheckpointError):
@@ -802,7 +805,8 @@ class Org03R1R3NegativeTests(unittest.TestCase):
     def test_unknown_event_key_fails_closed(self):
         with self.store._connect() as connection:
             connection.execute(
-                "UPDATE org03_events SET key_id='unknown-key' WHERE alert_id=? AND sequence=2",
+                "UPDATE org03_events SET key_id='unknown-key' "
+                    "WHERE alert_id=? AND sequence=2",
                 ("SYNTHETIC-R1-ALERT",),
             )
         with self.assertRaises(IntegrityKeyError):
@@ -856,12 +860,18 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             ids = [
                 r["key_id"]
                 for r in connection.execute(
-                    "SELECT key_id FROM org03_events WHERE alert_id=? ORDER BY sequence",
+                    "SELECT key_id FROM org03_events "
+                    "WHERE alert_id=? ORDER BY sequence",
                     ("SYNTHETIC-R1-ALERT",),
                 )
             ]
         self.assertEqual(
-            ["synthetic-test-v1", "synthetic-test-v1", "synthetic-test-v2"], ids
+            [
+                "synthetic-test-v1",
+                "synthetic-test-v1",
+                "synthetic-test-v2",
+            ],
+            ids
         )
 
     def test_empty_keyring_is_rejected(self):
@@ -925,7 +935,8 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             self.assertRaises(sqlite3.IntegrityError),
         ):
             connection.execute(
-                "UPDATE org03_authority_versions SET role='OWNER_OR_DELEGATE' WHERE principal_ref=?",
+                "UPDATE org03_authority_versions SET role='OWNER_OR_DELEGATE' "
+                "WHERE principal_ref=?",
                 (AUTH["primary"],),
             )
 
