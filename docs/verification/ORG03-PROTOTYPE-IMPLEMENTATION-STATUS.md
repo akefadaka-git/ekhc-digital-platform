@@ -160,7 +160,7 @@ Owner approval to implement was received on 2026-11-13. The approved synthetic-o
 - Synthetic policy tests cover omitted/empty fields, role-specific update scope, and unknown fields.
 - Idempotency tests cover event-ID substitution and replay of the original result after a later valid transition.
 
-**Current implementation head at report update:** `bafd014c1bd9444cbb1e2a386e7e433974aaa6c2`.
+**Current implementation head at report update:** `686e26cc4e494c82884942a4ddd2ed37bddc5496`.
 
 ### 11.3 Remaining R1/R3 work
 
@@ -169,6 +169,6 @@ Owner approval to implement was received on 2026-11-13. The approved synthetic-o
 
 ### 11.4 Verification
 
-Workflow run for prior exact head `dee411f7c0ac4a2f24b19044ae9b85cfe91791c5` exposed one failure in the new original-result test scenario (the test attempted an invalid deadline transition after acknowledgement). That test was corrected on `bafd014c1bd9444cbb1e2a386e7e433974aaa6c2`. The corrected exact-head A3 quality workflow is currently running; no PASS claim is made until its JUnit artifact, logs, lint, formatting and dependency audit are inspected.
+Workflow run for prior exact head `dee411f7c0ac4a2f24b19044ae9b85cfe91791c5` exposed one failure in the new original-result test scenario (the test attempted an invalid deadline transition after acknowledgement). That test was corrected on `bafd014c1bd9444cbb1e2a386e7e433974aaa6c2`. The corrected test scenario passed on `bafd014c1bd9444cbb1e2a386e7e433974aaa6c2` (123 Django tests and 29 ORG-03 tests), but Ruff lint failed on line-length/import-format findings. Those findings were corrected in commits `cf598abed933d2fc034bbdb6e07e1b9dd311c08e` and `686e26cc4e494c82884942a4ddd2ed37bddc5496`. Exact-head workflow `43401866233` is running on `686e26cc4e494c82884942a4ddd2ed37bddc5496`; JUnit, logs, Ruff, formatting and dependency audit remain pending inspection.
 
 A4 remains OPEN. Production readiness remains NOT READY. No merge, deployment, production runtime integration, real identities/data, live notifications, institutional rehearsal or A5 action occurred.
