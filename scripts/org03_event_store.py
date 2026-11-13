@@ -174,6 +174,88 @@ class Org03EventStore:
                 """
             )
 
+
+    def _key(self, key_id: str) -> bytes:
+        if key_id in self.revoked_key_ids or key_id not in self._integrity_keys:
+            raise IntegrityKeyError("integrity key is unknown, unavailable, or revoked")
+        return self._integrity_keys[key_id]
+
+    def _event_envelope(self, alert_id, event_id, sequence, idempotency_key, event_json, previous_hash, key_id):
+        return {
+            "schema": "ORG03-EVENT-INTEGRITY-V1",
+            "algorithm": "HMAC-SHA-256",
+            "key_id": key_id,
+            "alert_id": alert_id,
+            "event_id": event_id,
+            "sequence": sequence,
+            "idempotency_key": idempotency_key,
+            "event_json": event_json,
+            "previous_hash": previous_hash,
+        }
+
+    def _mac(self, key_id: str, payload: dict) -> str:
+        return hmac.new(self._key(key_id), _canonical(payload).encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def _checkpoint_path(self, alert_id: str) -> Path:
+        return self.checkpoint_dir / (hashlib.sha256(alert_id.encode("utf-8")).hexdigest() + ".json")
+
+    def _write_checkpoint(self, alert_id: str, sequence: int, event_hash: str) -> None:
+        key_id = self.active_key_id
+        payload = {
+            "schema": "ORG03-CHECKPOINT-V1",
+            "alert_id": alert_id,
+            "sequence": sequence,
+            "event_hash": event_hash,
+            "key_id": key_id,
+        }
+        checkpoint = {**payload, "mac": self._mac(key_id, payload)}
+        self.checkpoint_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        path = self._checkpoint_path(alert_id)
+        if path.exists():
+            current = json.loads(path.read_text(encoding="utf-8"))
+            old_payload = {k: v for k, v in current.items() if k != "mac"}
+            if not hmac.compare_digest(current.get("mac", ""), self._mac(old_payload["key_id"], old_payload)):
+                raise CheckpointError("existing checkpoint authentication failed")
+            if old_payload["sequence"] > sequence:
+                raise CheckpointError("refusing checkpoint rollback")
+            if old_payload["sequence"] == sequence:
+                if old_payload["event_hash"] != event_hash:
+                    raise CheckpointError("checkpoint fork detected")
+                return
+        fd, temporary = tempfile.mkstemp(prefix=".checkpoint-", dir=self.checkpoint_dir)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(_canonical(checkpoint))
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.chmod(temporary, 0o600)
+            os.replace(temporary, path)
+            dir_fd = os.open(self.checkpoint_dir, os.O_RDONLY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+    def _verify_checkpoint(self, alert_id: str, sequence: int, event_hash: str) -> None:
+        path = self._checkpoint_path(alert_id)
+        if not path.exists():
+            raise CheckpointError("independent checkpoint is missing")
+        try:
+            checkpoint = json.loads(path.read_text(encoding="utf-8"))
+            payload = {k: v for k, v in checkpoint.items() if k != "mac"}
+            expected = self._mac(payload["key_id"], payload)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            raise CheckpointError("checkpoint cannot be verified") from exc
+        if not hmac.compare_digest(checkpoint.get("mac", ""), expected):
+            raise CheckpointError("checkpoint authentication failed")
+        if payload.get("schema") != "ORG03-CHECKPOINT-V1" or payload.get("alert_id") != alert_id:
+            raise CheckpointError("checkpoint identity mismatch")
+        if payload.get("sequence") != sequence or payload.get("event_hash") != event_hash:
+            raise CheckpointError("database head differs from independent checkpoint")
+
     def create_alert(self, alert_id: str, priority: str, received_at_utc: str) -> dict:
         state = new_alert(alert_id, priority, received_at_utc)
         initial_event = state["history"][0]
