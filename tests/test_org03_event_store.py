@@ -1,5 +1,7 @@
 """Durability, concurrency, replay and rollback tests using temporary SQLite."""
 import concurrent.futures
+import multiprocessing
+import os
 import sqlite3
 import tempfile
 import threading
@@ -29,6 +31,43 @@ def make_event(sequence, name, role="SYSTEM", actor="SYNTHETIC-SYSTEM", **extra)
         "actor_ref": actor,
         **extra,
     }
+
+
+def _process_append(path, barrier, queue, event, event_id, idempotency_key):
+    store = Org03EventStore(path)
+    barrier.wait(timeout=10)
+    try:
+        state = store.append_event(
+            "SYNTHETIC-ALERT-STORE-01",
+            event,
+            expected_version=2,
+            event_id=event_id,
+            idempotency_key=idempotency_key,
+            authorized_responder_refs=AUTH,
+        )
+        queue.put(("committed", state["status"]))
+    except StaleAggregateVersion:
+        queue.put(("stale", None))
+
+
+def _crash_with_uncommitted_event(path):
+    connection = sqlite3.connect(path, isolation_level=None)
+    connection.execute("BEGIN IMMEDIATE")
+    connection.execute(
+        "INSERT INTO org03_events(event_id, alert_id, sequence, "
+        "idempotency_key, event_json, previous_hash, event_hash) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            "SYNTHETIC-CRASH-UNCOMMITTED",
+            "SYNTHETIC-ALERT-STORE-01",
+            3,
+            "SYNTHETIC-CRASH-IDEM",
+            "{}",
+            "uncommitted",
+            "uncommitted",
+        ),
+    )
+    os._exit(17)
 
 
 class Org03DurableEventStoreTests(unittest.TestCase):
@@ -256,6 +295,61 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             self.store.load_state(
                 "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
             )
+
+
+
+    def test_separate_processes_arbitrate_same_aggregate_version(self):
+        context = multiprocessing.get_context("fork")
+        barrier = context.Barrier(2)
+        queue = context.Queue()
+        events = [
+            (
+                make_event(
+                    3, "HUMAN_ACKNOWLEDGED", "PRIMARY_SECURITY_OPERATIONS",
+                    AUTH["primary"], disposition="ACCEPTED"
+                ),
+                "SYNTHETIC-MP-EVENT-A",
+                "SYNTHETIC-MP-IDEM-A",
+            ),
+            (
+                make_event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
+                "SYNTHETIC-MP-EVENT-B",
+                "SYNTHETIC-MP-IDEM-B",
+            ),
+        ]
+        processes = [
+            context.Process(
+                target=_process_append,
+                args=(str(self.path), barrier, queue, event, event_id, key),
+            )
+            for event, event_id, key in events
+        ]
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join(timeout=20)
+            self.assertFalse(process.is_alive(), "worker process did not exit")
+            self.assertEqual(0, process.exitcode)
+        outcomes = [queue.get(timeout=5), queue.get(timeout=5)]
+        self.assertEqual(1, sum(item[0] == "committed" for item in outcomes))
+        self.assertEqual(1, sum(item[0] == "stale" for item in outcomes))
+        self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
+
+    def test_uncommitted_write_is_rolled_back_after_abrupt_process_exit(self):
+        context = multiprocessing.get_context("fork")
+        process = context.Process(
+            target=_crash_with_uncommitted_event, args=(str(self.path),)
+        )
+        process.start()
+        process.join(timeout=20)
+        self.assertFalse(process.is_alive(), "crash worker did not exit")
+        self.assertEqual(17, process.exitcode)
+        reopened = Org03EventStore(self.path)
+        state = reopened.load_state(
+            "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
+        )
+        self.assertEqual("AWAITING_HUMAN_ACK", state["status"])
+        self.assertEqual(2, reopened.event_count("SYNTHETIC-ALERT-STORE-01"))
 
     def test_replay_is_repeatable_and_aggregate_matches_log(self):
         first = self.store.load_state(
