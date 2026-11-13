@@ -4,26 +4,24 @@ This module validates structure and operational readiness separately. It never
 loads restricted identity/contact records and never sends notifications.
 """
 
-from __future__ import annotations
-
-from datetime import datetime
-from typing import Any
+import datetime
+import typing
 
 
 ACTIVE = "ACTIVE"
 
 
-def _is_utc_timestamp(value: Any) -> bool:
+def _is_utc_timestamp(value: typing.Any) -> bool:
     if not isinstance(value, str) or not value.endswith("Z"):
         return False
     try:
-        datetime.fromisoformat(value[:-1] + "+00:00")
+        datetime.datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError:
         return False
     return True
 
 
-def validate_roster(document: dict[str, Any]) -> dict[str, list[str]]:
+def validate_roster(document: dict[str, typing.Any]) -> dict[str, list[str]]:
     """Return deterministic schema errors and readiness blockers."""
     errors: list[str] = []
     blockers: list[str] = []
