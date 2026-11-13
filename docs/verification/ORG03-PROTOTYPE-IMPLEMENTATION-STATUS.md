@@ -140,3 +140,35 @@ The uploaded JUnit XML was retrieved and inspected. It reports 20 ORG-03 test ca
 The JUnit result establishes only that the authored tests passed on the specified Linux runner and exact source head. It does not establish multi-host/high-load database behavior, filesystem or power-loss durability, backup restoration, cryptographic authenticity of the unkeyed hash chain, production authentication/authorization, institutional readiness, or deployed restricted-record protection.
 
 No Django runtime integration, production database selection, real identity, provider integration, live notification, operational rehearsal, merge, deployment, or A5 action occurred. A4 remains open pending independent technical/security review and the outstanding institutional evidence. Production readiness remains NOT READY.
+
+## 11. R1–R6 remediation implementation increment — 2026-11-13
+
+Owner approval to implement was received on 2026-11-13. The approved synthetic-only specification and implementation decisions are recorded in `docs/verification/ORG03-R1-R6-REMEDIATION-SPECIFICATION.md`.
+
+### 11.1 Changes in this increment
+
+- **R2:** `load_state()` now starts an explicit read transaction before loading aggregate metadata and replaying event history, so both reads use one SQLite snapshot.
+- **R4:** synthetic policy checks now require an explicit non-empty field set, apply role-specific read/update field scopes, and return the exact permitted field projection. Read permission does not imply update permission.
+- **R5:** event rows now retain a canonical request envelope including alert ID, event ID, idempotency key, expected version, event type, and payload. Exact retries return the originally committed result snapshot; changed event IDs or other request semantics conflict.
+- **R6:** internal store connections are deterministically closed. Writer reservation uses bounded lock/busy retries and raises a typed `EventStoreBusy` when the deadline expires.
+
+### 11.2 New acceptance coverage authored
+
+- A coordinated WAL reader/writer test checks that an in-flight read returns a coherent pre-commit snapshot and a subsequent read sees the committed update.
+- A held-writer-lock test checks bounded timeout and typed contention failure.
+- A connection-lifecycle test checks closure after context exit.
+- Synthetic policy tests cover omitted/empty fields, role-specific update scope, and unknown fields.
+- Idempotency tests cover event-ID substitution and replay of the original result after a later valid transition.
+
+**Current implementation head at report update:** `bafd014c1bd9444cbb1e2a386e7e433974aaa6c2`.
+
+### 11.3 Remaining R1/R3 work
+
+- **R1 — NOT IMPLEMENTED:** keyed HMAC-SHA-256 event authenticity, protected checkpoint trust boundary, key identification/rotation and rollback detection are still outstanding.
+- **R3 — NOT IMPLEMENTED:** immutable versioned synthetic authority registry, event-bound authority context and effective-time revocation semantics are still outstanding.
+
+### 11.4 Verification
+
+Workflow run for prior exact head `dee411f7c0ac4a2f24b19044ae9b85cfe91791c5` exposed one failure in the new original-result test scenario (the test attempted an invalid deadline transition after acknowledgement). That test was corrected on `bafd014c1bd9444cbb1e2a386e7e433974aaa6c2`. The corrected exact-head A3 quality workflow is currently running; no PASS claim is made until its JUnit artifact, logs, lint, formatting and dependency audit are inspected.
+
+A4 remains OPEN. Production readiness remains NOT READY. No merge, deployment, production runtime integration, real identities/data, live notifications, institutional rehearsal or A5 action occurred.
