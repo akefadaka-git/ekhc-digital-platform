@@ -283,7 +283,8 @@ class Org03EventStore:
                 )
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
-                    "idempotency_key, event_json, request_json, result_json, previous_hash, event_hash) "
+                    "idempotency_key, event_json, request_json, result_json, "
+                    "previous_hash, event_hash) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         event_id,
