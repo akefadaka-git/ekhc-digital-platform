@@ -837,6 +837,54 @@ class Org03R1R3NegativeTests(unittest.TestCase):
         with self.assertRaises(CheckpointError):
             self.load()
 
+    def test_checkpoint_mac_tampering_fails_closed(self):
+        checkpoint = self.store._checkpoint_path("SYNTHETIC-R1-ALERT")
+        record = json.loads(checkpoint.read_text(encoding="utf-8"))
+        record["event_hash"] = "f" * 64
+        checkpoint.write_text(
+            json.dumps(record, sort_keys=True, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        with self.assertRaises(CheckpointError):
+            self.load()
+
+    def test_concurrent_revocation_and_acknowledgement_fail_closed(self):
+        self.register_primary()
+        barrier = threading.Barrier(2)
+
+        def append_ack():
+            barrier.wait()
+            return self.store.append_event(
+                "SYNTHETIC-R1-ALERT",
+                self.human_ack("2026-11-13T07:04:00Z"),
+                expected_version=2,
+                event_id="SYNTHETIC-R3-CONCURRENT-ACK",
+                idempotency_key="SYNTHETIC-R3-CONCURRENT-ACK-IDEM",
+                authorized_responder_refs=AUTH,
+            )
+
+        def revoke():
+            barrier.wait()
+            return self.store.revoke_authority(
+                AUTH["primary"], "2026-11-13T07:04:00Z"
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            ack_future = pool.submit(append_ack)
+            revoke_future = pool.submit(revoke)
+            try:
+                ack_future.result()
+                append_won = True
+            except AuthorityError:
+                append_won = False
+            revoke_future.result()
+
+        if append_won:
+            with self.assertRaises(AuthorityError):
+                self.load()
+        else:
+            self.assertEqual("AWAITING_HUMAN_ACK", self.load()["status"])
+
     def test_key_rotation_verifies_old_and_new_events(self):
         keys = {
             "synthetic-test-v1": b"ORG03-TEST-ONLY-KEY-NOT-FOR-PRODUCTION-32",
@@ -926,11 +974,13 @@ class Org03R1R3NegativeTests(unittest.TestCase):
         )
         with self.store._connection() as connection:
             event = self.store._authority_for_event(
-                connection, self.human_ack("2026-11-13T07:03:00Z")
+                connection, self.human_ack("2026-11-13T07:03:00Z"), "SYNTHETIC-R1-ALERT"
             )
             event["actor_ref"] = AUTH["backup"]
             with self.assertRaises(AuthorityError):
-                self.store._verify_authority_event(connection, event)
+                self.store._verify_authority_event(
+                    connection, event, "SYNTHETIC-R1-ALERT"
+                )
 
     def test_historical_replay_ignores_mutated_current_responder_mapping(self):
         self.register_primary()
