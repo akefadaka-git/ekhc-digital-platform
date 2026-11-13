@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "classification": "SYNTHETIC_TEMPLATE_NO_PERSONAL_DATA",
+  "policy": {
+    "owner_decision": "2026-11-12",
+    "acknowledgement_targets": {
+      "critical_elapsed_hours": 4,
+      "high_business_days": 1,
+      "medium_business_days": 2,
+      "low_informational_business_days": 3
+    },
+    "business_time_convention": "NOT_APPROVED",
+    "timezone": "NOT_APPROVED",
+    "working_days": [],
+    "coverage_window": null,
+    "holiday_calendar_ref": null
+  },
+  "roster": {
+    "status": "NOT_PROVISIONED",
+    "custodian_ref": null,
+    "primary": {
+      "responder_ref": null,
+      "authorization_ref": null,
+      "restricted_contact_ref": null,
+      "accepted_at_utc": null,
+      "effective_from_utc": null,
+      "effective_until_utc": null,
+      "coverage_ref": null,
+      "status": "PENDING_ACCEPTANCE"
+    },
+    "backup": {
+      "responder_ref": null,
+      "authorization_ref": null,
+      "restricted_contact_ref": null,
+      "accepted_at_utc": null,
+      "effective_from_utc": null,
+      "effective_until_utc": null,
+      "coverage_ref": null,
+      "status": "PENDING_ACCEPTANCE"
+    },
+    "owner_or_delegate": {
+      "authority_ref": null,
+      "delegation_scope_ref": null,
+      "restricted_contact_ref": null,
+      "accepted_at_utc": null,
+      "status": "PENDING_ACCEPTANCE"
+    }
+  },
+  "routing": {
+    "policy_version": "ORG-03-1.0",
+    "status": "NOT_CONFIGURED",
+    "primary_route_ref": null,
+    "backup_route_ref": null,
+    "escalation_route_ref": null,
+    "synthetic_delivery_evidence_ref": null,
+    "human_acknowledgement_evidence_ref": null,
+    "missed_deadline_test_evidence_ref": null,
+    "failure_path_test_evidence_ref": null
+  },
+  "activation": {
+    "rehearsal_authorized": false,
+    "production_notifications_authorized": false,
+    "production_operation_authorized": false,
+    "merge_authorized": false,
+    "deployment_authorized": false
+  }
+}
