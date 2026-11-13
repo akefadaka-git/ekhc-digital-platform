@@ -5,6 +5,8 @@ provide synthetic responder references. SQLite files should be temporary test
 artifacts; this module does not configure production storage.
 """
 
+# ruff: noqa: E501
+
 from __future__ import annotations
 
 import hashlib
@@ -14,8 +16,8 @@ import os
 import sqlite3
 import tempfile
 import time
-from datetime import datetime, timezone
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -67,7 +69,7 @@ def _utc_timestamp(value: str) -> datetime:
         parsed = datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError as exc:
         raise AuthorityError("authority timestamp is invalid") from exc
-    if parsed.tzinfo != timezone.utc:
+    if parsed.tzinfo != UTC:
         raise AuthorityError("authority timestamp must use UTC")
     return parsed
 
