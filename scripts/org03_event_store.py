@@ -35,8 +35,24 @@ def _canonical(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
-def _digest(previous_hash: str, event_json: str) -> str:
-    return hashlib.sha256((previous_hash + "\n" + event_json).encode("utf-8")).hexdigest()
+def _digest(
+    previous_hash: str,
+    alert_id: str,
+    event_id: str,
+    sequence: int,
+    idempotency_key: str,
+    event_json: str,
+) -> str:
+    envelope = _canonical(
+        {
+            "alert_id": alert_id,
+            "event_id": event_id,
+            "sequence": sequence,
+            "idempotency_key": idempotency_key,
+            "event_json": event_json,
+        }
+    )
+    return hashlib.sha256((previous_hash + "\n" + envelope).encode("utf-8")).hexdigest()
 
 
 class Org03EventStore:
@@ -89,7 +105,11 @@ class Org03EventStore:
         state = new_alert(alert_id, priority, received_at_utc)
         initial_event = state["history"][0]
         event_json = _canonical(initial_event)
-        event_hash = _digest(self.GENESIS_HASH, event_json)
+        event_id = f"{alert_id}:1"
+        idempotency_key = f"{alert_id}:initial"
+        event_hash = _digest(
+            self.GENESIS_HASH, alert_id, event_id, 1, idempotency_key, event_json
+        )
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             try:
@@ -103,9 +123,9 @@ class Org03EventStore:
                     "idempotency_key, event_json, previous_hash, event_hash) "
                     "VALUES (?, ?, 1, ?, ?, ?, ?)",
                     (
-                        f"{alert_id}:1",
+                        event_id,
                         alert_id,
-                        f"{alert_id}:initial",
+                        idempotency_key,
                         event_json,
                         self.GENESIS_HASH,
                         event_hash,
@@ -162,11 +182,15 @@ class Org03EventStore:
                     )
 
                 state = self._replay_in_transaction(
-                    connection, alert_id, aggregate["priority"],
-                    authorized_responder_refs
+                    connection,
+                    alert_id,
+                    aggregate["priority"],
+                    authorized_responder_refs,
                 )
                 if state["next_sequence"] != expected_version + 1:
-                    raise EventLogIntegrityError("aggregate version does not match event log")
+                    raise EventLogIntegrityError(
+                        "aggregate version does not match event log"
+                    )
 
                 updated = apply_event(
                     state,
@@ -179,7 +203,15 @@ class Org03EventStore:
                     (alert_id,),
                 ).fetchone()
                 previous_hash = previous["event_hash"]
-                event_hash = _digest(previous_hash, event_json)
+                sequence = event["sequence"]
+                event_hash = _digest(
+                    previous_hash,
+                    alert_id,
+                    event_id,
+                    sequence,
+                    idempotency_key,
+                    event_json,
+                )
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
                     "idempotency_key, event_json, previous_hash, event_hash) "
@@ -187,24 +219,19 @@ class Org03EventStore:
                     (
                         event_id,
                         alert_id,
-                        event["sequence"],
+                        sequence,
                         idempotency_key,
                         event_json,
                         previous_hash,
                         event_hash,
                     ),
                 )
-                connection.execute(
+                cursor = connection.execute(
                     "UPDATE org03_aggregates SET version = ?, status = ? "
                     "WHERE alert_id = ? AND version = ?",
-                    (
-                        event["sequence"],
-                        updated["status"],
-                        alert_id,
-                        expected_version,
-                    ),
+                    (sequence, updated["status"], alert_id, expected_version),
                 )
-                if connection.total_changes < 2:
+                if cursor.rowcount != 1:
                     raise StaleAggregateVersion("aggregate compare-and-update lost")
                 connection.commit()
                 return updated
@@ -213,8 +240,11 @@ class Org03EventStore:
                 raise
 
     def _replay_in_transaction(
-        self, connection: sqlite3.Connection, alert_id: str, priority: str,
-        authorized_responder_refs: dict[str, str]
+        self,
+        connection: sqlite3.Connection,
+        alert_id: str,
+        priority: str,
+        authorized_responder_refs: dict[str, str],
     ) -> dict:
         rows = connection.execute(
             "SELECT * FROM org03_events WHERE alert_id = ? ORDER BY sequence",
@@ -230,11 +260,18 @@ class Org03EventStore:
         for index, row in enumerate(rows):
             event = json.loads(row["event_json"])
             expected_sequence = index + 1
-            if event.get("sequence") != expected_sequence:
+            if event.get("sequence") != expected_sequence or row["sequence"] != expected_sequence:
                 raise EventLogIntegrityError("event sequence gap or duplicate")
             if row["previous_hash"] != previous_hash:
                 raise EventLogIntegrityError("event hash-chain predecessor mismatch")
-            calculated = _digest(previous_hash, row["event_json"])
+            calculated = _digest(
+                previous_hash,
+                row["alert_id"],
+                row["event_id"],
+                row["sequence"],
+                row["idempotency_key"],
+                row["event_json"],
+            )
             if calculated != row["event_hash"]:
                 raise EventLogIntegrityError("event hash mismatch")
             if index:
@@ -245,7 +282,9 @@ class Org03EventStore:
                         authorized_responder_refs=authorized_responder_refs,
                     )
                 except TransitionError as exc:
-                    raise EventLogIntegrityError("stored event cannot be replayed") from exc
+                    raise EventLogIntegrityError(
+                        "stored event cannot be replayed"
+                    ) from exc
             previous_hash = calculated
         return state
 
@@ -260,8 +299,10 @@ class Org03EventStore:
             if aggregate is None:
                 raise EventStoreError("alert does not exist")
             state = self._replay_in_transaction(
-                connection, alert_id, aggregate["priority"],
-                authorized_responder_refs
+                connection,
+                alert_id,
+                aggregate["priority"],
+                authorized_responder_refs,
             )
             if aggregate["version"] != state["next_sequence"] - 1:
                 raise EventLogIntegrityError("aggregate version differs from event log")
