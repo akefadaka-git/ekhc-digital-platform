@@ -50,14 +50,16 @@ def make_event(sequence, name, role="SYSTEM", actor="SYNTHETIC-SYSTEM", **extra)
     }
 
 
-def _process_append(path, barrier, queue, event, event_id, idempotency_key):
+def _process_append(
+    path, barrier, queue, event, event_id, idempotency_key, expected_version=2
+):
     store = make_store(path)
     barrier.wait(timeout=10)
     try:
         state = store.append_event(
             "SYNTHETIC-ALERT-STORE-01",
             event,
-            expected_version=2,
+            expected_version=expected_version,
             event_id=event_id,
             idempotency_key=idempotency_key,
             authorized_responder_refs=AUTH,
@@ -366,6 +368,64 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(1, sum(item[0] == "committed" for item in outcomes))
         self.assertEqual(1, sum(item[0] == "stale" for item in outcomes))
         self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
+
+    def test_separate_processes_arbitrate_backup_ack_vs_backup_deadline(self):
+        self.store.append_event(
+            "SYNTHETIC-ALERT-STORE-01",
+            make_event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
+            expected_version=2,
+            event_id="SYNTHETIC-MP-BACKUP-ROUTE",
+            idempotency_key="SYNTHETIC-MP-BACKUP-ROUTE-IDEM",
+            authorized_responder_refs=AUTH,
+        )
+        context = multiprocessing.get_context("fork")
+        barrier = context.Barrier(2)
+        queue = context.Queue()
+        events = [
+            (
+                make_event(
+                    4,
+                    "HUMAN_ACKNOWLEDGED",
+                    "BACKUP_SECURITY_OPERATIONS",
+                    AUTH["backup"],
+                    disposition="ACCEPTED",
+                ),
+                "SYNTHETIC-MP-BACKUP-ACK",
+                "SYNTHETIC-MP-BACKUP-ACK-IDEM",
+            ),
+            (
+                make_event(4, "BACKUP_ACK_DEADLINE_MISSED"),
+                "SYNTHETIC-MP-BACKUP-DEADLINE",
+                "SYNTHETIC-MP-BACKUP-DEADLINE-IDEM",
+            ),
+        ]
+        processes = [
+            context.Process(
+                target=_process_append,
+                args=(str(self.path), barrier, queue, event, event_id, key, 3),
+            )
+            for event, event_id, key in events
+        ]
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join(timeout=20)
+            self.assertFalse(process.is_alive(), "worker process did not exit")
+            self.assertEqual(0, process.exitcode)
+        outcomes = [queue.get(timeout=5), queue.get(timeout=5)]
+        self.assertEqual(1, sum(item[0] == "committed" for item in outcomes))
+        self.assertEqual(1, sum(item[0] == "stale" for item in outcomes))
+
+        state = self.store.load_state(
+            "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
+        )
+        self.assertIn(state["status"], {"ACKNOWLEDGED", "AUTHORITY_ESCALATED"})
+        self.assertEqual(4, len(state["history"]))
+        self.assertEqual(4, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
+        replayed = make_store(self.path).load_state(
+            "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
+        )
+        self.assertEqual(state, replayed)
 
     def test_uncommitted_write_is_rolled_back_after_abrupt_process_exit(self):
         context = multiprocessing.get_context("fork")
