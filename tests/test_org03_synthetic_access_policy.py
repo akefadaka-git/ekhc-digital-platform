@@ -72,9 +72,13 @@ class Org03SyntheticAccessPolicyTests(unittest.TestCase):
             "SYNTHETIC_AUDITOR",
             frozenset({"SYNTHETIC-RECORD-01"}),
         )
-        authorize(auditor, self.record, "record.read", requested_fields={"summary"})
+        authorize(
+            auditor, self.record, "record.read", requested_fields={"summary"}
+        )
         with self.assertRaises(AccessDenied):
-            authorize(auditor, self.record, "record.update", requested_fields={"status"})
+            authorize(
+                auditor, self.record, "record.update", requested_fields={"status"}
+            )
 
     def test_non_synthetic_principal_is_rejected(self):
         external = SyntheticPrincipal(
@@ -90,16 +94,28 @@ class Org03SyntheticAccessPolicyTests(unittest.TestCase):
         with self.assertRaises(AccessDenied):
             authorize(self.custodian, self.record, "record.read")
         with self.assertRaises(AccessDenied):
-            authorize(self.custodian, self.record, "record.read", requested_fields=set())
+            authorize(
+                self.custodian, self.record, "record.read", requested_fields=set()
+            )
 
     def test_read_permission_does_not_grant_update_fields(self):
         with self.assertRaises(AccessDenied):
-            authorize(self.custodian, self.record, "record.update", requested_fields={"summary"})
+            authorize(
+                self.custodian,
+                self.record,
+                "record.update",
+                requested_fields={"summary"},
+            )
 
     def test_update_projection_is_limited_to_status(self):
         self.assertEqual(
             frozenset({"status"}),
-            authorize(self.custodian, self.record, "record.update", requested_fields={"status"}),
+            authorize(
+                self.custodian,
+                self.record,
+                "record.update",
+                requested_fields={"status"},
+            ),
         )
 
     def test_unknown_fields_fail_closed(self):
