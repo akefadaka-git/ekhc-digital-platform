@@ -120,7 +120,12 @@ class Org03SyntheticAccessPolicyTests(unittest.TestCase):
 
     def test_unknown_fields_fail_closed(self):
         with self.assertRaises(AccessDenied):
-            authorize(self.custodian, self.record, "record.read", requested_fields={"unknown"})
+            authorize(
+                self.custodian,
+                self.record,
+                "record.read",
+                requested_fields={"unknown"},
+            )
 
 
 if __name__ == "__main__":
