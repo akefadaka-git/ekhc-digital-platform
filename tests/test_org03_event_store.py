@@ -297,7 +297,6 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                 "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
             )
 
-
     def test_separate_processes_arbitrate_same_aggregate_version(self):
         context = multiprocessing.get_context("fork")
         barrier = context.Barrier(2)
