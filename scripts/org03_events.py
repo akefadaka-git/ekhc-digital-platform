@@ -4,11 +4,9 @@ This state machine records synthetic event facts only. It does not deliver
 notifications, identify real responders, or authorize operational actions.
 """
 
-from __future__ import annotations
-
-from copy import deepcopy
-from datetime import datetime
-from typing import Any
+import copy
+import datetime
+import typing
 
 
 INITIAL_STATE = "RECEIVED"
@@ -19,17 +17,17 @@ class TransitionError(ValueError):
     """Raised when an event is unauthorized, malformed, or out of sequence."""
 
 
-def _valid_utc(value: Any) -> bool:
+def _valid_utc(value: typing.Any) -> bool:
     if not isinstance(value, str) or not value.endswith("Z"):
         return False
     try:
-        datetime.fromisoformat(value[:-1] + "+00:00")
+        datetime.datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError:
         return False
     return True
 
 
-def new_alert(alert_id: str, priority: str, received_at_utc: str) -> dict[str, Any]:
+def new_alert(alert_id: str, priority: str, received_at_utc: str) -> dict[str, typing.Any]:
     """Create an immutable-by-convention alert state with an initial event."""
     if (
         not alert_id
@@ -139,8 +137,8 @@ def apply_event(
     else:
         raise TransitionError("unsupported ORG-03 event")
 
-    result = deepcopy(state)
-    result["history"].append(deepcopy(event))
+    result = copy.deepcopy(state)
+    result["history"].append(copy.deepcopy(event))
     result["status"] = next_status
     result["next_sequence"] += 1
     return result
