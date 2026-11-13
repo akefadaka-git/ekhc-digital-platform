@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import Any
 
 
-ROLES = ("primary", "backup", "owner_or_delegate")
 ACTIVE = "ACTIVE"
 
 
@@ -29,15 +28,19 @@ def validate_roster(document: dict[str, Any]) -> dict[str, list[str]]:
     blockers: list[str] = []
 
     if document.get("classification") != "SYNTHETIC_TEMPLATE_NO_PERSONAL_DATA":
-        errors.append("classification must identify a synthetic, no-personal-data record")
+        errors.append(
+            "classification must identify a synthetic, no-personal-data record"
+        )
 
     policy = document.get("policy")
     roster = document.get("roster")
     routing = document.get("routing")
     activation = document.get("activation")
-    if not all(isinstance(item, dict) for item in (policy, roster, routing, activation)):
+    sections = (policy, roster, routing, activation)
+    if not all(isinstance(item, dict) for item in sections):
         return {
-            "errors": errors + ["policy, roster, routing and activation must be objects"],
+            "errors": errors
+            + ["policy, roster, routing and activation must be objects"],
             "blockers": ["roster cannot be evaluated until its structure is valid"],
         }
 
@@ -54,15 +57,17 @@ def validate_roster(document: dict[str, Any]) -> dict[str, list[str]]:
     primary = roster.get("primary")
     backup = roster.get("backup")
     authority = roster.get("owner_or_delegate")
-    if not all(isinstance(item, dict) for item in (primary, backup, authority)):
+    assignments = (primary, backup, authority)
+    if not all(isinstance(item, dict) for item in assignments):
         return {
-            "errors": errors + ["primary, backup and owner_or_delegate must be objects"],
+            "errors": errors
+            + ["primary, backup and owner_or_delegate must be objects"],
             "blockers": ["all three authority slots must be structurally present"],
         }
 
     for role in ("primary", "backup"):
         entry = roster[role]
-        for field in (
+        required_fields = (
             "responder_ref",
             "authorization_ref",
             "restricted_contact_ref",
@@ -70,28 +75,45 @@ def validate_roster(document: dict[str, Any]) -> dict[str, list[str]]:
             "effective_from_utc",
             "effective_until_utc",
             "coverage_ref",
-        ):
+        )
+        for field in required_fields:
             if not entry.get(field):
                 blockers.append(f"{role}.{field} is not evidenced")
         if entry.get("status") != ACTIVE:
             blockers.append(f"{role} assignment is not ACTIVE")
-        for field in ("accepted_at_utc", "effective_from_utc", "effective_until_utc"):
+        timestamp_fields = (
+            "accepted_at_utc",
+            "effective_from_utc",
+            "effective_until_utc",
+        )
+        for field in timestamp_fields:
             value = entry.get(field)
             if value and not _is_utc_timestamp(value):
-                errors.append(f"{role}.{field} must be an ISO-8601 UTC timestamp ending in Z")
+                errors.append(
+                    f"{role}.{field} must be an ISO-8601 UTC timestamp ending in Z"
+                )
 
     primary_ref = primary.get("responder_ref")
     backup_ref = backup.get("responder_ref")
     if primary_ref and backup_ref and primary_ref == backup_ref:
         errors.append("primary and backup must be distinct individuals")
 
-    for field in ("authority_ref", "delegation_scope_ref", "restricted_contact_ref"):
+    authority_fields = (
+        "authority_ref",
+        "delegation_scope_ref",
+        "restricted_contact_ref",
+    )
+    for field in authority_fields:
         if not authority.get(field):
             blockers.append(f"owner_or_delegate.{field} is not evidenced")
     if authority.get("status") != ACTIVE:
         blockers.append("Owner/delegate escalation assignment is not ACTIVE")
-    if authority.get("accepted_at_utc") and not _is_utc_timestamp(authority["accepted_at_utc"]):
-        errors.append("owner_or_delegate.accepted_at_utc must be an ISO-8601 UTC timestamp ending in Z")
+    authority_accepted = authority.get("accepted_at_utc")
+    if authority_accepted and not _is_utc_timestamp(authority_accepted):
+        errors.append(
+            "owner_or_delegate.accepted_at_utc must be an ISO-8601 UTC "
+            "timestamp ending in Z"
+        )
 
     if policy.get("business_time_convention") != "APPROVED":
         blockers.append("business-time convention is not approved")
@@ -104,21 +126,25 @@ def validate_roster(document: dict[str, Any]) -> dict[str, list[str]]:
     if not policy.get("holiday_calendar_ref"):
         blockers.append("holiday calendar evidence is absent")
 
-    for field in ("primary_route_ref", "backup_route_ref", "escalation_route_ref"):
+    route_fields = ("primary_route_ref", "backup_route_ref", "escalation_route_ref")
+    for field in route_fields:
         if not routing.get(field):
             blockers.append(f"routing.{field} is not configured")
     if routing.get("status") != "CONFIGURED":
         blockers.append("notification routing is not CONFIGURED")
 
-    for field in (
+    activation_fields = (
         "rehearsal_authorized",
         "production_notifications_authorized",
         "production_operation_authorized",
         "merge_authorized",
         "deployment_authorized",
-    ):
+    )
+    for field in activation_fields:
         if activation.get(field) is not False:
-            errors.append(f"activation.{field} must remain false in this synthetic-only increment")
+            errors.append(
+                f"activation.{field} must remain false in this synthetic-only increment"
+            )
 
     if errors:
         blockers.append("structural validation failed; routing must remain disabled")
