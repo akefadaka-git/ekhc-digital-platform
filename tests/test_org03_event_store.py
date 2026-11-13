@@ -5,12 +5,14 @@ import multiprocessing
 import os
 import sqlite3
 import tempfile
+import time
 import threading
 import unittest
 from pathlib import Path
 
 from scripts.org03_event_store import (
     EventLogIntegrityError,
+    EventStoreBusy,
     IdempotencyConflict,
     Org03EventStore,
     StaleAggregateVersion,
@@ -362,6 +364,69 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
         self.assertEqual(first, second)
         self.assertEqual("AWAITING_HUMAN_ACK", second["status"])
+
+    def test_load_state_uses_one_snapshot_during_concurrent_commit(self):
+        reader = Org03EventStore(self.path)
+        writer = Org03EventStore(self.path)
+        aggregate_read = threading.Event()
+        allow_replay = threading.Event()
+        original_replay = reader._replay_in_transaction
+        observed = {}
+
+        def paused_replay(*args, **kwargs):
+            aggregate_read.set()
+            self.assertTrue(allow_replay.wait(timeout=5))
+            return original_replay(*args, **kwargs)
+
+        reader._replay_in_transaction = paused_replay
+
+        def read():
+            observed["state"] = reader.load_state(
+                "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
+            )
+
+        thread = threading.Thread(target=read)
+        thread.start()
+        self.assertTrue(aggregate_read.wait(timeout=5))
+        writer.append_event(
+            "SYNTHETIC-ALERT-STORE-01",
+            make_event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
+            expected_version=2,
+            event_id="SYNTHETIC-SNAPSHOT-EVENT-03",
+            idempotency_key="SYNTHETIC-SNAPSHOT-IDEM-03",
+            authorized_responder_refs=AUTH,
+        )
+        allow_replay.set()
+        thread.join(timeout=5)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual("AWAITING_HUMAN_ACK", observed["state"]["status"])
+        self.assertEqual(
+            "BACKUP_ROUTED",
+            reader.load_state(
+                "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
+            )["status"],
+        )
+
+    def test_writer_contention_expires_with_typed_error(self):
+        store = Org03EventStore(self.path, timeout_seconds=0.15)
+        blocker = sqlite3.connect(self.path, isolation_level=None)
+        blocker.execute("BEGIN IMMEDIATE")
+        started = time.monotonic()
+        try:
+            with self.assertRaises(EventStoreBusy):
+                store.create_alert(
+                    "SYNTHETIC-LOCKED-ALERT", "LOW", "2026-11-13T08:00:00Z"
+                )
+        finally:
+            blocker.rollback()
+            blocker.close()
+        self.assertLess(time.monotonic() - started, 1.5)
+
+    def test_owned_connection_is_closed_on_context_exit(self):
+        with self.store._connection() as connection:
+            connection.execute("SELECT 1")
+        with self.assertRaises(sqlite3.ProgrammingError):
+            connection.execute("SELECT 1")
 
 
 if __name__ == "__main__":
