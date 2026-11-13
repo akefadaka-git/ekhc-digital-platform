@@ -72,9 +72,7 @@ class Org03SyntheticAccessPolicyTests(unittest.TestCase):
             "SYNTHETIC_AUDITOR",
             frozenset({"SYNTHETIC-RECORD-01"}),
         )
-        authorize(
-            auditor, self.record, "record.read", requested_fields={"summary"}
-        )
+        authorize(auditor, self.record, "record.read", requested_fields={"summary"})
         with self.assertRaises(AccessDenied):
             authorize(
                 auditor, self.record, "record.update", requested_fields={"status"}
