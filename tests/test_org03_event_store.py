@@ -857,6 +857,58 @@ class Org03R1R3NegativeTests(unittest.TestCase):
         with self.assertRaises(EventLogIntegrityError):
             self.load()
 
+    def test_idempotent_retry_rejects_tampered_result_snapshot(self):
+        event = make_event(2, "DELIVERY_CONFIRMED")
+        self.store.append_event(
+            "SYNTHETIC-R1-ALERT",
+            event,
+            expected_version=1,
+            event_id="SYNTHETIC-R1-IDEMPOTENT-RESULT",
+            idempotency_key="SYNTHETIC-R1-IDEMPOTENT-RESULT-IDEM",
+            authorized_responder_refs=AUTH,
+        )
+        with self.store._connect() as connection:
+            connection.execute(
+                "UPDATE org03_events SET result_json = ? "
+                "WHERE alert_id = ? AND sequence = 2",
+                ('{"status":"FORGED"}', "SYNTHETIC-R1-ALERT"),
+            )
+        with self.assertRaises(EventLogIntegrityError):
+            self.store.append_event(
+                "SYNTHETIC-R1-ALERT",
+                event,
+                expected_version=1,
+                event_id="SYNTHETIC-R1-IDEMPOTENT-RESULT",
+                idempotency_key="SYNTHETIC-R1-IDEMPOTENT-RESULT-IDEM",
+                authorized_responder_refs=AUTH,
+            )
+
+    def test_idempotent_retry_rejects_tampered_request_fingerprint(self):
+        event = make_event(2, "DELIVERY_CONFIRMED")
+        self.store.append_event(
+            "SYNTHETIC-R1-ALERT",
+            event,
+            expected_version=1,
+            event_id="SYNTHETIC-R1-IDEMPOTENT-REQUEST",
+            idempotency_key="SYNTHETIC-R1-IDEMPOTENT-REQUEST-IDEM",
+            authorized_responder_refs=AUTH,
+        )
+        with self.store._connect() as connection:
+            connection.execute(
+                "UPDATE org03_events SET request_json = ? "
+                "WHERE alert_id = ? AND sequence = 2",
+                ('{"event_type":"FORGED"}', "SYNTHETIC-R1-ALERT"),
+            )
+        with self.assertRaises(EventLogIntegrityError):
+            self.store.append_event(
+                "SYNTHETIC-R1-ALERT",
+                event,
+                expected_version=1,
+                event_id="SYNTHETIC-R1-IDEMPOTENT-REQUEST",
+                idempotency_key="SYNTHETIC-R1-IDEMPOTENT-REQUEST-IDEM",
+                authorized_responder_refs=AUTH,
+            )
+
     def test_checkpoint_mac_tampering_fails_closed(self):
         checkpoint = self.store._checkpoint_path("SYNTHETIC-R1-ALERT")
         record = json.loads(checkpoint.read_text(encoding="utf-8"))
