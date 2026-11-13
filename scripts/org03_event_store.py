@@ -786,6 +786,7 @@ class Org03EventStore:
                     event_json,
                 )
                 key_id = self.active_key_id
+                result_json = _canonical(updated)
                 event_mac = self._mac(
                     key_id,
                     self._event_envelope(
@@ -794,6 +795,8 @@ class Org03EventStore:
                         sequence,
                         idempotency_key,
                         event_json,
+                        request_json,
+                        result_json,
                         previous_hash,
                         key_id,
                     ),
@@ -810,7 +813,7 @@ class Org03EventStore:
                         idempotency_key,
                         event_json,
                         request_json,
-                        _canonical(updated),
+                        result_json,
                         previous_hash,
                         event_hash,
                         "HMAC-SHA-256",
@@ -873,6 +876,8 @@ class Org03EventStore:
                     row["sequence"],
                     row["idempotency_key"],
                     row["event_json"],
+                    row["request_json"],
+                    row["result_json"],
                     previous_hash,
                     key_id,
                 ),
