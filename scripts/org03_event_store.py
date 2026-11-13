@@ -358,13 +358,29 @@ class Org03EventStore:
         ):
             raise CheckpointError("database head differs from independent checkpoint")
 
+    def _responder_refs_for_event(self, event: dict) -> dict[str, str]:
+        role_slots = {
+            "PRIMARY_SECURITY_OPERATIONS": "primary",
+            "BACKUP_SECURITY_OPERATIONS": "backup",
+            "OWNER_OR_DELEGATE": "owner_or_delegate",
+        }
+        role = event.get("actor_role", "SYSTEM")
+        if role == "SYSTEM":
+            return {}
+        slot = role_slots.get(role)
+        principal_ref = event.get("actor_ref")
+        if slot is None or not isinstance(principal_ref, str):
+            raise AuthorityError("event role cannot be mapped to historical authority")
+        return {slot: principal_ref}
+
     def _authority_payload(
-        self, principal_ref, role, version, valid_from, revoked_at, key_id
+        self, principal_ref, role, scope_ref, version, valid_from, revoked_at, key_id
     ):
         return {
             "schema": "ORG03-AUTHORITY-V1",
             "principal_ref": principal_ref,
             "role": role,
+            "scope_ref": scope_ref,
             "version": version,
             "valid_from_utc": valid_from,
             "revoked_at_utc": revoked_at,
@@ -372,7 +388,12 @@ class Org03EventStore:
         }
 
     def register_authority(
-        self, principal_ref: str, role: str, valid_from_utc: str
+        self,
+        principal_ref: str,
+        role: str,
+        valid_from_utc: str,
+        *,
+        scope_ref: str,
     ) -> int:
         if (
             not isinstance(principal_ref, str)
@@ -383,6 +404,8 @@ class Org03EventStore:
             raise AuthorityError(
                 "only synthetic human principals and roles can be registered"
             )
+        if not isinstance(scope_ref, str) or not scope_ref.startswith("SYNTHETIC-"):
+            raise AuthorityError("authority scope must be a synthetic reference")
         _utc_timestamp(valid_from_utc)
         key_id = self.active_key_id
         with self._connection() as connection:
@@ -394,12 +417,15 @@ class Org03EventStore:
                 ).fetchone():
                     raise AuthorityError("authority registration is immutable")
                 payload = self._authority_payload(
-                    principal_ref, role, 1, valid_from_utc, None, key_id
+                    principal_ref, role, scope_ref, 1, valid_from_utc, None, key_id
                 )
                 signature = self._mac(key_id, payload)
                 connection.execute(
-                    "INSERT INTO org03_authority_versions VALUES (?, ?, 1, ?, NULL, ?, ?)",
-                    (principal_ref, role, valid_from_utc, key_id, signature),
+                    "INSERT INTO org03_authority_versions "
+                    "(principal_ref, role, scope_ref, version, valid_from_utc, "
+                    "revoked_at_utc, key_id, evidence_mac) "
+                    "VALUES (?, ?, ?, 1, ?, NULL, ?, ?)",
+                    (principal_ref, role, scope_ref, valid_from_utc, key_id, signature),
                 )
                 connection.commit()
                 return 1
@@ -426,6 +452,7 @@ class Org03EventStore:
                 payload = self._authority_payload(
                     principal_ref,
                     latest["role"],
+                    latest["scope_ref"],
                     version,
                     latest["valid_from_utc"],
                     effective_at_utc,
@@ -433,10 +460,14 @@ class Org03EventStore:
                 )
                 signature = self._mac(key_id, payload)
                 connection.execute(
-                    "INSERT INTO org03_authority_versions VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO org03_authority_versions "
+                    "(principal_ref, role, scope_ref, version, valid_from_utc, "
+                    "revoked_at_utc, key_id, evidence_mac) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         principal_ref,
                         latest["role"],
+                        latest["scope_ref"],
                         version,
                         latest["valid_from_utc"],
                         effective_at_utc,
@@ -450,7 +481,7 @@ class Org03EventStore:
                 connection.rollback()
                 raise
 
-    def _authority_for_event(self, connection, event):
+    def _authority_for_event(self, connection, event, alert_id):
         role = event.get("actor_role", "SYSTEM")
         if role == "SYSTEM":
             return event
@@ -467,6 +498,7 @@ class Org03EventStore:
             payload = self._authority_payload(
                 row["principal_ref"],
                 row["role"],
+                row["scope_ref"],
                 row["version"],
                 row["valid_from_utc"],
                 row["revoked_at_utc"],
@@ -476,14 +508,23 @@ class Org03EventStore:
                 row["evidence_mac"], self._mac(row["key_id"], payload)
             ):
                 raise AuthorityError("stored authority version authentication failed")
-        at_utc = event.get("at_utc", "")
-        if latest["role"] != role or at_utc < latest["valid_from_utc"]:
-            raise AuthorityError("principal or role is not authorized at event time")
-        if latest["revoked_at_utc"] is not None and at_utc >= latest["revoked_at_utc"]:
+        at_utc = _utc_timestamp(event.get("at_utc", ""))
+        if (
+            latest["role"] != role
+            or latest["scope_ref"] != alert_id
+            or at_utc < _utc_timestamp(latest["valid_from_utc"])
+        ):
+            raise AuthorityError(
+                "principal, role, or scope is not authorized at event time"
+            )
+        if latest["revoked_at_utc"] is not None and at_utc >= _utc_timestamp(
+            latest["revoked_at_utc"]
+        ):
             raise AuthorityError("authority is revoked at event time")
         payload = self._authority_payload(
             latest["principal_ref"],
             latest["role"],
+            latest["scope_ref"],
             latest["version"],
             latest["valid_from_utc"],
             latest["revoked_at_utc"],
@@ -496,7 +537,7 @@ class Org03EventStore:
         }
         return event
 
-    def _verify_authority_event(self, connection, event):
+    def _verify_authority_event(self, connection, event, alert_id):
         role = event.get("actor_role", "SYSTEM")
         evidence = event.get("authority_evidence")
         if role == "SYSTEM":
@@ -509,9 +550,10 @@ class Org03EventStore:
         if (
             evidence.get("principal_ref") != principal_ref
             or evidence.get("role") != role
+            or evidence.get("scope_ref") != alert_id
         ):
             raise AuthorityError(
-                "authority evidence is bound to a different principal or role"
+                "authority evidence is bound to a different principal, role, or scope"
             )
         at_utc = _utc_timestamp(event.get("at_utc", ""))
         valid_from = _utc_timestamp(evidence.get("valid_from_utc", ""))
@@ -519,9 +561,7 @@ class Org03EventStore:
         revoked_at = _utc_timestamp(revoked_at_value) if revoked_at_value else None
         if at_utc < valid_from or (revoked_at is not None and at_utc >= revoked_at):
             raise AuthorityError("historical authority is not valid at event time")
-        payload = {
-            key: value for key, value in evidence.items() if key != "evidence_mac"
-        }
+        payload = {key: value for key, value in evidence.items() if key != "evidence_mac"}
         if evidence.get("schema") != "ORG03-AUTHORITY-V1":
             raise AuthorityError("authority evidence schema is invalid")
         if not hmac.compare_digest(
@@ -543,6 +583,7 @@ class Org03EventStore:
         expected_payload = self._authority_payload(
             registered["principal_ref"],
             registered["role"],
+            registered["scope_ref"],
             registered["version"],
             registered["valid_from_utc"],
             registered["revoked_at_utc"],
@@ -556,6 +597,7 @@ class Org03EventStore:
             signed = self._authority_payload(
                 row["principal_ref"],
                 row["role"],
+                row["scope_ref"],
                 row["version"],
                 row["valid_from_utc"],
                 row["revoked_at_utc"],
@@ -565,7 +607,10 @@ class Org03EventStore:
                 row["evidence_mac"], self._mac(row["key_id"], signed)
             ):
                 raise AuthorityError("authority registry tampering detected")
-        latest_revocation = rows[-1]["revoked_at_utc"]
+        latest = rows[-1]
+        if latest["scope_ref"] != alert_id or latest["role"] != role:
+            raise AuthorityError("historical authority scope or role changed")
+        latest_revocation = latest["revoked_at_utc"]
         if latest_revocation and at_utc >= _utc_timestamp(latest_revocation):
             raise AuthorityError("event timestamp is at or after authority revocation")
 
