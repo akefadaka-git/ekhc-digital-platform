@@ -74,15 +74,6 @@ jobs:
           mkdir -p artifacts
           python scripts/run_org03_tests.py --xml artifacts/org03-junit.xml 2>&1 | tee artifacts/org03-tests.log
 
-      - name: Stage pinned Ruff formatter for source formatting repair
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/formatting
-          cp "$(command -v ruff)" artifacts/formatting/ruff
-          cp scripts/org03_event_store.py tests/test_org03_event_store.py artifacts/formatting/
-
       - name: Ruff lint
         run: ruff check .
 
@@ -100,6 +91,5 @@ jobs:
           path: |
             artifacts/org03-junit.xml
             artifacts/org03-tests.log
-            artifacts/formatting/
           if-no-files-found: warn
           retention-days: 14
