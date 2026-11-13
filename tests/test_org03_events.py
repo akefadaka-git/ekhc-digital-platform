@@ -3,7 +3,7 @@
 import unittest
 from copy import deepcopy
 
-from scripts.org03_events import TransitionError, apply_event, new_alert
+from scripts.org03_events import scripts.org03_events.TransitionError, apply_event, new_alert
 
 
 AUTH = {
@@ -26,8 +26,8 @@ def event(sequence, name, role="SYSTEM", actor="SYNTHETIC-SYSTEM", **extra):
 
 class Org03AcknowledgementTransitionTests(unittest.TestCase):
     def setUp(self):
-        self.state = new_alert("SYNTHETIC-ALERT-01", "HIGH", "2026-11-13T07:00:00Z")
-        self.state = apply_event(
+        self.state = scripts.org03_events.new_alert("SYNTHETIC-ALERT-01", "HIGH", "2026-11-13T07:00:00Z")
+        self.state = scripts.org03_events.apply_event(
             self.state,
             event(2, "DELIVERY_CONFIRMED"),
             authorized_responder_refs=AUTH,
@@ -226,7 +226,7 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
             )
 
     def test_history_is_append_only_and_prior_state_is_unchanged(self):
-        original = deepcopy(self.state)
+        original = copy.deepcopy(self.state)
         result = apply_event(
             self.state,
             event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
