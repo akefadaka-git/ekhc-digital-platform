@@ -488,6 +488,8 @@ class Org03EventStore:
     def _authority_for_event(self, connection, event, alert_id):
         role = event.get("actor_role", "SYSTEM")
         if role == "SYSTEM":
+            if event.get("authority_evidence") is not None:
+                raise AuthorityError("system event cannot claim responder authority")
             return event
         principal_ref = event.get("actor_ref")
         rows = connection.execute(
