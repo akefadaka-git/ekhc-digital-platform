@@ -3,6 +3,7 @@
 This module validates structure and operational readiness separately. It never
 loads restricted identity/contact records and never sends notifications.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
