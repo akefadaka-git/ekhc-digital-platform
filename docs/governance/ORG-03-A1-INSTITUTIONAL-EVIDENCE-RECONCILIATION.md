@@ -153,7 +153,7 @@ Sensitive policies, personnel records, contact lists, keys and credentials must 
 **Authoritative institutional evidence collection:** INCOMPLETE.  
 **ADR decisions approved:** 0 / 20.  
 **ADR decisions with relevant public legal constraints identified:** 12 / 20 (ADR-003, 007, 009, 010, 012–018, 020). These are not approvals.  
-**ADR decisions without sufficient supporting evidence:** 9 / 20 (ADR-001, 002, 004, 005, 006, 008, 011, 019).  
+**ADR decisions without sufficient supporting evidence:** 8 / 20 (ADR-001, 002, 004, 005, 006, 008, 011, 019).  
 **A1 closure:** NOT PERMITTED.  
 **A2:** NOT AUTHORIZED.  
 **Production A3, live rehearsal, activation, merge and A5:** NOT AUTHORIZED.
