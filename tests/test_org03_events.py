@@ -1,8 +1,9 @@
 """Synthetic-only acknowledgement and escalation state-machine tests."""
 
 import copy
-import scripts.org03_events
 import unittest
+
+import scripts.org03_events
 
 
 AUTH = {
