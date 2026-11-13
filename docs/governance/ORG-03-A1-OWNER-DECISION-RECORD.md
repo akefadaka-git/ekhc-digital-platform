@@ -5,7 +5,7 @@
 **Decision authority:** Owner and applicable institutional authorities  
 **Review PR:** #24  
 **Review branch:** `a1/org03-production-architecture-review`  
-**Synthetic A3 baseline:** `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`
+**Synthetic A3 baseline:** `225daf65eaa27182ec20749adf469436fec1f654`
 
 ## 1. Decision requested
 
