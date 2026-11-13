@@ -14,6 +14,7 @@ import os
 import sqlite3
 import tempfile
 import time
+from datetime import datetime, timezone
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -60,6 +61,19 @@ def _canonical(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
+def _utc_timestamp(value: str) -> datetime:
+    """Parse one explicit UTC timestamp; reject local or ambiguous clock values."""
+    if not isinstance(value, str) or not value.endswith("Z"):
+        raise AuthorityError("authority timestamps must be explicit UTC ISO-8601 values")
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError as exc:
+        raise AuthorityError("authority timestamp is invalid") from exc
+    if parsed.tzinfo != timezone.utc:
+        raise AuthorityError("authority timestamp must use UTC")
+    return parsed
+
+
 def _digest(
     previous_hash: str,
     alert_id: str,
@@ -90,13 +104,13 @@ class Org03EventStore:
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive")
         self.timeout_seconds = timeout_seconds
-        self._integrity_keys = dict(integrity_keys or DEFAULT_SYNTHETIC_KEYS)
+        self._integrity_keys = dict(DEFAULT_SYNTHETIC_KEYS if integrity_keys is None else integrity_keys)
         self.active_key_id = active_key_id
         self.revoked_key_ids = frozenset(revoked_key_ids)
         if active_key_id not in self._integrity_keys or active_key_id in self.revoked_key_ids:
             raise IntegrityKeyError("active integrity key is unavailable")
-        if any(not isinstance(key, bytes) or len(key) < 32 for key in self._integrity_keys.values()):
-            raise ValueError("integrity keys must contain at least 32 bytes")
+        if any(not isinstance(key_id, str) or not key_id or not isinstance(key, bytes) or len(key) < 32 for key_id, key in self._integrity_keys.items()):
+            raise ValueError("integrity keys require non-empty IDs and at least 32 bytes")
         self.checkpoint_dir = Path(checkpoint_dir or (self.path + ".org03-checkpoints"))
         self._initialize()
 
@@ -286,8 +300,9 @@ class Org03EventStore:
         }
 
     def register_authority(self, principal_ref: str, role: str, valid_from_utc: str) -> int:
-        if not principal_ref.startswith("SYNTHETIC-") or not role or role == "SYSTEM":
+        if not isinstance(principal_ref, str) or not principal_ref.startswith("SYNTHETIC-") or not role or role == "SYSTEM":
             raise AuthorityError("only synthetic human principals and roles can be registered")
+        _utc_timestamp(valid_from_utc)
         key_id = self.active_key_id
         with self._connection() as connection:
             self._begin_immediate(connection)
@@ -307,6 +322,7 @@ class Org03EventStore:
                 raise
 
     def revoke_authority(self, principal_ref: str, effective_at_utc: str) -> int:
+        effective_at = _utc_timestamp(effective_at_utc)
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
@@ -316,6 +332,8 @@ class Org03EventStore:
                 ).fetchone()
                 if latest is None or latest["revoked_at_utc"] is not None:
                     raise AuthorityError("authority is missing or already revoked")
+                if effective_at < _utc_timestamp(latest["valid_from_utc"]):
+                    raise AuthorityError("revocation cannot precede authority validity")
                 version = latest["version"] + 1
                 key_id = self.active_key_id
                 payload = self._authority_payload(principal_ref, latest["role"], version, latest["valid_from_utc"], effective_at_utc, key_id)
@@ -371,29 +389,36 @@ class Org03EventStore:
             return
         if not isinstance(evidence, dict):
             raise AuthorityError("human event lacks historical authority evidence")
+        principal_ref = event.get("actor_ref")
+        if evidence.get("principal_ref") != principal_ref or evidence.get("role") != role:
+            raise AuthorityError("authority evidence is bound to a different principal or role")
+        at_utc = _utc_timestamp(event.get("at_utc", ""))
+        valid_from = _utc_timestamp(evidence.get("valid_from_utc", ""))
+        revoked_at_value = evidence.get("revoked_at_utc")
+        revoked_at = _utc_timestamp(revoked_at_value) if revoked_at_value else None
+        if at_utc < valid_from or (revoked_at is not None and at_utc >= revoked_at):
+            raise AuthorityError("historical authority is not valid at event time")
         payload = {key: value for key, value in evidence.items() if key != "evidence_mac"}
-        if (
-            evidence.get("schema") != "ORG03-AUTHORITY-V1"
-            or evidence.get("principal_ref") != event.get("actor_ref")
-            or evidence.get("role") != role
-            or event.get("at_utc", "") < evidence.get("valid_from_utc", "")
-            or (evidence.get("revoked_at_utc") is not None and event.get("at_utc", "") >= evidence["revoked_at_utc"])
-        ):
-            raise AuthorityError("historical authority does not match event")
+        if evidence.get("schema") != "ORG03-AUTHORITY-V1":
+            raise AuthorityError("authority evidence schema is invalid")
         if not hmac.compare_digest(evidence.get("evidence_mac", ""), self._mac(evidence.get("key_id", ""), payload)):
             raise AuthorityError("historical authority evidence authentication failed")
-        rows = connection.execute(
-            "SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version",
-            (evidence["principal_ref"],),
-        ).fetchall()
-        if not rows or evidence["version"] > rows[-1]["version"]:
+        rows = connection.execute("SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version", (principal_ref,)).fetchall()
+        if not rows:
+            raise AuthorityError("historical authority registry entry is missing")
+        version = evidence.get("version")
+        if not isinstance(version, int) or version < 1 or version > len(rows):
             raise AuthorityError("historical authority version is unavailable")
-        latest = rows[-1]
+        registered = rows[version - 1]
+        expected_payload = self._authority_payload(registered["principal_ref"], registered["role"], registered["version"], registered["valid_from_utc"], registered["revoked_at_utc"], registered["key_id"])
+        if payload != expected_payload or registered["version"] != version:
+            raise AuthorityError("event evidence does not match its immutable registry version")
         for row in rows:
             signed = self._authority_payload(row["principal_ref"], row["role"], row["version"], row["valid_from_utc"], row["revoked_at_utc"], row["key_id"])
             if not hmac.compare_digest(row["evidence_mac"], self._mac(row["key_id"], signed)):
                 raise AuthorityError("authority registry tampering detected")
-        if latest["revoked_at_utc"] is not None and event.get("at_utc", "") >= latest["revoked_at_utc"]:
+        latest_revocation = rows[-1]["revoked_at_utc"]
+        if latest_revocation and at_utc >= _utc_timestamp(latest_revocation):
             raise AuthorityError("event timestamp is at or after authority revocation")
 
     def create_alert(self, alert_id: str, priority: str, received_at_utc: str) -> dict:
