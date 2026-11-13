@@ -97,3 +97,46 @@ Commit `73c7c35814689a035e3c45b19985beb3d53e5a86` adds two more synthetic tests:
 - A child process terminated abruptly with an uncommitted SQLite write; a fresh store instance must reopen, replay, and confirm the uncommitted event was rolled back.
 
 These tests are **AUTHORED / NOT RUN**. They use the POSIX `fork` multiprocessing context and therefore target the repository's Linux CI runner; portability to non-POSIX environments is not claimed. The event-store test module now contains 12 test methods. The full repository test suite and exact-head CI remain outstanding.
+
+
+## 10. Exact-head Linux verification and JUnit evidence — 2026-11-13
+
+This section supersedes the earlier pending-test statements in Sections 3, 5, 7, and 9 for the isolated synthetic prototype only.
+
+**Verified branch head:** `14916f23f6fc1ad7c2bed7968169b944e2780772`  
+**Workflow:** [A3 quality checks — run 43395710793](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43395710793)  
+**Runner:** Ubuntu 24.04  
+**Run conclusion:** SUCCESS  
+**Exact-head match:** the workflow `head_sha` matched the branch head at verification.
+
+### 10.1 Test evidence
+
+- Full Django repository suite: 114 tests passed; system check reported no issues.
+- Dedicated ORG-03 prototype suite: 20 tests passed.
+- JUnit report: `artifacts/org03-junit.xml`.
+- Dedicated console log: `artifacts/org03-tests.log`.
+- Uploaded artifact: `org03-linux-test-evidence`, artifact ID `14023160981`, 14-day retention.
+- Ruff lint: PASS.
+- Ruff format check: PASS.
+- Dependency audit: PASS; no known vulnerabilities reported.
+
+The uploaded JUnit XML was retrieved and inspected. It reports 20 ORG-03 test cases with zero failures, errors, or skipped tests. The tests cover the synthetic persistence, concurrency, process-level race, abrupt uncommitted-write recovery, replay/integrity, and synthetic access-policy scenarios.
+
+### 10.2 Updated acceptance status
+
+| Requirement | Current evidence | Status |
+|---|---|---|
+| PERSIST-01 isolated synthetic append/replay and rollback | SQLite test adapter and passing JUnit cases | PASS — isolated prototype only |
+| PERSIST-02 idempotent retry | Passing JUnit cases | PASS — isolated prototype only |
+| CONC-01 thread/process acknowledgement arbitration | Passing thread and POSIX process tests | PASS — tested Linux prototype scope |
+| REC-01 reopen/replay and abrupt uncommitted-write recovery | Passing JUnit cases | PASS — tested SQLite process scope; not power-loss or backup restoration |
+| ACL-01 synthetic policy boundary | Passing synthetic policy tests | PASS — policy harness only; no authentication or deployed ACL |
+| Full repository quality checks | Exact-head Linux workflow | PASS |
+| Operational responder readiness | Actual roster, acceptance, authority, coverage, calendar and routing still absent | NOT VERIFIED |
+| Production security controls and service integration | Not part of this prototype | NOT IMPLEMENTED |
+
+### 10.3 Evidence limits and governance
+
+The JUnit result establishes only that the authored tests passed on the specified Linux runner and exact source head. It does not establish multi-host/high-load database behavior, filesystem or power-loss durability, backup restoration, cryptographic authenticity of the unkeyed hash chain, production authentication/authorization, institutional readiness, or deployed restricted-record protection.
+
+No Django runtime integration, production database selection, real identity, provider integration, live notification, operational rehearsal, merge, deployment, or A5 action occurred. A4 remains open pending independent technical/security review and the outstanding institutional evidence. Production readiness remains NOT READY.
