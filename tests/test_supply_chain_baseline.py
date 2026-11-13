@@ -101,8 +101,12 @@ class CiSupplyChainBoundaryTests(unittest.TestCase):
         )
         self.assertNotRegex(
             workflow,
-            r"(?mi)^\s+uses:\s+actions/(upload-artifact|attest-build-provenance)@",
+            r"(?mi)^\s+uses:\s+actions/attest-build-provenance@",
         )
+        self.assertIn("name: org03-linux-test-evidence", workflow)
+        self.assertIn("artifacts/org03-junit.xml", workflow)
+        self.assertIn("artifacts/org03-tests.log", workflow)
+        self.assertIn("retention-days: 14", workflow)
 
 
 if __name__ == "__main__":
