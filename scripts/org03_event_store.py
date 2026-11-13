@@ -107,8 +107,16 @@ class Org03EventStore:
         self._integrity_keys = dict(DEFAULT_SYNTHETIC_KEYS if integrity_keys is None else integrity_keys)
         self.active_key_id = active_key_id
         self.revoked_key_ids = frozenset(revoked_key_ids)
-        if any(not isinstance(key_id, str) or not key_id or not isinstance(key, bytes) or len(key) < 32 for key_id, key in self._integrity_keys.items()):
+        if any(
+            not isinstance(key_id, str)
+            or not key_id
+            or not isinstance(key, bytes)
+            or len(key) < 32
+            for key_id, key in self._integrity_keys.items()
+        ):
             raise ValueError("integrity keys require non-empty IDs and at least 32 bytes")
+        if active_key_id not in self._integrity_keys:
+            raise IntegrityKeyError("active integrity key is unavailable")
         self.checkpoint_dir = Path(checkpoint_dir or (self.path + ".org03-checkpoints"))
         self._initialize()
 
