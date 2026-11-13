@@ -3,7 +3,7 @@
 **Document ID:** EKHC-ORG03-A1-ARCH-002  
 **Status:** Draft for Owner/institution decision — not implementation authorization  
 **Applies to:** Proposed future production architecture only  
-**Synthetic baseline:** `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`
+**Synthetic baseline:** `225daf65eaa27182ec20749adf469436fec1f654`
 
 ## 1. Normative interpretation
 
