@@ -49,7 +49,7 @@ def make_event(sequence, name, role="SYSTEM", actor="SYNTHETIC-SYSTEM", **extra)
 
 
 def _process_append(path, barrier, queue, event, event_id, idempotency_key):
-    store = Org03EventStore(path)
+    store = make_store(path)
     barrier.wait(timeout=10)
     try:
         state = store.append_event(
@@ -89,7 +89,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.path = Path(self.temp.name) / "org03-test.sqlite3"
-        self.store = Org03EventStore(self.path)
+        self.store = make_store(self.path)
         self.store.create_alert(
             "SYNTHETIC-ALERT-STORE-01", "HIGH", "2026-11-13T07:00:00Z"
         )
@@ -165,7 +165,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
 
     def test_committed_events_survive_new_store_instance(self):
         self.append_primary()
-        reopened = Org03EventStore(self.path)
+        reopened = make_store(self.path)
         state = reopened.load_state(
             "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
         )
@@ -362,7 +362,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         process.join(timeout=20)
         self.assertFalse(process.is_alive(), "crash worker did not exit")
         self.assertEqual(17, process.exitcode)
-        reopened = Org03EventStore(self.path)
+        reopened = make_store(self.path)
         state = reopened.load_state(
             "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
         )
@@ -380,8 +380,8 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual("AWAITING_HUMAN_ACK", second["status"])
 
     def test_load_state_uses_one_snapshot_during_concurrent_commit(self):
-        reader = Org03EventStore(self.path)
-        writer = Org03EventStore(self.path)
+        reader = make_store(self.path)
+        writer = make_store(self.path)
         aggregate_read = threading.Event()
         allow_replay = threading.Event()
         original_replay = reader._replay_in_transaction
@@ -422,7 +422,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
 
     def test_writer_contention_expires_with_typed_error(self):
-        store = Org03EventStore(self.path, timeout_seconds=0.15)
+        store = make_store(self.path, timeout_seconds=0.15)
         blocker = sqlite3.connect(self.path, isolation_level=None)
         blocker.execute("BEGIN IMMEDIATE")
         started = time.monotonic()
@@ -509,7 +509,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             self.store.load_state("SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH)
 
     def test_revoked_integrity_key_fails_closed(self):
-        reopened = Org03EventStore(
+        reopened = make_store(
             self.path,
             revoked_key_ids=frozenset({"synthetic-test-v1"}),
         )
@@ -528,7 +528,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             self.store.load_state("SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH)
 
     def test_key_rotation_keeps_old_events_verifiable_and_signs_new_events(self):
-        rotated = Org03EventStore(
+        rotated = make_store(
             self.path,
             integrity_keys={
                 "synthetic-test-v1": TEST_INTEGRITY_KEYS["synthetic-test-v1"],
@@ -668,7 +668,7 @@ class Org03R1R3NegativeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.path = Path(self.temp.name) / "org03-integrity.sqlite3"
-        self.store = Org03EventStore(self.path)
+        self.store = make_store(self.path)
         self.store.create_alert("SYNTHETIC-R1-ALERT", "HIGH", "2026-11-13T07:00:00Z")
         self.store.append_event(
             "SYNTHETIC-R1-ALERT", make_event(2, "DELIVERY_CONFIRMED"),
@@ -717,7 +717,7 @@ class Org03R1R3NegativeTests(unittest.TestCase):
         with self.assertRaises(IntegrityKeyError): self.load()
 
     def test_revoked_key_fails_closed(self):
-        revoked=Org03EventStore(self.path,revoked_key_ids=frozenset({"synthetic-test-v1"}))
+        revoked=make_store(self.path,revoked_key_ids=frozenset({"synthetic-test-v1"}))
         with self.assertRaises(IntegrityKeyError):
             revoked.load_state("SYNTHETIC-R1-ALERT",authorized_responder_refs=AUTH)
 
@@ -733,7 +733,7 @@ class Org03R1R3NegativeTests(unittest.TestCase):
     def test_key_rotation_verifies_old_and_new_events(self):
         keys={"synthetic-test-v1":b"ORG03-TEST-ONLY-KEY-NOT-FOR-PRODUCTION-32",
               "synthetic-test-v2":b"synthetic-org03-rotated-test-key-000000000000"}
-        rotated=Org03EventStore(self.path,integrity_keys=keys,active_key_id="synthetic-test-v2")
+        rotated=make_store(self.path,integrity_keys=keys,active_key_id="synthetic-test-v2")
         rotated.append_event("SYNTHETIC-R1-ALERT",make_event(3,"PRIMARY_ACK_DEADLINE_MISSED"),
             expected_version=2,event_id="SYNTHETIC-R1-ROTATED",idempotency_key="SYNTHETIC-R1-ROTATED-IDEM",
             authorized_responder_refs=AUTH)
