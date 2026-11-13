@@ -2,7 +2,7 @@
 
 **Document ID:** EKHC-ORG03-A1-ARCH-003  
 **Status:** Conceptual draft — subject to institutional evidence and Owner approval  
-**Baseline:** Synthetic A3 commit `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`
+**Baseline:** Synthetic A3 commit `225daf65eaa27182ec20749adf469436fec1f654`
 
 These diagrams express logical boundaries, not deployed infrastructure. They do not imply that any provider, institutional directory, records service, KMS/HSM or hosting environment has been selected or connected.
 
