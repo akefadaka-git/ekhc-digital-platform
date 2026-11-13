@@ -437,18 +437,45 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             )
 
     def test_idempotent_retry_returns_original_result_after_later_transition(self):
-        original = self.append_primary()
+        first_event = make_event(
+            3,
+            "HUMAN_UNABLE_TO_ACCEPT",
+            "PRIMARY_SECURITY_OPERATIONS",
+            AUTH["primary"],
+            disposition="UNABLE_TO_ACCEPT",
+        )
+        original = self.store.append_event(
+            "SYNTHETIC-ALERT-STORE-01",
+            first_event,
+            expected_version=2,
+            event_id="SYNTHETIC-ORIGINAL-DECLINE",
+            idempotency_key="SYNTHETIC-ORIGINAL-DECLINE-IDEM",
+            authorized_responder_refs=AUTH,
+        )
         self.store.append_event(
             "SYNTHETIC-ALERT-STORE-01",
-            make_event(4, "PRIMARY_ACK_DEADLINE_MISSED"),
+            make_event(
+                4,
+                "HUMAN_ACKNOWLEDGED",
+                "BACKUP_SECURITY_OPERATIONS",
+                AUTH["backup"],
+                disposition="ACCEPTED",
+            ),
             expected_version=3,
             event_id="SYNTHETIC-LATER-EVENT",
             idempotency_key="SYNTHETIC-LATER-IDEM",
             authorized_responder_refs=AUTH,
         )
-        retry = self.append_primary()
+        retry = self.store.append_event(
+            "SYNTHETIC-ALERT-STORE-01",
+            first_event,
+            expected_version=2,
+            event_id="SYNTHETIC-ORIGINAL-DECLINE",
+            idempotency_key="SYNTHETIC-ORIGINAL-DECLINE-IDEM",
+            authorized_responder_refs=AUTH,
+        )
         self.assertEqual(original, retry)
-        self.assertEqual("ACKNOWLEDGED", retry["status"])
+        self.assertEqual("BACKUP_ROUTED", retry["status"])
         self.assertEqual(4, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
 
 
