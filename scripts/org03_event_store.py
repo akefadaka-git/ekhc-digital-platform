@@ -527,11 +527,13 @@ class Org03EventStore:
                     idempotency_key,
                     event_json,
                 )
+                key_id = self.active_key_id
+                event_mac = self._mac(key_id, self._event_envelope(alert_id, event_id, sequence, idempotency_key, event_json, previous_hash, key_id))
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
                     "idempotency_key, event_json, request_json, result_json, "
-                    "previous_hash, event_hash) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "previous_hash, event_hash, key_id, event_mac) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         event_id,
                         alert_id,
@@ -542,6 +544,8 @@ class Org03EventStore:
                         _canonical(updated),
                         previous_hash,
                         event_hash,
+                        key_id,
+                        event_mac,
                     ),
                 )
                 cursor = connection.execute(
