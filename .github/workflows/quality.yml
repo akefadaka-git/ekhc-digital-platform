@@ -64,11 +64,6 @@ jobs:
       - name: Django tests
         run: python manage.py test
 
-      - name: Temporary ORG-03 Ruff import diagnostic
-        run: |
-          ruff check --fix scripts/org03_events.py scripts/org03_roster.py tests/test_org03_events.py tests/test_org03_roster.py || true
-          git diff -- scripts/org03_events.py scripts/org03_roster.py tests/test_org03_events.py tests/test_org03_roster.py
-
       - name: Ruff lint
         run: ruff check .
 
