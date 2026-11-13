@@ -263,3 +263,21 @@ Suggested non-secret mock configuration:
 - Production readiness: **NOT READY**
 
 This clarification authorizes only the use of sample/mock behavior as an interim design direction. It does not authorize live integrations, real notifications, rehearsal, production operation, schedule activation, merge, deployment, publication, or A5.
+
+
+## 9. ORG-03 process implementation increment — 2026-11-13
+
+**Implementation branch:** `a3/org-03-responder-operations`
+
+The following process artifacts have been added:
+- `docs/operations/ORG-03-RESPONDER-OPERATIONS.md` — role separation, coverage requirements, human acknowledgement semantics, priority clocks, routing state machine, escalation triggers, authority boundaries, restricted roster fields, audit requirements and activation gate.
+- `docs/operations/org-03-roster-template.synthetic.json` — empty synthetic-only roster/configuration template; no identities, contact details, provider routes or institutional secrets.
+- `docs/verification/ORG-03-ACKNOWLEDGEMENT-ESCALATION-ACCEPTANCE-MATRIX.md` — 16-case acceptance matrix covering assignment, delivery, acknowledgement, escalation, handover, authorization and privacy failure paths.
+
+**Implemented:** role-based process definition, explicit primary/backup distinction, Owner/delegate escalation path, human acknowledgement evidence requirements, append-only transition expectations, fail-closed missing-assignment behavior, and a synthetic verification matrix.
+
+**Not implemented / not evidenced:** actual responder identities, accepted assignments, authority/delegation evidence, coverage rota, timezone and business-day calendar, institutional routes, provider delivery, human acknowledgement, live escalation, or operational rehearsal.
+
+The business-day calculation convention, coverage timezone/hours, holiday calendar and handover schedule remain institution decisions and must be approved before due timestamps or coverage claims can be treated as operationally authoritative.
+
+**Disposition:** ORG-03 POLICY APPROVED; PROCESS DESIGN IMPLEMENTED; INSTITUTIONAL ASSIGNMENTS AND OPERATIONAL EVIDENCE NOT VERIFIED. This increment does not authorize rehearsal, production notification, external integration, activation, merge, deployment, publication, signing or A5.
