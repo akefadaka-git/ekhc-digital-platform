@@ -1,9 +1,8 @@
 """Synthetic-only acknowledgement and escalation state-machine tests."""
 
+import copy
+import scripts.org03_events
 import unittest
-from copy import deepcopy
-
-from scripts.org03_events import scripts.org03_events.TransitionError, apply_event, new_alert
 
 
 AUTH = {
@@ -26,7 +25,9 @@ def event(sequence, name, role="SYSTEM", actor="SYNTHETIC-SYSTEM", **extra):
 
 class Org03AcknowledgementTransitionTests(unittest.TestCase):
     def setUp(self):
-        self.state = scripts.org03_events.new_alert("SYNTHETIC-ALERT-01", "HIGH", "2026-11-13T07:00:00Z")
+        self.state = scripts.org03_events.new_alert(
+            "SYNTHETIC-ALERT-01", "HIGH", "2026-11-13T07:00:00Z"
+        )
         self.state = scripts.org03_events.apply_event(
             self.state,
             event(2, "DELIVERY_CONFIRMED"),
@@ -34,7 +35,7 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
         )
 
     def test_primary_acceptance_records_acknowledged_state(self):
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             self.state,
             event(
                 3,
@@ -50,7 +51,7 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
         self.assertEqual("AWAITING_HUMAN_ACK", self.state["status"])
 
     def test_primary_decline_routes_to_backup(self):
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             self.state,
             event(
                 3,
@@ -64,12 +65,12 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
         self.assertEqual("BACKUP_ROUTED", result["status"])
 
     def test_backup_acceptance_acknowledges_after_routing(self):
-        backup_routed = apply_event(
+        backup_routed = scripts.org03_events.apply_event(
             self.state,
             event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
             authorized_responder_refs=AUTH,
         )
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             backup_routed,
             event(
                 4,
@@ -83,7 +84,7 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
         self.assertEqual("ACKNOWLEDGED", result["status"])
 
     def test_missed_primary_deadline_routes_to_backup(self):
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             self.state,
             event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
             authorized_responder_refs=AUTH,
@@ -91,7 +92,7 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
         self.assertEqual("BACKUP_ROUTED", result["status"])
 
     def test_backup_decline_escalates_to_owner(self):
-        backup_routed = apply_event(
+        backup_routed = scripts.org03_events.apply_event(
             self.state,
             event(
                 3,
@@ -102,7 +103,7 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
             ),
             authorized_responder_refs=AUTH,
         )
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             backup_routed,
             event(
                 4,
@@ -116,12 +117,12 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
         self.assertEqual("AUTHORITY_ESCALATED", result["status"])
 
     def test_missed_backup_deadline_escalates_to_owner(self):
-        backup_routed = apply_event(
+        backup_routed = scripts.org03_events.apply_event(
             self.state,
             event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
             authorized_responder_refs=AUTH,
         )
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             backup_routed,
             event(4, "BACKUP_ACK_DEADLINE_MISSED"),
             authorized_responder_refs=AUTH,
@@ -129,8 +130,8 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
         self.assertEqual("AUTHORITY_ESCALATED", result["status"])
 
     def test_owner_acknowledgement_completes_acknowledgement_not_closure(self):
-        escalated = apply_event(
-            apply_event(
+        escalated = scripts.org03_events.apply_event(
+            scripts.org03_events.apply_event(
                 self.state,
                 event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
                 authorized_responder_refs=AUTH,
@@ -138,7 +139,7 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
             event(4, "BACKUP_ACK_DEADLINE_MISSED"),
             authorized_responder_refs=AUTH,
         )
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             escalated,
             event(
                 5,
@@ -153,8 +154,8 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
         self.assertNotEqual("CLOSED", result["status"])
 
     def test_unauthorized_responder_cannot_acknowledge(self):
-        with self.assertRaises(TransitionError):
-            apply_event(
+        with self.assertRaises(scripts.org03_events.TransitionError):
+            scripts.org03_events.apply_event(
                 self.state,
                 event(
                     3,
@@ -167,8 +168,8 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
             )
 
     def test_bot_delivery_receipt_cannot_be_human_ack(self):
-        with self.assertRaises(TransitionError):
-            apply_event(
+        with self.assertRaises(scripts.org03_events.TransitionError):
+            scripts.org03_events.apply_event(
                 self.state,
                 event(
                     3,
@@ -181,11 +182,11 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
             )
 
     def test_ack_before_confirmed_delivery_is_rejected(self):
-        initial = new_alert(
+        initial = scripts.org03_events.new_alert(
             "SYNTHETIC-ALERT-02", "CRITICAL", "2026-11-13T07:00:00Z"
         )
-        with self.assertRaises(TransitionError):
-            apply_event(
+        with self.assertRaises(scripts.org03_events.TransitionError):
+            scripts.org03_events.apply_event(
                 initial,
                 event(
                     2,
@@ -199,21 +200,23 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
 
     def test_duplicate_or_out_of_order_sequence_is_rejected(self):
         bad = event(4, "PRIMARY_ACK_DEADLINE_MISSED")
-        with self.assertRaises(TransitionError):
-            apply_event(self.state, bad, authorized_responder_refs=AUTH)
+        with self.assertRaises(scripts.org03_events.TransitionError):
+            scripts.org03_events.apply_event(
+                self.state, bad, authorized_responder_refs=AUTH
+            )
 
     def test_failed_delivery_never_claims_human_acknowledgement(self):
-        initial = new_alert(
+        initial = scripts.org03_events.new_alert(
             "SYNTHETIC-ALERT-03", "MEDIUM", "2026-11-13T07:00:00Z"
         )
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             initial,
             event(2, "DELIVERY_FAILED"),
             authorized_responder_refs=AUTH,
         )
         self.assertEqual("DELIVERY_UNCONFIRMED", result["status"])
-        with self.assertRaises(TransitionError):
-            apply_event(
+        with self.assertRaises(scripts.org03_events.TransitionError):
+            scripts.org03_events.apply_event(
                 result,
                 event(
                     3,
@@ -227,7 +230,7 @@ class Org03AcknowledgementTransitionTests(unittest.TestCase):
 
     def test_history_is_append_only_and_prior_state_is_unchanged(self):
         original = copy.deepcopy(self.state)
-        result = apply_event(
+        result = scripts.org03_events.apply_event(
             self.state,
             event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
             authorized_responder_refs=AUTH,
