@@ -7,7 +7,6 @@ loads restricted identity/contact records and never sends notifications.
 import datetime
 import typing
 
-
 ACTIVE = "ACTIVE"
 
 
