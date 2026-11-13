@@ -251,3 +251,18 @@ Owner message on 2026-11-13: “Start amendments and I approve implementation.�
 | Operational readiness | NOT VERIFIED |
 | Production readiness | NOT READY |
 | A5 | NOT AUTHORIZED |
+
+## 13. Staged implementation record — 2026-11-13
+
+Owner authorization is recorded in Section 11. The first implementation increment addresses R2, R4, R5, and R6 in the isolated test adapter. R1 and R3 remain pending and must not be represented as implemented.
+
+| Requirement | Implemented in current increment | Verification |
+|---|---|---|
+| R1 authenticated HMAC chain and protected checkpoint | NOT STARTED | NOT RUN |
+| R2 aggregate + event replay in one explicit read transaction | IMPLEMENTED | Exact-head workflow pending |
+| R3 immutable historical authority registry/version and revocation semantics | NOT STARTED | NOT RUN |
+| R4 mandatory non-empty role-specific field scopes and explicit projection | IMPLEMENTED | Exact-head workflow pending |
+| R5 complete request fingerprint and original result snapshot | IMPLEMENTED | Exact-head workflow pending |
+| R6 deterministic connection closure and bounded writer-lock retry | IMPLEMENTED | Exact-head workflow pending |
+
+The first implementation increment does not close R1 or R3, and does not close A4. R1 remains the integrity/authenticity blocker; R3 remains the historical-authority blocker. Do not merge or deploy based on this increment.
