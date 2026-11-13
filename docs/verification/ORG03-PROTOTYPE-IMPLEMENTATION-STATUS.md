@@ -221,3 +221,64 @@ The 29 passing ORG-03 tests cover the current R2/R4/R5/R6 increment and prior sy
 - A5: NOT AUTHORIZED.
 
 No merge, deployment, production database selection, Django runtime integration, real identity/record processing, live notification, institutional rehearsal, or production key provisioning occurred. Main and unrelated work remain untouched.
+
+
+## 13. R1/R3 implementation and exact-head verification — 2026-11-13
+
+This section supersedes earlier R1/R3 NOT IMPLEMENTED statements. It records the synthetic-only remediation at source SHA `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`.
+
+### 13.1 R1 — authenticated event integrity and checkpoint
+
+- Event rows carry an explicit `HMAC-SHA-256` algorithm identifier, key ID, event MAC, and chained previous/event hashes.
+- HMAC authenticates the alert ID, event ID, sequence, idempotency key, event payload, request fingerprint, result snapshot, previous hash, algorithm and key ID.
+- Key material is caller-supplied and retained in process memory; it is not written to SQLite. Synthetic keys are test fixtures only.
+- Retained old keys allow historical verification after rotation. Unknown, unavailable or explicitly revoked keys fail closed.
+- A separate checkpoint file is stored outside the SQLite database in a restricted sibling directory. It is HMAC-authenticated, atomically replaced, fsynced, and checked for monotonic sequence/head consistency.
+- Read verification captures the checkpoint before beginning the SQLite snapshot transaction, preventing a concurrent writer from changing the checkpoint observed by a reader already holding an older database snapshot.
+- Acceptance coverage includes full database rewrite with recomputed public hashes, event-ID substitution, event truncation with aggregate rewrite, unknown/revoked key, key rotation, checkpoint MAC tampering, checkpoint rollback, and tampered request/result snapshots.
+
+### 13.2 R3 — immutable historical authority and revocation
+
+- Synthetic authority versions are append-only and HMAC-authenticated; database triggers reject update/delete.
+- Evidence binds principal, role, alert scope, version, valid-from UTC, effective revocation UTC, and key ID.
+- Each human event embeds the signed authority evidence, which is covered by the event HMAC.
+- Replay validates the embedded evidence against the immutable registry, its version signature and the latest effective revocation.
+- Replay derives responder identity and role from authenticated event evidence; it does not trust a mutable current responder mapping.
+- Acceptance coverage includes historical acceptance before revocation, rejection at/after effective revocation, altered authority evidence, cross-principal substitution, cross-alert scope reuse, current-mapping substitution, system-event authority injection, and a concurrent revocation/acknowledgement boundary race.
+
+### 13.3 Exact-head Linux verification
+
+- **Branch:** `a3/org-03-responder-operations`
+- **Verified implementation SHA:** `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`
+- **Workflow:** [A3 quality checks — run 43408089840](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43408089840)
+- **Runner:** Ubuntu 24.04
+- **Conclusion:** SUCCESS; run head SHA matches the verified implementation SHA.
+- Django system check: PASS.
+- Django suite: **158 passed**.
+- Dedicated ORG-03 suite: **84 passed**.
+- JUnit XML: **84 tests, 0 failures, 0 errors, 0 skipped**.
+- Ruff lint: PASS.
+- Ruff format: PASS; 76 files already formatted.
+- Dependency audit: PASS; no known vulnerabilities found.
+- Evidence artifact: [org03-linux-test-evidence — artifact 14027659042](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43408089840/artifacts/14027659042), 14-day retention.
+
+### 13.4 Second-pass security review and remaining limitations
+
+An internal second-pass review was completed against the implementation and acceptance evidence. It is **not an independent external review**. A designated external reviewer has not yet been supplied or obtained; A4 therefore remains OPEN pending that review.
+
+Residual synthetic-prototype limitations:
+- The checkpoint is a separate authenticated file on the same host/filesystem, not a remote or independently administered monotonic anchor. An attacker able to alter both the database and checkpoint directory, or compromise process memory, is outside this prototype's protection boundary.
+- SQLite commit and checkpoint-file replacement are not one atomic cross-resource transaction. A crash between them can leave a stale checkpoint and cause fail-closed unavailability; trusted recovery/re-anchoring is not implemented.
+- Revoking an integrity key makes records authenticated by that key unverifiable. Production key-compromise recovery and external trust-root governance are not implemented.
+- Authority/event timestamps are synthetic caller-provided UTC values. Production must use a trusted server acceptance clock and institutionally authenticated authority issuance/revocation.
+- The authority registry, HMAC key provisioning, and policy harness are not integrated into Django authentication or a production identity/authorization service.
+
+### 13.5 Gate decision
+
+- R1–R6 synthetic remediation: **IMPLEMENTED — 6/6 (100%)**.
+- A3 for this remediation scope: **IMPLEMENTATION COMPLETE**.
+- A4: **PARTIAL / OPEN** — exact-head CI verified; independent external security re-review and institutional evidence remain outstanding.
+- Operational readiness: **NOT VERIFIED**.
+- Production readiness: **NOT READY**.
+- A5: **NOT AUTHORIZED**.
+- No merge, deployment, production key provisioning, real identities/data, live notifications, or institutional rehearsal occurred.
