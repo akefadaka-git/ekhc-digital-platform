@@ -77,6 +77,12 @@ jobs:
       - name: Ruff lint
         run: ruff check .
 
+      - name: Stage ORG-03 source for formatting repair
+        if: always()
+        run: |
+          mkdir -p artifacts/formatting
+          cp scripts/org03_event_store.py tests/test_org03_event_store.py artifacts/formatting/
+
       - name: Ruff format check
         run: ruff format --check .
 
@@ -91,5 +97,7 @@ jobs:
           path: |
             artifacts/org03-junit.xml
             artifacts/org03-tests.log
+            artifacts/formatting/org03_event_store.py
+            artifacts/formatting/test_org03_event_store.py
           if-no-files-found: warn
           retention-days: 14
