@@ -1,5 +1,4 @@
 """Synthetic-only acknowledgement and escalation state-machine tests."""
-from __future__ import annotations
 
 import unittest
 from copy import deepcopy
