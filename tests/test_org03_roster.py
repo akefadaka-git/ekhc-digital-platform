@@ -1,5 +1,4 @@
 """Synthetic-only tests for ORG-03 roster validation."""
-from __future__ import annotations
 
 import json
 import unittest
