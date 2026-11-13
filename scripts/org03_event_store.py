@@ -726,7 +726,7 @@ class Org03EventStore:
                     connection.commit()
                     return original_result
 
-                event = self._authority_for_event(connection, event)
+                event = self._authority_for_event(connection, event, alert_id)
                 event_json = _canonical(event)
                 aggregate = connection.execute(
                     "SELECT priority, version FROM org03_aggregates WHERE alert_id = ?",
@@ -744,7 +744,6 @@ class Org03EventStore:
                     connection,
                     alert_id,
                     aggregate["priority"],
-                    authorized_responder_refs,
                 )
                 if state["next_sequence"] != expected_version + 1:
                     raise EventLogIntegrityError(
@@ -754,7 +753,7 @@ class Org03EventStore:
                 updated = apply_event(
                     state,
                     event,
-                    authorized_responder_refs=authorized_responder_refs,
+                    authorized_responder_refs=self._responder_refs_for_event(event),
                 )
                 previous = connection.execute(
                     "SELECT sequence, event_hash FROM org03_events "
@@ -826,7 +825,6 @@ class Org03EventStore:
         connection: sqlite3.Connection,
         alert_id: str,
         priority: str,
-        authorized_responder_refs: dict[str, str],
     ) -> dict:
         rows = connection.execute(
             "SELECT * FROM org03_events WHERE alert_id = ? ORDER BY sequence",
@@ -849,7 +847,7 @@ class Org03EventStore:
                 raise EventLogIntegrityError("event sequence gap or duplicate")
             if row["previous_hash"] != previous_hash:
                 raise EventLogIntegrityError("event hash-chain predecessor mismatch")
-            self._verify_authority_event(connection, event)
+            self._verify_authority_event(connection, event, alert_id)
             if row["algorithm"] != "HMAC-SHA-256":
                 raise EventLogIntegrityError(
                     "unsupported event authentication algorithm"
@@ -884,7 +882,7 @@ class Org03EventStore:
                     state = apply_event(
                         state,
                         event,
-                        authorized_responder_refs=authorized_responder_refs,
+                        authorized_responder_refs=self._responder_refs_for_event(event),
                     )
                 except TransitionError as exc:
                     raise EventLogIntegrityError(
@@ -911,7 +909,6 @@ class Org03EventStore:
                     connection,
                     alert_id,
                     aggregate["priority"],
-                    authorized_responder_refs,
                 )
                 last_event = connection.execute(
                     "SELECT sequence, event_hash FROM org03_events "
