@@ -563,7 +563,9 @@ class Org03EventStore:
             revoked_at is not None and at_utc >= revoked_at
         ):
             raise AuthorityError("historical authority is not valid at event time")
-        payload = {key: value for key, value in evidence.items() if key != "evidence_mac"}
+        payload = {
+            key: value for key, value in evidence.items() if key != "evidence_mac"
+        }
         if evidence.get("schema") != "ORG03-AUTHORITY-V1":
             raise AuthorityError("authority evidence schema is invalid")
         if not hmac.compare_digest(
