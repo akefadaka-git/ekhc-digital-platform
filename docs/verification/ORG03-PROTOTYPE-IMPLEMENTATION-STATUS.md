@@ -172,3 +172,52 @@ Owner approval to implement was received on 2026-11-13. The approved synthetic-o
 Workflow run for prior exact head `dee411f7c0ac4a2f24b19044ae9b85cfe91791c5` exposed one failure in the new original-result test scenario (the test attempted an invalid deadline transition after acknowledgement). That test was corrected on `bafd014c1bd9444cbb1e2a386e7e433974aaa6c2`. The corrected test scenario passed on `bafd014c1bd9444cbb1e2a386e7e433974aaa6c2` (123 Django tests and 29 ORG-03 tests), but Ruff lint failed on line-length/import-format findings. Those findings were corrected in commits `cf598abed933d2fc034bbdb6e07e1b9dd311c08e` and `686e26cc4e494c82884942a4ddd2ed37bddc5496`. Exact-head workflow `43401866233` is running on `686e26cc4e494c82884942a4ddd2ed37bddc5496`; JUnit, logs, Ruff, formatting and dependency audit remain pending inspection.
 
 A4 remains OPEN. Production readiness remains NOT READY. No merge, deployment, production runtime integration, real identities/data, live notifications, institutional rehearsal or A5 action occurred.
+
+
+## 12. Exact-head verification after R2/R4/R5/R6 formatting repair — 2026-11-13
+
+This section supersedes the pending verification statement in Section 11.4 for the current implementation increment.
+
+- **Verified branch:** `a3/org-03-responder-operations`
+- **Exact verified source SHA:** `579014b5b563509914528fdef090e8a3a7cb21a1`
+- **Quality workflow:** [A3 quality checks — run 43403751986](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43403751986)
+- **Read-only security monitor:** [run 43403752069](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43403752069)
+- **Runner:** Ubuntu 24.04
+- **Quality workflow conclusion:** SUCCESS; workflow head SHA matches the branch head at verification.
+- **JUnit/log artifact:** [org03-linux-test-evidence — artifact 14025958139](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43403751986/artifacts/14025958139), 14-day retention.
+
+### 12.1 Exact evidence inspected
+
+- Django system check: PASS; no issues.
+- Full Django test suite: **123 passed**.
+- Dedicated ORG-03 suite: **29 passed**.
+- JUnit XML: **29 tests, 0 failures, 0 errors, 0 skipped**; duration 1.145504 seconds.
+- Ruff lint: PASS.
+- Ruff format: PASS; 74 files already formatted.
+- Dependency audit: PASS; no known vulnerabilities found.
+- Required-file checks, artifact upload: PASS.
+
+The immediately preceding run `43401992698` failed only because Ruff format identified two unformatted files. Those exact findings were corrected in commits `58a8256a33d7cc067d6304e335dcb9d4095e77e1` and `579014b5b563509914528fdef090e8a3a7cb21a1`; the latter exact-head run passed all quality steps.
+
+### 12.2 Remediation work-package status
+
+| Requirement | Implementation status | Verification status |
+|---|---|---|
+| R1 — HMAC-authenticated event chain and independently protected checkpoint/rollback verification | **NOT IMPLEMENTED** | NOT RUN |
+| R2 — single-snapshot aggregate and event replay | IMPLEMENTED | PASS in exact-head suite |
+| R3 — immutable historical authority evidence and effective-time revocation | **NOT IMPLEMENTED** | NOT RUN |
+| R4 — mandatory field scope and explicit projection | IMPLEMENTED | PASS in exact-head suite |
+| R5 — complete idempotency request identity and original result | IMPLEMENTED | PASS in exact-head suite |
+| R6 — deterministic connection closure and bounded contention | IMPLEMENTED | PASS in exact-head suite |
+
+The 29 passing ORG-03 tests cover the current R2/R4/R5/R6 increment and prior synthetic event-store behavior. They do **not** test R1 authenticated integrity/checkpoint rollback or R3 historical authority/revocation. The unkeyed SHA-256 event chain remains insufficient against a database writer able to rewrite and recompute the complete history.
+
+### 12.3 Gate and scope conclusion
+
+- A3 implementation: PARTIAL — R2/R4/R5/R6 implemented; R1/R3 remain outstanding.
+- A4 verification: OPEN — the passing exact-head workflow verifies only the implemented increment; R1/R3, independent security re-review, and institutional evidence remain outstanding.
+- Operational readiness: NOT VERIFIED.
+- Production readiness: NOT READY.
+- A5: NOT AUTHORIZED.
+
+No merge, deployment, production database selection, Django runtime integration, real identity/record processing, live notification, institutional rehearsal, or production key provisioning occurred. Main and unrelated work remain untouched.
