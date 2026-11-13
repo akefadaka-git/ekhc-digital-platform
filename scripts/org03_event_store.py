@@ -5,8 +5,6 @@ provide synthetic responder references. SQLite files should be temporary test
 artifacts; this module does not configure production storage.
 """
 
-# ruff: noqa: E501
-
 from __future__ import annotations
 
 import hashlib
@@ -56,7 +54,6 @@ class AuthorityError(EventStoreError):
     """Synthetic historical authority evidence is invalid."""
 
 
-
 def _canonical(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
@@ -64,9 +61,11 @@ def _canonical(value: Any) -> str:
 def _utc_timestamp(value: str) -> datetime:
     """Parse one explicit UTC timestamp; reject local or ambiguous clock values."""
     if not isinstance(value, str) or not value.endswith("Z"):
-        raise AuthorityError("authority timestamps must be explicit UTC ISO-8601 values")
+        raise AuthorityError(
+            "authority timestamps must be explicit UTC ISO-8601 values"
+        )
     try:
-        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+        parsed = datetime.fromisoformat(value)
     except ValueError as exc:
         raise AuthorityError("authority timestamp is invalid") from exc
     if parsed.tzinfo != UTC:
@@ -99,7 +98,16 @@ class Org03EventStore:
 
     GENESIS_HASH = "0" * 64
 
-    def __init__(self, path: str | Path, *, timeout_seconds: float = 10.0, integrity_keys: dict[str, bytes] | None = None, active_key_id: str = "synthetic-test-v1", revoked_key_ids: frozenset[str] = frozenset(), checkpoint_dir: str | Path | None = None):
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        timeout_seconds: float = 10.0,
+        integrity_keys: dict[str, bytes] | None = None,
+        active_key_id: str = "synthetic-test-v1",
+        revoked_key_ids: frozenset[str] = frozenset(),
+        checkpoint_dir: str | Path | None = None,
+    ):
         self.path = str(path)
         if timeout_seconds <= 0:
             raise ValueError("timeout_seconds must be positive")
@@ -114,7 +122,9 @@ class Org03EventStore:
             or len(key) < 32
             for key_id, key in self._integrity_keys.items()
         ):
-            raise ValueError("integrity keys require non-empty IDs and at least 32 bytes")
+            raise ValueError(
+                "integrity keys require non-empty IDs and at least 32 bytes"
+            )
         if active_key_id not in self._integrity_keys:
             raise IntegrityKeyError("active integrity key is unavailable")
         self.checkpoint_dir = Path(checkpoint_dir or (self.path + ".org03-checkpoints"))
@@ -212,13 +222,21 @@ class Org03EventStore:
                 BEGIN SELECT RAISE(ABORT, 'authority versions are immutable'); END;
             """)
 
-
     def _key(self, key_id: str) -> bytes:
         if key_id in self.revoked_key_ids or key_id not in self._integrity_keys:
             raise IntegrityKeyError("integrity key is unknown, unavailable, or revoked")
         return self._integrity_keys[key_id]
 
-    def _event_envelope(self, alert_id, event_id, sequence, idempotency_key, event_json, previous_hash, key_id):
+    def _event_envelope(
+        self,
+        alert_id,
+        event_id,
+        sequence,
+        idempotency_key,
+        event_json,
+        previous_hash,
+        key_id,
+    ):
         return {
             "schema": "ORG03-EVENT-INTEGRITY-V1",
             "algorithm": "HMAC-SHA-256",
@@ -232,10 +250,14 @@ class Org03EventStore:
         }
 
     def _mac(self, key_id: str, payload: dict) -> str:
-        return hmac.new(self._key(key_id), _canonical(payload).encode("utf-8"), hashlib.sha256).hexdigest()
+        return hmac.new(
+            self._key(key_id), _canonical(payload).encode("utf-8"), hashlib.sha256
+        ).hexdigest()
 
     def _checkpoint_path(self, alert_id: str) -> Path:
-        return self.checkpoint_dir / (hashlib.sha256(alert_id.encode("utf-8")).hexdigest() + ".json")
+        return self.checkpoint_dir / (
+            hashlib.sha256(alert_id.encode("utf-8")).hexdigest() + ".json"
+        )
 
     def _write_checkpoint(self, alert_id: str, sequence: int, event_hash: str) -> None:
         key_id = self.active_key_id
@@ -252,7 +274,9 @@ class Org03EventStore:
         if path.exists():
             current = json.loads(path.read_text(encoding="utf-8"))
             old_payload = {k: v for k, v in current.items() if k != "mac"}
-            if not hmac.compare_digest(current.get("mac", ""), self._mac(old_payload["key_id"], old_payload)):
+            if not hmac.compare_digest(
+                current.get("mac", ""), self._mac(old_payload["key_id"], old_payload)
+            ):
                 raise CheckpointError("existing checkpoint authentication failed")
             if old_payload["sequence"] > sequence:
                 return
@@ -291,14 +315,24 @@ class Org03EventStore:
             raise CheckpointError("checkpoint authentication failed")
         return payload
 
-    def _verify_checkpoint(self, alert_id: str, sequence: int, event_hash: str, payload: dict | None = None) -> None:
+    def _verify_checkpoint(
+        self, alert_id: str, sequence: int, event_hash: str, payload: dict | None = None
+    ) -> None:
         payload = payload or self._read_checkpoint(alert_id)
-        if payload.get("schema") != "ORG03-CHECKPOINT-V1" or payload.get("alert_id") != alert_id:
+        if (
+            payload.get("schema") != "ORG03-CHECKPOINT-V1"
+            or payload.get("alert_id") != alert_id
+        ):
             raise CheckpointError("checkpoint identity mismatch")
-        if payload.get("sequence") != sequence or payload.get("event_hash") != event_hash:
+        if (
+            payload.get("sequence") != sequence
+            or payload.get("event_hash") != event_hash
+        ):
             raise CheckpointError("database head differs from independent checkpoint")
 
-    def _authority_payload(self, principal_ref, role, version, valid_from, revoked_at, key_id):
+    def _authority_payload(
+        self, principal_ref, role, version, valid_from, revoked_at, key_id
+    ):
         return {
             "schema": "ORG03-AUTHORITY-V1",
             "principal_ref": principal_ref,
@@ -309,17 +343,31 @@ class Org03EventStore:
             "key_id": key_id,
         }
 
-    def register_authority(self, principal_ref: str, role: str, valid_from_utc: str) -> int:
-        if not isinstance(principal_ref, str) or not principal_ref.startswith("SYNTHETIC-") or not role or role == "SYSTEM":
-            raise AuthorityError("only synthetic human principals and roles can be registered")
+    def register_authority(
+        self, principal_ref: str, role: str, valid_from_utc: str
+    ) -> int:
+        if (
+            not isinstance(principal_ref, str)
+            or not principal_ref.startswith("SYNTHETIC-")
+            or not role
+            or role == "SYSTEM"
+        ):
+            raise AuthorityError(
+                "only synthetic human principals and roles can be registered"
+            )
         _utc_timestamp(valid_from_utc)
         key_id = self.active_key_id
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
-                if connection.execute("SELECT 1 FROM org03_authority_versions WHERE principal_ref = ?", (principal_ref,)).fetchone():
+                if connection.execute(
+                    "SELECT 1 FROM org03_authority_versions WHERE principal_ref = ?",
+                    (principal_ref,),
+                ).fetchone():
                     raise AuthorityError("authority registration is immutable")
-                payload = self._authority_payload(principal_ref, role, 1, valid_from_utc, None, key_id)
+                payload = self._authority_payload(
+                    principal_ref, role, 1, valid_from_utc, None, key_id
+                )
                 signature = self._mac(key_id, payload)
                 connection.execute(
                     "INSERT INTO org03_authority_versions VALUES (?, ?, 1, ?, NULL, ?, ?)",
@@ -346,11 +394,26 @@ class Org03EventStore:
                     raise AuthorityError("revocation cannot precede authority validity")
                 version = latest["version"] + 1
                 key_id = self.active_key_id
-                payload = self._authority_payload(principal_ref, latest["role"], version, latest["valid_from_utc"], effective_at_utc, key_id)
+                payload = self._authority_payload(
+                    principal_ref,
+                    latest["role"],
+                    version,
+                    latest["valid_from_utc"],
+                    effective_at_utc,
+                    key_id,
+                )
                 signature = self._mac(key_id, payload)
                 connection.execute(
                     "INSERT INTO org03_authority_versions VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (principal_ref, latest["role"], version, latest["valid_from_utc"], effective_at_utc, key_id, signature),
+                    (
+                        principal_ref,
+                        latest["role"],
+                        version,
+                        latest["valid_from_utc"],
+                        effective_at_utc,
+                        key_id,
+                        signature,
+                    ),
                 )
                 connection.commit()
                 return version
@@ -372,10 +435,16 @@ class Org03EventStore:
         latest = rows[-1]
         for row in rows:
             payload = self._authority_payload(
-                row["principal_ref"], row["role"], row["version"],
-                row["valid_from_utc"], row["revoked_at_utc"], row["key_id"]
+                row["principal_ref"],
+                row["role"],
+                row["version"],
+                row["valid_from_utc"],
+                row["revoked_at_utc"],
+                row["key_id"],
             )
-            if not hmac.compare_digest(row["evidence_mac"], self._mac(row["key_id"], payload)):
+            if not hmac.compare_digest(
+                row["evidence_mac"], self._mac(row["key_id"], payload)
+            ):
                 raise AuthorityError("stored authority version authentication failed")
         at_utc = event.get("at_utc", "")
         if latest["role"] != role or at_utc < latest["valid_from_utc"]:
@@ -383,11 +452,18 @@ class Org03EventStore:
         if latest["revoked_at_utc"] is not None and at_utc >= latest["revoked_at_utc"]:
             raise AuthorityError("authority is revoked at event time")
         payload = self._authority_payload(
-            latest["principal_ref"], latest["role"], latest["version"],
-            latest["valid_from_utc"], latest["revoked_at_utc"], latest["key_id"]
+            latest["principal_ref"],
+            latest["role"],
+            latest["version"],
+            latest["valid_from_utc"],
+            latest["revoked_at_utc"],
+            latest["key_id"],
         )
         event = dict(event)
-        event["authority_evidence"] = {**payload, "evidence_mac": latest["evidence_mac"]}
+        event["authority_evidence"] = {
+            **payload,
+            "evidence_mac": latest["evidence_mac"],
+        }
         return event
 
     def _verify_authority_event(self, connection, event):
@@ -400,32 +476,63 @@ class Org03EventStore:
         if not isinstance(evidence, dict):
             raise AuthorityError("human event lacks historical authority evidence")
         principal_ref = event.get("actor_ref")
-        if evidence.get("principal_ref") != principal_ref or evidence.get("role") != role:
-            raise AuthorityError("authority evidence is bound to a different principal or role")
+        if (
+            evidence.get("principal_ref") != principal_ref
+            or evidence.get("role") != role
+        ):
+            raise AuthorityError(
+                "authority evidence is bound to a different principal or role"
+            )
         at_utc = _utc_timestamp(event.get("at_utc", ""))
         valid_from = _utc_timestamp(evidence.get("valid_from_utc", ""))
         revoked_at_value = evidence.get("revoked_at_utc")
         revoked_at = _utc_timestamp(revoked_at_value) if revoked_at_value else None
         if at_utc < valid_from or (revoked_at is not None and at_utc >= revoked_at):
             raise AuthorityError("historical authority is not valid at event time")
-        payload = {key: value for key, value in evidence.items() if key != "evidence_mac"}
+        payload = {
+            key: value for key, value in evidence.items() if key != "evidence_mac"
+        }
         if evidence.get("schema") != "ORG03-AUTHORITY-V1":
             raise AuthorityError("authority evidence schema is invalid")
-        if not hmac.compare_digest(evidence.get("evidence_mac", ""), self._mac(evidence.get("key_id", ""), payload)):
+        if not hmac.compare_digest(
+            evidence.get("evidence_mac", ""),
+            self._mac(evidence.get("key_id", ""), payload),
+        ):
             raise AuthorityError("historical authority evidence authentication failed")
-        rows = connection.execute("SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version", (principal_ref,)).fetchall()
+        rows = connection.execute(
+            "SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version",
+            (principal_ref,),
+        ).fetchall()
         if not rows:
             raise AuthorityError("historical authority registry entry is missing")
         version = evidence.get("version")
         if not isinstance(version, int) or version < 1 or version > len(rows):
             raise AuthorityError("historical authority version is unavailable")
         registered = rows[version - 1]
-        expected_payload = self._authority_payload(registered["principal_ref"], registered["role"], registered["version"], registered["valid_from_utc"], registered["revoked_at_utc"], registered["key_id"])
+        expected_payload = self._authority_payload(
+            registered["principal_ref"],
+            registered["role"],
+            registered["version"],
+            registered["valid_from_utc"],
+            registered["revoked_at_utc"],
+            registered["key_id"],
+        )
         if payload != expected_payload or registered["version"] != version:
-            raise AuthorityError("event evidence does not match its immutable registry version")
+            raise AuthorityError(
+                "event evidence does not match its immutable registry version"
+            )
         for row in rows:
-            signed = self._authority_payload(row["principal_ref"], row["role"], row["version"], row["valid_from_utc"], row["revoked_at_utc"], row["key_id"])
-            if not hmac.compare_digest(row["evidence_mac"], self._mac(row["key_id"], signed)):
+            signed = self._authority_payload(
+                row["principal_ref"],
+                row["role"],
+                row["version"],
+                row["valid_from_utc"],
+                row["revoked_at_utc"],
+                row["key_id"],
+            )
+            if not hmac.compare_digest(
+                row["evidence_mac"], self._mac(row["key_id"], signed)
+            ):
                 raise AuthorityError("authority registry tampering detected")
         latest_revocation = rows[-1]["revoked_at_utc"]
         if latest_revocation and at_utc >= _utc_timestamp(latest_revocation):
@@ -441,7 +548,18 @@ class Org03EventStore:
             self.GENESIS_HASH, alert_id, event_id, 1, idempotency_key, event_json
         )
         key_id = self.active_key_id
-        event_mac = self._mac(key_id, self._event_envelope(alert_id, event_id, 1, idempotency_key, event_json, self.GENESIS_HASH, key_id))
+        event_mac = self._mac(
+            key_id,
+            self._event_envelope(
+                alert_id,
+                event_id,
+                1,
+                idempotency_key,
+                event_json,
+                self.GENESIS_HASH,
+                key_id,
+            ),
+        )
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
@@ -499,14 +617,16 @@ class Org03EventStore:
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
-                request_json = _canonical({
-                    "alert_id": alert_id,
-                    "event_id": event_id,
-                    "idempotency_key": idempotency_key,
-                    "expected_version": expected_version,
-                    "event_type": event.get("event"),
-                    "event_json": _canonical(event),
-                })
+                request_json = _canonical(
+                    {
+                        "alert_id": alert_id,
+                        "event_id": event_id,
+                        "idempotency_key": idempotency_key,
+                        "expected_version": expected_version,
+                        "event_type": event.get("event"),
+                        "event_json": _canonical(event),
+                    }
+                )
                 prior = connection.execute(
                     "SELECT event_id, event_json, request_json, result_json "
                     "FROM org03_events "
@@ -564,7 +684,9 @@ class Org03EventStore:
                     "WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
                     (alert_id,),
                 ).fetchone()
-                self._verify_checkpoint(alert_id, previous["sequence"], previous["event_hash"])
+                self._verify_checkpoint(
+                    alert_id, previous["sequence"], previous["event_hash"]
+                )
                 previous_hash = previous["event_hash"]
                 sequence = event["sequence"]
                 event_hash = _digest(
@@ -576,7 +698,18 @@ class Org03EventStore:
                     event_json,
                 )
                 key_id = self.active_key_id
-                event_mac = self._mac(key_id, self._event_envelope(alert_id, event_id, sequence, idempotency_key, event_json, previous_hash, key_id))
+                event_mac = self._mac(
+                    key_id,
+                    self._event_envelope(
+                        alert_id,
+                        event_id,
+                        sequence,
+                        idempotency_key,
+                        event_json,
+                        previous_hash,
+                        key_id,
+                    ),
+                )
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
                     "idempotency_key, event_json, request_json, result_json, "
@@ -640,7 +773,18 @@ class Org03EventStore:
                 raise EventLogIntegrityError("event hash-chain predecessor mismatch")
             self._verify_authority_event(connection, event)
             key_id = row["key_id"]
-            calculated_mac = self._mac(key_id, self._event_envelope(row["alert_id"], row["event_id"], row["sequence"], row["idempotency_key"], row["event_json"], previous_hash, key_id))
+            calculated_mac = self._mac(
+                key_id,
+                self._event_envelope(
+                    row["alert_id"],
+                    row["event_id"],
+                    row["sequence"],
+                    row["idempotency_key"],
+                    row["event_json"],
+                    previous_hash,
+                    key_id,
+                ),
+            )
             if not hmac.compare_digest(row["event_mac"], calculated_mac):
                 raise EventLogIntegrityError("event HMAC verification failed")
             calculated = _digest(
@@ -691,7 +835,12 @@ class Org03EventStore:
                     "SELECT sequence, event_hash FROM org03_events WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
                     (alert_id,),
                 ).fetchone()
-                self._verify_checkpoint(alert_id, last_event["sequence"], last_event["event_hash"], checkpoint_snapshot)
+                self._verify_checkpoint(
+                    alert_id,
+                    last_event["sequence"],
+                    last_event["event_hash"],
+                    checkpoint_snapshot,
+                )
                 if aggregate["version"] != state["next_sequence"] - 1:
                     raise EventLogIntegrityError(
                         "aggregate version differs from event log"
