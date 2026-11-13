@@ -4,6 +4,7 @@ The caller-supplied principal is a test fixture, not a verified identity.
 This module intentionally has no integration with Django, sessions, tokens,
 institutional directories, or restricted records.
 """
+
 from dataclasses import dataclass
 
 
