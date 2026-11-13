@@ -81,6 +81,8 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.store.create_alert(
             "SYNTHETIC-ALERT-STORE-01", "HIGH", "2026-11-13T07:00:00Z"
         )
+        self.store.register_authority(AUTH["primary"], "PRIMARY_SECURITY_OPERATIONS", "2026-11-13T06:00:00Z")
+        self.store.register_authority(AUTH["backup"], "BACKUP_SECURITY_OPERATIONS", "2026-11-13T06:00:00Z")
         self.store.append_event(
             "SYNTHETIC-ALERT-STORE-01",
             make_event(2, "DELIVERY_CONFIRMED"),
