@@ -80,14 +80,13 @@ def apply_event(
             raise TransitionError("delivery failure is not valid from this state")
         next_status = "DELIVERY_UNCONFIRMED"
     elif name in {"HUMAN_ACKNOWLEDGED", "HUMAN_UNABLE_TO_ACCEPT"}:
-        if current != "AWAITING_HUMAN_ACK":
-            raise TransitionError("human acknowledgement requires confirmed delivery")
         expected = {
-            "PRIMARY_SECURITY_OPERATIONS": "primary",
-            "BACKUP_SECURITY_OPERATIONS": "backup",
-            "OWNER_OR_DELEGATE": "owner_or_delegate",
+            "PRIMARY_SECURITY_OPERATIONS": ("primary", "AWAITING_HUMAN_ACK"),
+            "BACKUP_SECURITY_OPERATIONS": ("backup", "BACKUP_ROUTED"),
         }.get(actor_role)
-        if expected is None or authorized_responder_refs.get(expected) != actor_ref:
+        if expected is None or current != expected[1]:
+            raise TransitionError("human acknowledgement is invalid for this role or state")
+        if authorized_responder_refs.get(expected[0]) != actor_ref:
             raise TransitionError("actor is not the currently authorized responder for this role")
         if name == "HUMAN_ACKNOWLEDGED":
             if event.get("disposition") != "ACCEPTED":
@@ -98,10 +97,8 @@ def apply_event(
                 raise TransitionError("decline must explicitly be UNABLE_TO_ACCEPT")
             if actor_role == "PRIMARY_SECURITY_OPERATIONS":
                 next_status = "BACKUP_ROUTED"
-            elif actor_role == "BACKUP_SECURITY_OPERATIONS":
-                next_status = "AUTHORITY_ESCALATED"
             else:
-                raise TransitionError("Owner/delegate cannot decline into another escalation tier")
+                next_status = "AUTHORITY_ESCALATED"
     elif name == "PRIMARY_ACK_DEADLINE_MISSED":
         if current != "AWAITING_HUMAN_ACK" or actor_role != "SYSTEM":
             raise TransitionError("primary deadline event is invalid from this state")
