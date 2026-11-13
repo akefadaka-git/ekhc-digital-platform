@@ -12,8 +12,6 @@ from typing import Any
 
 INITIAL_STATE = "RECEIVED"
 VALID_PRIORITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
-VALID_DISPOSITIONS = {"ACCEPTED", "UNABLE_TO_ACCEPT"}
-VALID_ROLES = {"PRIMARY_SECURITY_OPERATIONS", "BACKUP_SECURITY_OPERATIONS", "OWNER_OR_DELEGATE"}
 
 
 class TransitionError(ValueError):
@@ -32,20 +30,26 @@ def _valid_utc(value: Any) -> bool:
 
 def new_alert(alert_id: str, priority: str, received_at_utc: str) -> dict[str, Any]:
     """Create an immutable-by-convention alert state with an initial event."""
-    if not alert_id or priority not in VALID_PRIORITIES or not _valid_utc(received_at_utc):
+    if (
+        not alert_id
+        or priority not in VALID_PRIORITIES
+        or not _valid_utc(received_at_utc)
+    ):
         raise TransitionError("alert ID, priority or UTC timestamp is invalid")
     return {
         "alert_id": alert_id,
         "priority": priority,
         "status": INITIAL_STATE,
         "next_sequence": 2,
-        "history": [{
-            "sequence": 1,
-            "event": "RECEIVED",
-            "at_utc": received_at_utc,
-            "actor_role": "SYSTEM",
-            "actor_ref": "SYNTHETIC-SYSTEM",
-        }],
+        "history": [
+            {
+                "sequence": 1,
+                "event": "RECEIVED",
+                "at_utc": received_at_utc,
+                "actor_role": "SYSTEM",
+                "actor_ref": "SYNTHETIC-SYSTEM",
+            }
+        ],
     }
 
 
@@ -62,6 +66,7 @@ def apply_event(
         raise TransitionError("event timestamp must be ISO-8601 UTC ending in Z")
     if event.get("sequence") != state.get("next_sequence"):
         raise TransitionError("event sequence must be the next monotonic sequence")
+
     actor_role = event.get("actor_role")
     actor_ref = event.get("actor_ref")
     if not isinstance(actor_role, str) or not isinstance(actor_ref, str):
@@ -71,15 +76,24 @@ def apply_event(
     name = event.get("event")
     next_status: str
 
+    if name in {
+        "DELIVERY_CONFIRMED",
+        "DELIVERY_FAILED",
+        "PRIMARY_ACK_DEADLINE_MISSED",
+        "BACKUP_ACK_DEADLINE_MISSED",
+    }:
+        if actor_role != "SYSTEM" or actor_ref != "SYNTHETIC-SYSTEM":
+            raise TransitionError("system transition requires the synthetic system actor")
+
     if name == "DELIVERY_CONFIRMED":
-        if current not in {"RECEIVED", "DELIVERY_PENDING"} or actor_role != "SYSTEM":
+        if current not in {"RECEIVED", "DELIVERY_PENDING"}:
             raise TransitionError("delivery confirmation is not valid from this state")
         next_status = "AWAITING_HUMAN_ACK"
     elif name == "DELIVERY_FAILED":
-        if current not in {"RECEIVED", "DELIVERY_PENDING"} or actor_role != "SYSTEM":
+        if current not in {"RECEIVED", "DELIVERY_PENDING"}:
             raise TransitionError("delivery failure is not valid from this state")
         next_status = "DELIVERY_UNCONFIRMED"
-    elif name in {"HUMAN_ACKNOWLEDGED", "HUMAN_UNABLE_TO_ACCEPT"}:
+    elif name == "HUMAN_ACKNOWLEDGED" or name == "HUMAN_UNABLE_TO_ACCEPT":
         expected = {
             "PRIMARY_SECURITY_OPERATIONS": ("primary", "AWAITING_HUMAN_ACK"),
             "BACKUP_SECURITY_OPERATIONS": ("backup", "BACKUP_ROUTED"),
@@ -87,7 +101,9 @@ def apply_event(
         if expected is None or current != expected[1]:
             raise TransitionError("human acknowledgement is invalid for this role or state")
         if authorized_responder_refs.get(expected[0]) != actor_ref:
-            raise TransitionError("actor is not the currently authorized responder for this role")
+            raise TransitionError(
+                "actor is not the currently authorized responder for this role"
+            )
         if name == "HUMAN_ACKNOWLEDGED":
             if event.get("disposition") != "ACCEPTED":
                 raise TransitionError("acknowledgement must explicitly be ACCEPTED")
@@ -100,11 +116,11 @@ def apply_event(
             else:
                 next_status = "AUTHORITY_ESCALATED"
     elif name == "PRIMARY_ACK_DEADLINE_MISSED":
-        if current != "AWAITING_HUMAN_ACK" or actor_role != "SYSTEM":
+        if current != "AWAITING_HUMAN_ACK":
             raise TransitionError("primary deadline event is invalid from this state")
         next_status = "BACKUP_ROUTED"
     elif name == "BACKUP_ACK_DEADLINE_MISSED":
-        if current != "BACKUP_ROUTED" or actor_role != "SYSTEM":
+        if current != "BACKUP_ROUTED":
             raise TransitionError("backup deadline event is invalid from this state")
         next_status = "AUTHORITY_ESCALATED"
     elif name == "OWNER_AUTHORITY_ACKNOWLEDGED":
