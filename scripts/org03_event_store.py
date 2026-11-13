@@ -150,8 +150,8 @@ class Org03EventStore:
         event_hash = _digest(
             self.GENESIS_HASH, alert_id, event_id, 1, idempotency_key, event_json
         )
-        with self._connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
+        with self._connection() as connection:
+            self._begin_immediate(connection)
             try:
                 connection.execute(
                     "INSERT INTO org03_aggregates(alert_id, priority, version, status) "
@@ -190,8 +190,8 @@ class Org03EventStore:
         if not event_id or not idempotency_key:
             raise EventStoreError("event_id and idempotency_key are required")
         event_json = _canonical(event)
-        with self._connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
+        with self._connection() as connection:
+            self._begin_immediate(connection)
             try:
                 prior = connection.execute(
                     "SELECT event_json FROM org03_events "
@@ -361,7 +361,7 @@ class Org03EventStore:
                 raise
 
     def event_count(self, alert_id: str) -> int:
-        with self._connect() as connection:
+        with self._connection() as connection:
             row = connection.execute(
                 "SELECT COUNT(*) AS count FROM org03_events WHERE alert_id = ?",
                 (alert_id,),
