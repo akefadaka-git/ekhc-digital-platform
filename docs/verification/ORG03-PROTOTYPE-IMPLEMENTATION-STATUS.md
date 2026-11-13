@@ -78,3 +78,13 @@ Prior CI runs `43384771796` and `43384771790` apply only to the earlier source h
 ## 7. Next verification step
 
 Run the repository's existing quality workflow against the exact implementation head `10195cac0ccf8075d585d680a6d9d04940d18c98` using an available no-cost GitHub Actions route. Resolve any syntax, formatting, lint, or test failures, then repeat exact-head verification. Only after the unit tests pass should the prototype be extended to multi-process concurrency and controlled crash-injection tests.
+
+## 8. Verification refinement after initial implementation
+
+Two follow-up commits refined the prototype:
+- `c0659d26fcca09314f35d141824b9447f6e043fe`: bind alert ID, event ID, sequence, idempotency key, and canonical event payload into the event hash chain; use the aggregate update row count for compare-and-update validation.
+- `c8f516e1ed07110c63bc7f368b472ee87254b4c3`: add separate concurrent primary-ack/deadline and backup-ack/deadline races, plus same-version duplicate backup acknowledgement arbitration.
+
+The final implementation head for this increment is `c8f516e1ed07110c63bc7f368b472ee87254b4c3`.
+
+The race tests are still **AUTHORED / NOT RUN**. The hash chain remains tamper-evident rather than authenticated: a database writer able to rewrite the full log can recompute an unkeyed SHA-256 chain. Independent process-level crash injection and multi-process stress testing remain outstanding.
