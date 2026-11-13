@@ -83,7 +83,8 @@ class Org03EventStore:
         try:
             connection.row_factory = sqlite3.Row
             connection.execute("PRAGMA foreign_keys = ON")
-            connection.execute(f"PRAGMA busy_timeout = {int(min(self.timeout_seconds, 0.1) * 1000)}")
+            busy_timeout_ms = int(min(self.timeout_seconds, 0.1) * 1000)
+            connection.execute(f"PRAGMA busy_timeout = {busy_timeout_ms}")
             return connection
         except Exception:
             connection.close()
@@ -112,7 +113,9 @@ class Org03EventStore:
                     raise
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
-                    raise EventStoreBusy("SQLite remained busy past the retry deadline") from exc
+                    raise EventStoreBusy(
+                        "SQLite remained busy past the retry deadline"
+                    ) from exc
                 time.sleep(min(delay, remaining))
                 delay = min(delay * 2, 0.1)
 
@@ -162,7 +165,8 @@ class Org03EventStore:
                 )
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
-                    "idempotency_key, event_json, request_json, result_json, previous_hash, event_hash) "
+                    "idempotency_key, event_json, request_json, result_json, "
+                    "previous_hash, event_hash) "
                     "VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)",
                     (
                         event_id,
@@ -213,17 +217,23 @@ class Org03EventStore:
             self._begin_immediate(connection)
             try:
                 prior = connection.execute(
-                    "SELECT event_id, event_json, request_json, result_json FROM org03_events "
+                    "SELECT event_id, event_json, request_json, result_json "
+                    "FROM org03_events "
                     "WHERE alert_id = ? AND idempotency_key = ?",
                     (alert_id, idempotency_key),
                 ).fetchone()
                 if prior is not None:
-                    if prior["request_json"] != request_json or prior["event_id"] != event_id:
+                    if (
+                        prior["request_json"] != request_json
+                        or prior["event_id"] != event_id
+                    ):
                         raise IdempotencyConflict(
                             "idempotency key was already used for a different request"
                         )
                     if prior["result_json"] is None:
-                        raise EventLogIntegrityError("idempotent result snapshot is missing")
+                        raise EventLogIntegrityError(
+                            "idempotent result snapshot is missing"
+                        )
                     original_result = json.loads(prior["result_json"])
                     connection.commit()
                     return original_result
@@ -372,9 +382,13 @@ class Org03EventStore:
                     authorized_responder_refs,
                 )
                 if aggregate["version"] != state["next_sequence"] - 1:
-                    raise EventLogIntegrityError("aggregate version differs from event log")
+                    raise EventLogIntegrityError(
+                        "aggregate version differs from event log"
+                    )
                 if aggregate["status"] != state["status"]:
-                    raise EventLogIntegrityError("aggregate status differs from event log")
+                    raise EventLogIntegrityError(
+                        "aggregate status differs from event log"
+                    )
                 connection.commit()
                 return state
             except Exception:
