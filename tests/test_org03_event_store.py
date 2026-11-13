@@ -2,6 +2,7 @@
 import concurrent.futures
 import sqlite3
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 
@@ -54,14 +55,57 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         return self.store.append_event(
             "SYNTHETIC-ALERT-STORE-01",
             make_event(
-                3, "HUMAN_ACKNOWLEDGED", "PRIMARY_SECURITY_OPERATIONS",
-                AUTH["primary"], disposition="ACCEPTED"
+                3,
+                "HUMAN_ACKNOWLEDGED",
+                "PRIMARY_SECURITY_OPERATIONS",
+                AUTH["primary"],
+                disposition="ACCEPTED",
             ),
             expected_version=2,
             event_id=event_id,
             idempotency_key=key,
             authorized_responder_refs=AUTH,
         )
+
+    def _race_two_events(self, first_event, second_event, *, expected_version):
+        barrier = threading.Barrier(2)
+
+        def attempt(event, event_id, key):
+            barrier.wait()
+            try:
+                result = self.store.append_event(
+                    "SYNTHETIC-ALERT-STORE-01",
+                    event,
+                    expected_version=expected_version,
+                    event_id=event_id,
+                    idempotency_key=key,
+                    authorized_responder_refs=AUTH,
+                )
+                return ("committed", result["status"])
+            except StaleAggregateVersion:
+                return ("stale", None)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = list(
+                pool.map(
+                    lambda args: attempt(*args),
+                    [
+                        (
+                            first_event,
+                            "SYNTHETIC-RACE-EVENT-A",
+                            "SYNTHETIC-RACE-IDEM-A",
+                        ),
+                        (
+                            second_event,
+                            "SYNTHETIC-RACE-EVENT-B",
+                            "SYNTHETIC-RACE-IDEM-B",
+                        ),
+                    ],
+                )
+            )
+        self.assertEqual(1, sum(item[0] == "committed" for item in outcomes))
+        self.assertEqual(1, sum(item[0] == "stale" for item in outcomes))
+        return outcomes
 
     def test_committed_events_survive_new_store_instance(self):
         self.append_primary()
@@ -73,7 +117,25 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(3, len(state["history"]))
         self.assertEqual(3, reopened.event_count("SYNTHETIC-ALERT-STORE-01"))
 
-    def test_concurrent_primary_and_backup_attempts_only_one_wins(self):
+    def test_primary_ack_racing_primary_deadline_has_one_winner(self):
+        self._race_two_events(
+            make_event(
+                3,
+                "HUMAN_ACKNOWLEDGED",
+                "PRIMARY_SECURITY_OPERATIONS",
+                AUTH["primary"],
+                disposition="ACCEPTED",
+            ),
+            make_event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
+            expected_version=2,
+        )
+        state = self.store.load_state(
+            "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
+        )
+        self.assertIn(state["status"], {"ACKNOWLEDGED", "BACKUP_ROUTED"})
+        self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
+
+    def test_backup_ack_racing_backup_deadline_has_one_winner(self):
         self.store.append_event(
             "SYNTHETIC-ALERT-STORE-01",
             make_event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
@@ -82,38 +144,49 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             idempotency_key="SYNTHETIC-IDEM-03",
             authorized_responder_refs=AUTH,
         )
-        barrier = __import__("threading").Barrier(2)
+        self._race_two_events(
+            make_event(
+                4,
+                "HUMAN_ACKNOWLEDGED",
+                "BACKUP_SECURITY_OPERATIONS",
+                AUTH["backup"],
+                disposition="ACCEPTED",
+            ),
+            make_event(4, "BACKUP_ACK_DEADLINE_MISSED"),
+            expected_version=3,
+        )
+        state = self.store.load_state(
+            "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
+        )
+        self.assertIn(state["status"], {"ACKNOWLEDGED", "AUTHORITY_ESCALATED"})
+        self.assertEqual(4, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
 
-        def attempt(role, actor, event_id, key):
-            barrier.wait()
-            try:
-                result = self.store.append_event(
-                    "SYNTHETIC-ALERT-STORE-01",
-                    make_event(
-                        4, "HUMAN_ACKNOWLEDGED", role, actor,
-                        disposition="ACCEPTED"
-                    ),
-                    expected_version=3,
-                    event_id=event_id,
-                    idempotency_key=key,
-                    authorized_responder_refs=AUTH,
-                )
-                return ("committed", result["status"])
-            except StaleAggregateVersion:
-                return ("stale", None)
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            outcomes = list(pool.map(
-                lambda args: attempt(*args),
-                [
-                    ("BACKUP_SECURITY_OPERATIONS", AUTH["backup"],
-                     "SYNTHETIC-EVENT-04A", "SYNTHETIC-IDEM-04A"),
-                    ("BACKUP_SECURITY_OPERATIONS", AUTH["backup"],
-                     "SYNTHETIC-EVENT-04B", "SYNTHETIC-IDEM-04B"),
-                ],
-            ))
-        self.assertEqual(1, sum(outcome[0] == "committed" for outcome in outcomes))
-        self.assertEqual(1, sum(outcome[0] == "stale" for outcome in outcomes))
+    def test_concurrent_same_version_backup_ack_attempts_only_one_wins(self):
+        self.store.append_event(
+            "SYNTHETIC-ALERT-STORE-01",
+            make_event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
+            expected_version=2,
+            event_id="SYNTHETIC-EVENT-03",
+            idempotency_key="SYNTHETIC-IDEM-03",
+            authorized_responder_refs=AUTH,
+        )
+        self._race_two_events(
+            make_event(
+                4,
+                "HUMAN_ACKNOWLEDGED",
+                "BACKUP_SECURITY_OPERATIONS",
+                AUTH["backup"],
+                disposition="ACCEPTED",
+            ),
+            make_event(
+                4,
+                "HUMAN_ACKNOWLEDGED",
+                "BACKUP_SECURITY_OPERATIONS",
+                AUTH["backup"],
+                disposition="ACCEPTED",
+            ),
+            expected_version=3,
+        )
         self.assertEqual(4, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
 
     def test_duplicate_idempotent_retry_returns_committed_state(self):
@@ -155,8 +228,15 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
                     "idempotency_key, event_json, previous_hash, event_hash) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    ("SYNTHETIC-EVENT-BAD", "SYNTHETIC-ALERT-STORE-01", 2,
-                     "SYNTHETIC-IDEM-BAD", "{}", "bad", "bad"),
+                    (
+                        "SYNTHETIC-EVENT-BAD",
+                        "SYNTHETIC-ALERT-STORE-01",
+                        2,
+                        "SYNTHETIC-IDEM-BAD",
+                        "{}",
+                        "bad",
+                        "bad",
+                    ),
                 )
                 connection.commit()
         self.assertEqual(2, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
