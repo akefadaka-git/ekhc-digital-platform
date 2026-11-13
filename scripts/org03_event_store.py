@@ -173,14 +173,16 @@ class Org03EventStore:
                         alert_id,
                         idempotency_key,
                         event_json,
-                        _canonical({
-                            "alert_id": alert_id,
-                            "event_id": event_id,
-                            "idempotency_key": idempotency_key,
-                            "expected_version": 0,
-                            "event_type": "RECEIVED",
-                            "event_json": event_json,
-                        }),
+                        _canonical(
+                            {
+                                "alert_id": alert_id,
+                                "event_id": event_id,
+                                "idempotency_key": idempotency_key,
+                                "expected_version": 0,
+                                "event_type": "RECEIVED",
+                                "event_json": event_json,
+                            }
+                        ),
                         _canonical(state),
                         self.GENESIS_HASH,
                         event_hash,
@@ -205,14 +207,16 @@ class Org03EventStore:
         if not event_id or not idempotency_key:
             raise EventStoreError("event_id and idempotency_key are required")
         event_json = _canonical(event)
-        request_json = _canonical({
-            "alert_id": alert_id,
-            "event_id": event_id,
-            "idempotency_key": idempotency_key,
-            "expected_version": expected_version,
-            "event_type": event.get("event"),
-            "event_json": event_json,
-        })
+        request_json = _canonical(
+            {
+                "alert_id": alert_id,
+                "event_id": event_id,
+                "idempotency_key": idempotency_key,
+                "expected_version": expected_version,
+                "event_type": event.get("event"),
+                "event_json": event_json,
+            }
+        )
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
