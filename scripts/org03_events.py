@@ -55,10 +55,10 @@ def new_alert(
 
 def apply_event(
     state: dict[str, typing.Any],
-    event: dict[str, Any],
+    event: dict[str, typing.Any],
     *,
     authorized_responder_refs: dict[str, str],
-) -> dict[str, Any]:
+) -> dict[str, typing.Any]:
     """Validate one event and return a new state with an appended history row."""
     if not isinstance(state, dict) or not isinstance(event, dict):
         raise TransitionError("state and event must be objects")
