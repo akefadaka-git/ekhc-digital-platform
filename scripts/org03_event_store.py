@@ -107,8 +107,6 @@ class Org03EventStore:
         self._integrity_keys = dict(DEFAULT_SYNTHETIC_KEYS if integrity_keys is None else integrity_keys)
         self.active_key_id = active_key_id
         self.revoked_key_ids = frozenset(revoked_key_ids)
-        if active_key_id not in self._integrity_keys or active_key_id in self.revoked_key_ids:
-            raise IntegrityKeyError("active integrity key is unavailable")
         if any(not isinstance(key_id, str) or not key_id or not isinstance(key, bytes) or len(key) < 32 for key_id, key in self._integrity_keys.items()):
             raise ValueError("integrity keys require non-empty IDs and at least 32 bytes")
         self.checkpoint_dir = Path(checkpoint_dir or (self.path + ".org03-checkpoints"))
@@ -271,7 +269,7 @@ class Org03EventStore:
             if os.path.exists(temporary):
                 os.unlink(temporary)
 
-    def _verify_checkpoint(self, alert_id: str, sequence: int, event_hash: str) -> None:
+    def _read_checkpoint(self, alert_id: str) -> dict:
         path = self._checkpoint_path(alert_id)
         if not path.exists():
             raise CheckpointError("independent checkpoint is missing")
@@ -283,6 +281,10 @@ class Org03EventStore:
             raise CheckpointError("checkpoint cannot be verified") from exc
         if not hmac.compare_digest(checkpoint.get("mac", ""), expected):
             raise CheckpointError("checkpoint authentication failed")
+        return payload
+
+    def _verify_checkpoint(self, alert_id: str, sequence: int, event_hash: str, payload: dict | None = None) -> None:
+        payload = payload or self._read_checkpoint(alert_id)
         if payload.get("schema") != "ORG03-CHECKPOINT-V1" or payload.get("alert_id") != alert_id:
             raise CheckpointError("checkpoint identity mismatch")
         if payload.get("sequence") != sequence or payload.get("event_hash") != event_hash:
@@ -660,6 +662,7 @@ class Org03EventStore:
     def load_state(
         self, alert_id: str, *, authorized_responder_refs: dict[str, str]
     ) -> dict:
+        checkpoint_snapshot = self._read_checkpoint(alert_id)
         with self._connection() as connection:
             connection.execute("BEGIN")
             try:
@@ -680,7 +683,7 @@ class Org03EventStore:
                     "SELECT sequence, event_hash FROM org03_events WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
                     (alert_id,),
                 ).fetchone()
-                self._verify_checkpoint(alert_id, last_event["sequence"], last_event["event_hash"])
+                self._verify_checkpoint(alert_id, last_event["sequence"], last_event["event_hash"], checkpoint_snapshot)
                 if aggregate["version"] != state["next_sequence"] - 1:
                     raise EventLogIntegrityError(
                         "aggregate version differs from event log"
