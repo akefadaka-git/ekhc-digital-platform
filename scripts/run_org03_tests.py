@@ -145,6 +145,8 @@ def main() -> int:
         [
             loader.loadTestsFromName("tests.test_org03_event_store"),
             loader.loadTestsFromName("tests.test_org03_synthetic_access_policy"),
+            loader.loadTestsFromName("tests.test_org03_events"),
+            loader.loadTestsFromName("tests.test_org03_roster"),
         ]
     )
     result = JUnitRunner(verbosity=2).run(suite)
