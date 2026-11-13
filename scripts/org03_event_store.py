@@ -213,17 +213,6 @@ class Org03EventStore:
                     "ALTER TABLE org03_events ADD COLUMN algorithm "
                     "TEXT NOT NULL DEFAULT 'HMAC-SHA-256'"
                 )
-            authority_columns = {
-                row["name"]
-                for row in connection.execute(
-                    "PRAGMA table_info(org03_authority_versions)"
-                )
-            }
-            if "scope_ref" not in authority_columns:
-                connection.execute(
-                    "ALTER TABLE org03_authority_versions "
-                    "ADD COLUMN scope_ref TEXT NOT NULL DEFAULT 'UNSCOPED'"
-                )
             connection.executescript("""
                 CREATE TABLE IF NOT EXISTS org03_authority_versions (
                     principal_ref TEXT NOT NULL,
@@ -243,6 +232,17 @@ class Org03EventStore:
                 BEFORE DELETE ON org03_authority_versions
                 BEGIN SELECT RAISE(ABORT, 'authority versions are immutable'); END;
             """)
+            authority_columns = {
+                row["name"]
+                for row in connection.execute(
+                    "PRAGMA table_info(org03_authority_versions)"
+                )
+            }
+            if "scope_ref" not in authority_columns:
+                connection.execute(
+                    "ALTER TABLE org03_authority_versions "
+                    "ADD COLUMN scope_ref TEXT NOT NULL DEFAULT 'UNSCOPED'"
+                )
 
     def _key(self, key_id: str) -> bytes:
         if key_id in self.revoked_key_ids or key_id not in self._integrity_keys:
