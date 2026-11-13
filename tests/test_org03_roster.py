@@ -9,7 +9,7 @@ from scripts.org03_roster import is_operationally_ready, validate_roster
 
 
 TEMPLATE = (
-    Path(__file__).parents[1]
+    pathlib.Path(__file__).parents[1]
     / "docs"
     / "operations"
     / "org-03-roster-template.synthetic.json"
@@ -21,13 +21,13 @@ class Org03RosterValidationTests(unittest.TestCase):
         self.document = json.loads(TEMPLATE.read_text(encoding="utf-8"))
 
     def test_published_template_is_structurally_valid_but_not_ready(self):
-        result = validate_roster(self.document)
+        result = scripts.org03_roster.validate_roster(self.document)
         self.assertEqual([], result["errors"])
         self.assertTrue(result["blockers"])
-        self.assertFalse(is_operationally_ready(result))
+        self.assertFalse(scripts.org03_roster.is_operationally_ready(result))
 
     def test_same_person_cannot_be_primary_and_backup(self):
-        document = deepcopy(self.document)
+        document = copy.deepcopy(self.document)
         document["roster"]["primary"]["responder_ref"] = "SYNTHETIC-RESPONDER-1"
         document["roster"]["backup"]["responder_ref"] = "SYNTHETIC-RESPONDER-1"
         result = validate_roster(document)
