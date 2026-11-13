@@ -292,3 +292,35 @@ This verification applies to R2, R4, R5 and R6 only. R1 and R3 have **not** been
 | R6 — connection lifecycle and bounded contention | IMPLEMENTED / VERIFIED |
 
 No production keys, real identities, live notifications, runtime integration, merge, or deployment were introduced.
+
+
+## 15. Implementation disposition and acceptance evidence — 2026-11-13
+
+This section supersedes the earlier NOT IMPLEMENTED dispositions for R1 and R3. Implementation source SHA: `fca11fd4d975aa55e2bd2f7e975c832802eb7bf1`.
+
+| Requirement | Implemented control | Negative/concurrency acceptance coverage |
+|---|---|---|
+| R1 — authenticated integrity | HMAC-SHA-256 over event, request fingerprint, result snapshot, sequence, IDs, previous hash, algorithm and key ID; caller-supplied process-held keyring | Full DB rewrite with recomputed SHA chain; event substitution; unknown/revoked key; key rotation; request/result snapshot tampering |
+| R1 — independent checkpoint | Separately stored authenticated head checkpoint; atomic replace/fsync; sequence/head comparison; read-snapshot ordering | Checkpoint MAC tampering; checkpoint rollback; database truncation with aggregate rewrite; concurrent read/write snapshot |
+| R3 — historical authority | Immutable HMAC-signed version records; event-bound evidence; principal/role/alert scope; valid-from and effective revocation timestamps | Altered registry/evidence; cross-principal substitution; cross-alert scope reuse; system-event evidence injection |
+| R3 — revocation semantics | Append-only revocation version and replay-time comparison against latest effective revocation | Historical event before effective time accepted; event at/after effective time rejected; concurrent acknowledgement/revocation race; current responder mapping substitution |
+
+R2/R4/R5/R6 remain implemented and verified as recorded in Sections 11–14. R1/R3 are implemented in the isolated synthetic prototype only; they are not production runtime controls.
+
+### 15.1 Exact-head verification
+
+Run [43408089840](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43408089840) completed SUCCESS on Ubuntu 24.04 at the exact implementation SHA above:
+- Django: 158 passed; system check clean.
+- ORG-03: 84 passed.
+- JUnit: 84 tests, zero failures/errors/skips.
+- Ruff lint and format: PASS.
+- Dependency audit: PASS, no known vulnerabilities.
+- Artifact [14027659042](https://github.com/akefadaka-git/ekhc-digital-platform/actions/runs/43408089840/artifacts/14027659042) contains JUnit XML and console output.
+
+### 15.2 Security review gate
+
+Internal second-pass review is complete. Independent external review remains NOT OBTAINED because no designated reviewer identity/team has been provided. A4 remains OPEN until an independent reviewer assesses key custody, checkpoint trust boundary and crash recovery, event-chain authenticity, historical authority semantics, concurrency and tamper resistance.
+
+The prototype must not be represented as production-secure. Production requires separately administered/remote checkpoint anchoring, production KMS/HSM key custody and rotation governance, crash reconciliation, trusted event timestamps, institutional authority issuance/revocation, and integration with real authentication/authorization controls. Those items are outside the approved synthetic-only scope.
+
+A5 remains separate and NOT AUTHORIZED. No merge or deployment is authorized by this specification.
