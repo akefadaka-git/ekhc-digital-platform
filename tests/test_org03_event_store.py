@@ -317,6 +317,39 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
         self.assertEqual("AWAITING_HUMAN_ACK", state["status"])
 
+    def test_checkpoint_failure_after_database_commit_leaves_stale_sidecar(self):
+        original_write_checkpoint = self.store._write_checkpoint
+
+        def fail_checkpoint_write(*args, **kwargs):
+            raise OSError("synthetic checkpoint replacement failure")
+
+        self.store._write_checkpoint = fail_checkpoint_write
+        try:
+            with self.assertRaisesRegex(OSError, "synthetic checkpoint"):
+                self.append_primary()
+        finally:
+            self.store._write_checkpoint = original_write_checkpoint
+
+        self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
+        with self.store._connection() as connection:
+            aggregate = connection.execute(
+                "SELECT version, status FROM org03_aggregates WHERE alert_id = ?",
+                ("SYNTHETIC-ALERT-STORE-01",),
+            ).fetchone()
+        self.assertEqual(3, aggregate["version"])
+        self.assertEqual("ACKNOWLEDGED", aggregate["status"])
+
+        checkpoint = self.store._read_checkpoint("SYNTHETIC-ALERT-STORE-01")
+        self.assertEqual(2, checkpoint["sequence"])
+
+        with self.assertRaises(CheckpointError):
+            self.store.load_state(
+                "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
+            )
+
+        with self.assertRaises(CheckpointError):
+            self.append_primary()
+
     def test_corrupted_event_hash_fails_closed(self):
         with self.store._connect() as connection:
             connection.execute(
