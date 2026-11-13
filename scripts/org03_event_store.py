@@ -205,11 +205,13 @@ class Org03EventStore:
                 """
             )
             event_columns = {
-                row["name"] for row in connection.execute("PRAGMA table_info(org03_events)")
+                row["name"]
+                for row in connection.execute("PRAGMA table_info(org03_events)")
             }
             if "algorithm" not in event_columns:
                 connection.execute(
-                    "ALTER TABLE org03_events ADD COLUMN algorithm TEXT NOT NULL DEFAULT 'HMAC-SHA-256'"
+                    "ALTER TABLE org03_events ADD COLUMN algorithm "
+                    "TEXT NOT NULL DEFAULT 'HMAC-SHA-256'"
                 )
             authority_columns = {
                 row["name"]
@@ -411,7 +413,8 @@ class Org03EventStore:
             self._begin_immediate(connection)
             try:
                 latest = connection.execute(
-                    "SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version DESC LIMIT 1",
+                    "SELECT * FROM org03_authority_versions "
+                    "WHERE principal_ref = ? ORDER BY version DESC LIMIT 1",
                     (principal_ref,),
                 ).fetchone()
                 if latest is None or latest["revoked_at_utc"] is not None:
@@ -453,7 +456,8 @@ class Org03EventStore:
             return event
         principal_ref = event.get("actor_ref")
         rows = connection.execute(
-            "SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version",
+            "SELECT * FROM org03_authority_versions "
+            "WHERE principal_ref = ? ORDER BY version",
             (principal_ref,),
         ).fetchall()
         if not rows:
@@ -526,7 +530,8 @@ class Org03EventStore:
         ):
             raise AuthorityError("historical authority evidence authentication failed")
         rows = connection.execute(
-            "SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version",
+            "SELECT * FROM org03_authority_versions "
+            "WHERE principal_ref = ? ORDER BY version",
             (principal_ref,),
         ).fetchall()
         if not rows:
@@ -801,7 +806,9 @@ class Org03EventStore:
                 raise EventLogIntegrityError("event hash-chain predecessor mismatch")
             self._verify_authority_event(connection, event)
             if row["algorithm"] != "HMAC-SHA-256":
-                raise EventLogIntegrityError("unsupported event authentication algorithm")
+                raise EventLogIntegrityError(
+                    "unsupported event authentication algorithm"
+                )
             key_id = row["key_id"]
             calculated_mac = self._mac(
                 key_id,
@@ -862,7 +869,8 @@ class Org03EventStore:
                     authorized_responder_refs,
                 )
                 last_event = connection.execute(
-                    "SELECT sequence, event_hash FROM org03_events WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
+                    "SELECT sequence, event_hash FROM org03_events "
+                    "WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
                     (alert_id,),
                 ).fetchone()
                 self._verify_checkpoint(
