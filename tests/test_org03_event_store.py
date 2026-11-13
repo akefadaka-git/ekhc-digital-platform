@@ -949,6 +949,19 @@ class Org03R1R3NegativeTests(unittest.TestCase):
         with self.assertRaises(IntegrityKeyError):
             Org03EventStore(Path(self.temp.name) / "empty.sqlite3", integrity_keys={})
 
+    def test_system_event_cannot_claim_responder_authority(self):
+        event = make_event(3, "PRIMARY_ACK_DEADLINE_MISSED")
+        event["authority_evidence"] = {"principal_ref": AUTH["primary"]}
+        with self.assertRaises(AuthorityError):
+            self.store.append_event(
+                "SYNTHETIC-R1-ALERT",
+                event,
+                expected_version=2,
+                event_id="SYNTHETIC-R1-SYSTEM-AUTHORITY",
+                idempotency_key="SYNTHETIC-R1-SYSTEM-AUTHORITY-IDEM",
+                authorized_responder_refs=AUTH,
+            )
+
     def test_historical_authority_before_revocation_remains_valid(self):
         self.register_primary()
         self.store.revoke_authority(AUTH["primary"], "2026-11-13T07:04:00Z")
