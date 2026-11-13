@@ -211,10 +211,22 @@ class Org03EventStore:
                 connection.execute(
                     "ALTER TABLE org03_events ADD COLUMN algorithm TEXT NOT NULL DEFAULT 'HMAC-SHA-256'"
                 )
+            authority_columns = {
+                row["name"]
+                for row in connection.execute(
+                    "PRAGMA table_info(org03_authority_versions)"
+                )
+            }
+            if "scope_ref" not in authority_columns:
+                connection.execute(
+                    "ALTER TABLE org03_authority_versions "
+                    "ADD COLUMN scope_ref TEXT NOT NULL DEFAULT 'UNSCOPED'"
+                )
             connection.executescript("""
                 CREATE TABLE IF NOT EXISTS org03_authority_versions (
                     principal_ref TEXT NOT NULL,
                     role TEXT NOT NULL,
+                    scope_ref TEXT NOT NULL,
                     version INTEGER NOT NULL,
                     valid_from_utc TEXT NOT NULL,
                     revoked_at_utc TEXT,
