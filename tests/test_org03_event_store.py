@@ -14,16 +14,12 @@ from pathlib import Path
 from scripts.org03_event_store import (
     AuthorityError,
     CheckpointError,
-    AuthorityError,
-    CheckpointError,
     EventLogIntegrityError,
-    IntegrityKeyError,
     EventStoreBusy,
-    IntegrityKeyError,
     IdempotencyConflict,
+    IntegrityKeyError,
     Org03EventStore,
     StaleAggregateVersion,
-    _digest,
     _digest,
 )
 
