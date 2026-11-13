@@ -133,6 +133,8 @@ class Org03EventStore:
                     sequence INTEGER NOT NULL CHECK (sequence >= 1),
                     idempotency_key TEXT NOT NULL,
                     event_json TEXT NOT NULL,
+                    request_json TEXT,
+                    result_json TEXT,
                     previous_hash TEXT NOT NULL,
                     event_hash TEXT NOT NULL,
                     UNIQUE(alert_id, sequence),
@@ -160,13 +162,22 @@ class Org03EventStore:
                 )
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
-                    "idempotency_key, event_json, previous_hash, event_hash) "
-                    "VALUES (?, ?, 1, ?, ?, ?, ?)",
+                    "idempotency_key, event_json, request_json, result_json, previous_hash, event_hash) "
+                    "VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)",
                     (
                         event_id,
                         alert_id,
                         idempotency_key,
                         event_json,
+                        _canonical({
+                            "alert_id": alert_id,
+                            "event_id": event_id,
+                            "idempotency_key": idempotency_key,
+                            "expected_version": 0,
+                            "event_type": "RECEIVED",
+                            "event_json": event_json,
+                        }),
+                        _canonical(state),
                         self.GENESIS_HASH,
                         event_hash,
                     ),
@@ -190,24 +201,32 @@ class Org03EventStore:
         if not event_id or not idempotency_key:
             raise EventStoreError("event_id and idempotency_key are required")
         event_json = _canonical(event)
+        request_json = _canonical({
+            "alert_id": alert_id,
+            "event_id": event_id,
+            "idempotency_key": idempotency_key,
+            "expected_version": expected_version,
+            "event_type": event.get("event"),
+            "event_json": event_json,
+        })
         with self._connection() as connection:
             self._begin_immediate(connection)
             try:
                 prior = connection.execute(
-                    "SELECT event_json FROM org03_events "
+                    "SELECT event_id, event_json, request_json, result_json FROM org03_events "
                     "WHERE alert_id = ? AND idempotency_key = ?",
                     (alert_id, idempotency_key),
                 ).fetchone()
                 if prior is not None:
-                    if prior["event_json"] != event_json:
+                    if prior["request_json"] != request_json or prior["event_id"] != event_id:
                         raise IdempotencyConflict(
-                            "idempotency key was already used for a different event"
+                            "idempotency key was already used for a different request"
                         )
+                    if prior["result_json"] is None:
+                        raise EventLogIntegrityError("idempotent result snapshot is missing")
+                    original_result = json.loads(prior["result_json"])
                     connection.commit()
-                    return self.load_state(
-                        alert_id,
-                        authorized_responder_refs=authorized_responder_refs,
-                    )
+                    return original_result
 
                 aggregate = connection.execute(
                     "SELECT priority, version FROM org03_aggregates WHERE alert_id = ?",
@@ -254,14 +273,16 @@ class Org03EventStore:
                 )
                 connection.execute(
                     "INSERT INTO org03_events(event_id, alert_id, sequence, "
-                    "idempotency_key, event_json, previous_hash, event_hash) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "idempotency_key, event_json, request_json, result_json, previous_hash, event_hash) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         event_id,
                         alert_id,
                         sequence,
                         idempotency_key,
                         event_json,
+                        request_json,
+                        _canonical(updated),
                         previous_hash,
                         event_hash,
                     ),
