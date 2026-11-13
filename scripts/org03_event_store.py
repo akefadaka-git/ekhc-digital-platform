@@ -559,7 +559,9 @@ class Org03EventStore:
         valid_from = _utc_timestamp(evidence.get("valid_from_utc", ""))
         revoked_at_value = evidence.get("revoked_at_utc")
         revoked_at = _utc_timestamp(revoked_at_value) if revoked_at_value else None
-        if at_utc < valid_from or (revoked_at is not None and at_utc >= revoked_at):
+        if at_utc < valid_from or (
+            revoked_at is not None and at_utc >= revoked_at
+        ):
             raise AuthorityError("historical authority is not valid at event time")
         payload = {key: value for key, value in evidence.items() if key != "evidence_mac"}
         if evidence.get("schema") != "ORG03-AUTHORITY-V1":
