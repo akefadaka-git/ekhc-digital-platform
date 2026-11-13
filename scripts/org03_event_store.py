@@ -173,6 +173,24 @@ class Org03EventStore:
                 );
                 """
             )
+            connection.executescript("""
+                CREATE TABLE IF NOT EXISTS org03_authority_versions (
+                    principal_ref TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    version INTEGER NOT NULL,
+                    valid_from_utc TEXT NOT NULL,
+                    revoked_at_utc TEXT,
+                    key_id TEXT NOT NULL,
+                    evidence_mac TEXT NOT NULL,
+                    PRIMARY KEY(principal_ref, version)
+                );
+                CREATE TRIGGER IF NOT EXISTS org03_authority_no_update
+                BEFORE UPDATE ON org03_authority_versions
+                BEGIN SELECT RAISE(ABORT, 'authority versions are immutable'); END;
+                CREATE TRIGGER IF NOT EXISTS org03_authority_no_delete
+                BEFORE DELETE ON org03_authority_versions
+                BEGIN SELECT RAISE(ABORT, 'authority versions are immutable'); END;
+            """)
 
 
     def _key(self, key_id: str) -> bytes:
@@ -255,6 +273,115 @@ class Org03EventStore:
             raise CheckpointError("checkpoint identity mismatch")
         if payload.get("sequence") != sequence or payload.get("event_hash") != event_hash:
             raise CheckpointError("database head differs from independent checkpoint")
+
+    def _authority_payload(self, principal_ref, role, version, valid_from, revoked_at, key_id):
+        return {
+            "schema": "ORG03-AUTHORITY-V1",
+            "principal_ref": principal_ref,
+            "role": role,
+            "version": version,
+            "valid_from_utc": valid_from,
+            "revoked_at_utc": revoked_at,
+            "key_id": key_id,
+        }
+
+    def register_authority(self, principal_ref: str, role: str, valid_from_utc: str) -> int:
+        if not principal_ref.startswith("SYNTHETIC-") or not role or role == "SYSTEM":
+            raise AuthorityError("only synthetic human principals and roles can be registered")
+        key_id = self.active_key_id
+        with self._connection() as connection:
+            self._begin_immediate(connection)
+            try:
+                if connection.execute("SELECT 1 FROM org03_authority_versions WHERE principal_ref = ?", (principal_ref,)).fetchone():
+                    raise AuthorityError("authority registration is immutable")
+                payload = self._authority_payload(principal_ref, role, 1, valid_from_utc, None, key_id)
+                signature = self._mac(key_id, payload)
+                connection.execute(
+                    "INSERT INTO org03_authority_versions VALUES (?, ?, 1, ?, NULL, ?, ?)",
+                    (principal_ref, role, valid_from_utc, key_id, signature),
+                )
+                connection.commit()
+                return 1
+            except Exception:
+                connection.rollback()
+                raise
+
+    def revoke_authority(self, principal_ref: str, effective_at_utc: str) -> int:
+        with self._connection() as connection:
+            self._begin_immediate(connection)
+            try:
+                latest = connection.execute(
+                    "SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version DESC LIMIT 1",
+                    (principal_ref,),
+                ).fetchone()
+                if latest is None or latest["revoked_at_utc"] is not None:
+                    raise AuthorityError("authority is missing or already revoked")
+                version = latest["version"] + 1
+                key_id = self.active_key_id
+                payload = self._authority_payload(principal_ref, latest["role"], version, latest["valid_from_utc"], effective_at_utc, key_id)
+                signature = self._mac(key_id, payload)
+                connection.execute(
+                    "INSERT INTO org03_authority_versions VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (principal_ref, latest["role"], version, latest["valid_from_utc"], effective_at_utc, key_id, signature),
+                )
+                connection.commit()
+                return version
+            except Exception:
+                connection.rollback()
+                raise
+
+    def _authority_for_event(self, connection, event):
+        role = event.get("actor_role", "SYSTEM")
+        if role == "SYSTEM":
+            return event
+        principal_ref = event.get("actor_ref")
+        rows = connection.execute(
+            "SELECT * FROM org03_authority_versions WHERE principal_ref = ? ORDER BY version",
+            (principal_ref,),
+        ).fetchall()
+        if not rows:
+            raise AuthorityError("human event has no registered synthetic authority")
+        latest = rows[-1]
+        for row in rows:
+            payload = self._authority_payload(
+                row["principal_ref"], row["role"], row["version"],
+                row["valid_from_utc"], row["revoked_at_utc"], row["key_id"]
+            )
+            if not hmac.compare_digest(row["evidence_mac"], self._mac(row["key_id"], payload)):
+                raise AuthorityError("stored authority version authentication failed")
+        at_utc = event.get("at_utc", "")
+        if latest["role"] != role or at_utc < latest["valid_from_utc"]:
+            raise AuthorityError("principal or role is not authorized at event time")
+        if latest["revoked_at_utc"] is not None and at_utc >= latest["revoked_at_utc"]:
+            raise AuthorityError("authority is revoked at event time")
+        payload = self._authority_payload(
+            latest["principal_ref"], latest["role"], latest["version"],
+            latest["valid_from_utc"], latest["revoked_at_utc"], latest["key_id"]
+        )
+        event = dict(event)
+        event["authority_evidence"] = {**payload, "evidence_mac": latest["evidence_mac"]}
+        return event
+
+    def _verify_authority_event(self, event):
+        role = event.get("actor_role", "SYSTEM")
+        evidence = event.get("authority_evidence")
+        if role == "SYSTEM":
+            if evidence is not None:
+                raise AuthorityError("system event carries responder authority")
+            return
+        if not isinstance(evidence, dict):
+            raise AuthorityError("human event lacks historical authority evidence")
+        payload = {key: value for key, value in evidence.items() if key != "evidence_mac"}
+        if (
+            evidence.get("schema") != "ORG03-AUTHORITY-V1"
+            or evidence.get("principal_ref") != event.get("actor_ref")
+            or evidence.get("role") != role
+            or event.get("at_utc", "") < evidence.get("valid_from_utc", "")
+            or (evidence.get("revoked_at_utc") is not None and event.get("at_utc", "") >= evidence["revoked_at_utc"])
+        ):
+            raise AuthorityError("historical authority does not match event")
+        if not hmac.compare_digest(evidence.get("evidence_mac", ""), self._mac(evidence.get("key_id", ""), payload)):
+            raise AuthorityError("historical authority evidence authentication failed")
 
     def create_alert(self, alert_id: str, priority: str, received_at_utc: str) -> dict:
         state = new_alert(alert_id, priority, received_at_utc)
