@@ -964,7 +964,9 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             )
             event["authority_evidence"]["role"] = "OWNER_OR_DELEGATE"
             with self.assertRaises(AuthorityError):
-                self.store._verify_authority_event(connection, event, "SYNTHETIC-R1-ALERT")
+                self.store._verify_authority_event(
+                    connection, event, "SYNTHETIC-R1-ALERT"
+                )
 
     def test_cross_principal_evidence_substitution_is_rejected(self):
         self.register_primary()
