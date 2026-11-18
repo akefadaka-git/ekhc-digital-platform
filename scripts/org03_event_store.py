@@ -7,20 +7,19 @@ artifacts; this module does not configure production storage.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from datetime import UTC, datetime
 import hashlib
 import hmac
 import json
 import os
+from pathlib import Path
 import sqlite3
 import tempfile
 import time
-import uuid
-from contextlib import contextmanager
-from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
+import uuid
 
-from scripts.org03_events import TransitionError, apply_event, new_alert
 from scripts.org03_checkpoint_ledger import (
     Checkpoint,
     CheckpointAuthenticationError,
@@ -30,6 +29,7 @@ from scripts.org03_checkpoint_ledger import (
     HMACCheckpointSigner,
     SQLiteCheckpointLedger,
 )
+from scripts.org03_events import TransitionError, apply_event, new_alert
 
 
 class EventStoreError(RuntimeError):
@@ -227,7 +227,9 @@ class Org03EventStore:
                     checkpoint_version INTEGER NOT NULL CHECK (checkpoint_version >= 1),
                     created_at_utc TEXT NOT NULL,
                     status TEXT NOT NULL CHECK (
-                        status IN ('PENDING', 'LEASED', 'PUBLISHED', 'CONFLICT', 'INVALID')
+                        status IN (
+                            'PENDING', 'LEASED', 'PUBLISHED', 'CONFLICT', 'INVALID'
+                        )
                     ),
                     attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
                     lease_owner TEXT,
@@ -852,7 +854,10 @@ class Org03EventStore:
                             "AND sequence<=? ORDER BY sequence",
                             (item["alert_id"], head_sequence),
                         ).fetchall()
-                    if len(history) != head_sequence or len(database_history) != head_sequence:
+                    if (
+                        len(history) != head_sequence
+                        or len(database_history) != head_sequence
+                    ):
                         raise CheckpointAuthenticationError(
                             "ledger or database history is incomplete"
                         )
@@ -861,8 +866,10 @@ class Org03EventStore:
                     ):
                         if (
                             ledger_record.sequence != database_record["sequence"]
-                            or ledger_record.event_hash != database_record["event_hash"]
-                            or ledger_record.previous_hash != database_record["previous_hash"]
+                            or ledger_record.event_hash
+                            != database_record["event_hash"]
+                            or ledger_record.previous_hash
+                            != database_record["previous_hash"]
                         ):
                             raise CheckpointConflict(
                                 "ledger and database event histories diverge"
@@ -1090,7 +1097,8 @@ class Org03EventStore:
 
                 pending = connection.execute(
                     "SELECT 1 FROM org03_checkpoint_outbox "
-                    "WHERE alert_id=? AND status IN ('PENDING', 'LEASED', 'CONFLICT', 'INVALID')",
+                    "WHERE alert_id=? AND status IN "
+                    "('PENDING', 'LEASED', 'CONFLICT', 'INVALID')",
                     (alert_id,),
                 ).fetchone()
                 if pending is not None:

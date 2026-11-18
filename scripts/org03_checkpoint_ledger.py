@@ -7,13 +7,13 @@ independently administered ledger and protected asymmetric signer.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+from datetime import UTC, datetime
 import hashlib
 import hmac
 import json
-import sqlite3
-from contextlib import contextmanager
-from datetime import UTC, datetime
 from pathlib import Path
+import sqlite3
 from typing import NamedTuple, Protocol
 
 
