@@ -144,6 +144,7 @@ def main() -> int:
     suite = unittest.TestSuite(
         [
             loader.loadTestsFromName("tests.test_org03_event_store"),
+            loader.loadTestsFromName("tests.test_org03_checkpoint_ledger"),
             loader.loadTestsFromName("tests.test_org03_synthetic_access_policy"),
             loader.loadTestsFromName("tests.test_org03_events"),
             loader.loadTestsFromName("tests.test_org03_roster"),

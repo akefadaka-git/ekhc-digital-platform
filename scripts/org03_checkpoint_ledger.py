@@ -11,6 +11,8 @@ import hashlib
 import hmac
 import json
 import sqlite3
+from contextlib import contextmanager
+from datetime import UTC, datetime
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Protocol
@@ -118,8 +120,16 @@ class SQLiteCheckpointLedger:
         connection.execute("PRAGMA synchronous = FULL")
         return connection
 
+    @contextmanager
+    def _connection(self):
+        connection = self._connect()
+        try:
+            yield connection
+        finally:
+            connection.close()
+
     def _initialize(self) -> None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             mode = connection.execute("PRAGMA journal_mode = WAL").fetchone()[0]
             if str(mode).lower() != "wal":
                 raise CheckpointLedgerError("checkpoint ledger WAL mode unavailable")
@@ -172,12 +182,22 @@ class SQLiteCheckpointLedger:
         return record
 
     def head(self, alert_id: str) -> Checkpoint | None:
-        with self._connect() as connection:
-            row = connection.execute(
-                "SELECT * FROM org03_checkpoint_records WHERE alert_id=? "
-                "ORDER BY sequence DESC LIMIT 1", (alert_id,)
-            ).fetchone()
-        return self._verified_record(row)
+        with self._connection() as connection:
+            rows = connection.execute(
+                "SELECT * FROM org03_checkpoint_records WHERE alert_id=? ORDER BY sequence",
+                (alert_id,),
+            ).fetchall()
+        records = [self._verified_record(row) for row in rows]
+        previous_hash = GENESIS_HASH
+        for expected_sequence, record in enumerate(records, start=1):
+            if (
+                record.sequence != expected_sequence
+                or record.previous_sequence != expected_sequence - 1
+                or record.previous_hash != previous_hash
+            ):
+                raise CheckpointAuthenticationError("checkpoint history is not contiguous")
+            previous_hash = record.event_hash
+        return records[-1] if records else None
 
     def get(self, alert_id: str, sequence: int) -> Checkpoint | None:
         with self._connect() as connection:
@@ -196,10 +216,33 @@ class SQLiteCheckpointLedger:
                 "AND sequence BETWEEN ? AND ? ORDER BY sequence",
                 (alert_id, start, end),
             ).fetchall()
-        return [self._verified_record(row) for row in rows]
+        records = [self._verified_record(row) for row in rows]
+        previous = self.get(alert_id, start - 1) if start > 1 else None
+        previous_hash = previous.event_hash if previous else GENESIS_HASH
+        expected_sequence = start
+        for record in records:
+            if (
+                record.sequence != expected_sequence
+                or record.previous_sequence != expected_sequence - 1
+                or record.previous_hash != previous_hash
+            ):
+                raise CheckpointAuthenticationError("checkpoint history is not contiguous")
+            previous_hash = record.event_hash
+            expected_sequence += 1
+        if expected_sequence != end + 1:
+            raise CheckpointAuthenticationError("checkpoint history contains a sequence gap")
+        return records
 
     def compare_and_set(self, checkpoint: Checkpoint, signature: str) -> bool:
         """Advance exactly one sequence; return False for an exact idempotent repeat."""
+        try:
+            timestamp = datetime.fromisoformat(checkpoint.published_at_utc.replace("Z", "+00:00"))
+        except (TypeError, ValueError) as exc:
+            raise CheckpointConflict("checkpoint timestamp is invalid") from exc
+        if timestamp.tzinfo != UTC or not checkpoint.published_at_utc.endswith("Z"):
+            raise CheckpointConflict("checkpoint timestamp must be explicit UTC")
+        if checkpoint.sequence < 1 or checkpoint.checkpoint_version < 1:
+            raise CheckpointConflict("checkpoint sequence and version must be positive")
         if checkpoint.sequence != checkpoint.previous_sequence + 1:
             raise CheckpointConflict("checkpoint must advance exactly one sequence")
         if checkpoint.previous_sequence == 0 and checkpoint.previous_hash != GENESIS_HASH:
@@ -215,7 +258,12 @@ class SQLiteCheckpointLedger:
                 ).fetchone()
                 current = self._verified_record(row)
                 if current and current.sequence == checkpoint.sequence:
-                    if current == checkpoint:
+                    if (
+                        current.event_hash == checkpoint.event_hash
+                        and current.previous_sequence == checkpoint.previous_sequence
+                        and current.previous_hash == checkpoint.previous_hash
+                        and current.checkpoint_version == checkpoint.checkpoint_version
+                    ):
                         connection.commit()
                         return False
                     raise CheckpointConflict("same sequence has a different checkpoint")
