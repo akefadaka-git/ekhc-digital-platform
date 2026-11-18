@@ -783,7 +783,8 @@ class Org03DurableEventStoreTests(unittest.TestCase):
 
     def test_checkpoint_rollback_is_detected(self):
         self.append_primary()
-        with sqlite3.connect(str(self.path) + ".org03-test-ledger.sqlite3") as connection:
+        ledger_path = str(self.path) + ".org03-test-ledger.sqlite3"
+        with sqlite3.connect(ledger_path) as connection:
             connection.execute("DROP TRIGGER org03_checkpoint_no_delete")
             connection.execute(
                 "DELETE FROM org03_checkpoint_records "
