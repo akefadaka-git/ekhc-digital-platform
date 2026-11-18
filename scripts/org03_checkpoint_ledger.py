@@ -12,10 +12,9 @@ import hmac
 import json
 import sqlite3
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 
 GENESIS_HASH = "0" * 64
@@ -37,8 +36,7 @@ class CheckpointAuthenticationError(CheckpointLedgerError):
     """A checkpoint signature or stored record is invalid."""
 
 
-@dataclass(frozen=True)
-class Checkpoint:
+class Checkpoint(NamedTuple):
     alert_id: str
     sequence: int
     event_hash: str
@@ -49,7 +47,7 @@ class Checkpoint:
     published_at_utc: str
 
     def payload(self) -> dict[str, object]:
-        return asdict(self)
+        return self._asdict()
 
 
 class CheckpointSigner(Protocol):
