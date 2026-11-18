@@ -12,8 +12,8 @@ import hmac
 import json
 import sqlite3
 from contextlib import contextmanager
-from datetime import UTC, datetime
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
