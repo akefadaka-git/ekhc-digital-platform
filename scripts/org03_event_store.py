@@ -993,12 +993,16 @@ class Org03EventStore:
                 connection.rollback()
                 raise
         self._write_checkpoint(alert_id, 1, event_hash)
-        self.publish_checkpoint_outbox(
+        publication = self.publish_checkpoint_outbox(
             self._checkpoint_ledger,
             self._checkpoint_signer,
             worker_id=f"synthetic-inline-{os.getpid()}",
             limit=1,
         )
+        if publication["conflict"]:
+            raise CheckpointError("checkpoint ledger rejected the outbox publication")
+        if publication["invalid"]:
+            raise EventLogIntegrityError("checkpoint outbox failed event verification")
         return state
 
     def append_event(
@@ -1184,12 +1188,20 @@ class Org03EventStore:
                 )
                 connection.commit()
                 self._write_checkpoint(alert_id, sequence, event_hash)
-                self.publish_checkpoint_outbox(
+                publication = self.publish_checkpoint_outbox(
                     self._checkpoint_ledger,
                     self._checkpoint_signer,
                     worker_id=f"synthetic-inline-{os.getpid()}",
                     limit=1,
                 )
+                if publication["conflict"]:
+                    raise CheckpointError(
+                        "checkpoint ledger rejected the outbox publication"
+                    )
+                if publication["invalid"]:
+                    raise EventLogIntegrityError(
+                        "checkpoint outbox failed event verification"
+                    )
                 return updated
             except Exception:
                 connection.rollback()

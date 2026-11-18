@@ -278,6 +278,12 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual((0, 0, 0), (aggregate_count, event_count, outbox_count))
 
     def test_expired_worker_lease_can_be_reclaimed(self):
+        with self.store._connection() as connection:
+            connection.execute(
+                "UPDATE org03_checkpoint_outbox SET status='PENDING', "
+                "published_at_utc=NULL WHERE alert_id=? AND sequence=1",
+                ("SYNTHETIC-ALERT-STORE-01",),
+            )
         item = self.store._claim_checkpoint_outbox(
             "synthetic-worker-a", lease_seconds=60
         )
@@ -465,7 +471,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                 "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
             )
 
-        with self.assertRaises(CheckpointError):
+        with self.assertRaises(CheckpointPending):
             self.append_primary()
 
     def test_corrupted_event_hash_fails_closed(self):
