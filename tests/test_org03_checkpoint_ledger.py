@@ -1,4 +1,5 @@
 """Contract tests for the synthetic ORG-03 checkpoint ledger adapter."""
+
 import multiprocessing
 import tempfile
 import unittest

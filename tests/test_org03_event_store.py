@@ -70,7 +70,7 @@ def _process_append(
             authorized_responder_refs=AUTH,
         )
         queue.put(("committed", state["status"]))
-    except (StaleAggregateVersion, CheckpointPending):
+    except StaleAggregateVersion, CheckpointPending:
         queue.put(("blocked", None))
 
 
@@ -157,7 +157,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                     authorized_responder_refs=AUTH,
                 )
                 return ("committed", result["status"])
-            except (StaleAggregateVersion, CheckpointPending):
+            except StaleAggregateVersion, CheckpointPending:
                 return ("blocked", None)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
@@ -219,9 +219,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual("PENDING", pending["status"])
         self.assertEqual(
             "COMMITTED_PENDING_CHECKPOINT",
-            self.store.checkpoint_command_status(
-                "SYNTHETIC-ALERT-STORE-01", 3
-            ),
+            self.store.checkpoint_command_status("SYNTHETIC-ALERT-STORE-01", 3),
         )
         self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
 
@@ -322,9 +320,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
     def test_injected_ledger_is_published_by_worker_not_inline(self):
         path = Path(self.temp.name) / "external-ledger-event-store.sqlite3"
         ledger_path = Path(self.temp.name) / "external-checkpoint-ledger.sqlite3"
-        signer = HMACCheckpointSigner(
-            TEST_INTEGRITY_KEYS, "synthetic-test-v1"
-        )
+        signer = HMACCheckpointSigner(TEST_INTEGRITY_KEYS, "synthetic-test-v1")
         ledger = SQLiteCheckpointLedger(ledger_path, signer)
         store = make_store(
             path,
@@ -338,9 +334,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
         self.assertEqual(
             "COMMITTED_PENDING_CHECKPOINT",
-            store.checkpoint_command_status(
-                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", 1
-            ),
+            store.checkpoint_command_status("SYNTHETIC-EXTERNAL-LEDGER-ALERT", 1),
         )
         with self.assertRaises(CheckpointPending):
             store.append_event(
@@ -371,9 +365,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
         self.assertEqual(
             "COMMITTED_PENDING_CHECKPOINT",
-            store.checkpoint_command_status(
-                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", 2
-            ),
+            store.checkpoint_command_status("SYNTHETIC-EXTERNAL-LEDGER-ALERT", 2),
         )
         store.publish_checkpoint_outbox(
             ledger, signer, worker_id="synthetic-external-ledger-worker"
@@ -858,8 +850,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         with sqlite3.connect(ledger_path) as connection:
             connection.execute("DROP TRIGGER org03_checkpoint_no_delete")
             connection.execute(
-                "DELETE FROM org03_checkpoint_records "
-                "WHERE alert_id=? AND sequence=3",
+                "DELETE FROM org03_checkpoint_records WHERE alert_id=? AND sequence=3",
                 ("SYNTHETIC-ALERT-STORE-01",),
             )
         with self.assertRaises(CheckpointError):

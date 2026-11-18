@@ -5,7 +5,8 @@ filesystem failure domain with an event store and MUST NOT be represented as
 the production independent checkpoint authority. Production must inject an
 independently administered ledger and protected asymmetric signer.
 """
-from __future__ import annotations  # noqa: I001
+
+from __future__ import annotations
 
 import hashlib
 import hmac
@@ -78,8 +79,10 @@ class HMACCheckpointSigner:
     ):
         if not keys or active_key_id not in keys:
             raise ValueError("active checkpoint signing key is unavailable")
-        if any(not key_id or not isinstance(key, bytes) or len(key) < 32
-               for key_id, key in keys.items()):
+        if any(
+            not key_id or not isinstance(key, bytes) or len(key) < 32
+            for key_id, key in keys.items()
+        ):
             raise ValueError("checkpoint test keys must contain at least 32 bytes")
         self._keys = dict(keys)
         self.active_key_id = active_key_id
@@ -141,9 +144,7 @@ class SQLiteCheckpointLedger:
             mode = connection.execute("PRAGMA journal_mode = WAL").fetchone()[0]
             if str(mode).lower() != "wal":
                 raise CheckpointLedgerError("checkpoint ledger WAL mode unavailable")
-            synchronous = connection.execute(
-                "PRAGMA synchronous"
-            ).fetchone()[0]
+            synchronous = connection.execute("PRAGMA synchronous").fetchone()[0]
             if synchronous != 2:
                 raise CheckpointLedgerError(
                     "checkpoint ledger requires synchronous=FULL"
@@ -268,9 +269,7 @@ class SQLiteCheckpointLedger:
         if checkpoint.sequence < 1 or checkpoint.checkpoint_version < 1:
             raise CheckpointConflict("checkpoint sequence and version must be positive")
         if checkpoint.sequence != checkpoint.previous_sequence + 1:
-            raise CheckpointConflict(
-                "checkpoint must advance exactly one sequence"
-            )
+            raise CheckpointConflict("checkpoint must advance exactly one sequence")
         if (
             checkpoint.previous_sequence == 0
             and checkpoint.previous_hash != GENESIS_HASH
@@ -283,7 +282,8 @@ class SQLiteCheckpointLedger:
             try:
                 row = connection.execute(
                     "SELECT * FROM org03_checkpoint_records WHERE alert_id=? "
-                    "ORDER BY sequence DESC LIMIT 1", (checkpoint.alert_id,)
+                    "ORDER BY sequence DESC LIMIT 1",
+                    (checkpoint.alert_id,),
                 ).fetchone()
                 current = self._verified_record(row)
                 if current and current.sequence == checkpoint.sequence:
@@ -315,9 +315,12 @@ class SQLiteCheckpointLedger:
                         checkpoint.alert_id,
                         checkpoint.sequence,
                         checkpoint.event_hash,
-                        checkpoint.previous_sequence, checkpoint.previous_hash,
-                        checkpoint.checkpoint_version, checkpoint.key_id,
-                        checkpoint.published_at_utc, signature,
+                        checkpoint.previous_sequence,
+                        checkpoint.previous_hash,
+                        checkpoint.checkpoint_version,
+                        checkpoint.key_id,
+                        checkpoint.published_at_utc,
+                        signature,
                     ),
                 )
                 connection.commit()

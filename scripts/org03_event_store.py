@@ -5,7 +5,7 @@ provide synthetic responder references. SQLite files should be temporary test
 artifacts; this module does not configure production storage.
 """
 
-from __future__ import annotations  # noqa: I001
+from __future__ import annotations
 
 import hashlib
 import hmac
@@ -443,9 +443,7 @@ class Org03EventStore:
                     )
                 raise CheckpointError("independent ledger is behind database history")
 
-            ledger_history = self._checkpoint_ledger.history(
-                alert_id, 1, sequence
-            )
+            ledger_history = self._checkpoint_ledger.history(alert_id, 1, sequence)
             if connection is None:
                 with self._connection() as read_connection:
                     database_history = read_connection.execute(
@@ -459,10 +457,7 @@ class Org03EventStore:
                     "WHERE alert_id=? ORDER BY sequence",
                     (alert_id,),
                 ).fetchall()
-            if (
-                len(ledger_history) != sequence
-                or len(database_history) != sequence
-            ):
+            if len(ledger_history) != sequence or len(database_history) != sequence:
                 raise CheckpointError("database or ledger history is incomplete")
             for ledger_record, database_record in zip(
                 ledger_history, database_history, strict=True
@@ -802,9 +797,11 @@ class Org03EventStore:
             raise ValueError("worker ID and positive lease duration are required")
         now = datetime.now(UTC)
         now_text = now.isoformat().replace("+00:00", "Z")
-        expiry = datetime.fromtimestamp(
-            now.timestamp() + lease_seconds, UTC
-        ).isoformat().replace("+00:00", "Z")
+        expiry = (
+            datetime.fromtimestamp(now.timestamp() + lease_seconds, UTC)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
         token = str(uuid.uuid4())
         with self._connection() as connection:
             self._begin_immediate(connection)
@@ -885,9 +882,7 @@ class Org03EventStore:
             raise ValueError("limit must be positive")
         totals = {"published": 0, "conflict": 0, "invalid": 0, "claimed": 0}
         for _ in range(limit):
-            item = self._claim_checkpoint_outbox(
-                worker_id, lease_seconds=lease_seconds
-            )
+            item = self._claim_checkpoint_outbox(worker_id, lease_seconds=lease_seconds)
             if item is None:
                 break
             totals["claimed"] += 1
@@ -954,8 +949,7 @@ class Org03EventStore:
                     ):
                         if (
                             ledger_record.sequence != database_record["sequence"]
-                            or ledger_record.event_hash
-                            != database_record["event_hash"]
+                            or ledger_record.event_hash != database_record["event_hash"]
                             or ledger_record.previous_hash
                             != database_record["previous_hash"]
                         ):
@@ -995,7 +989,7 @@ class Org03EventStore:
                 if not completed:
                     raise EventStoreBusy("outbox lease was lost before completion")
                 totals["published"] += 1
-            except (CheckpointConflict, CheckpointAuthenticationError):
+            except CheckpointConflict, CheckpointAuthenticationError:
                 self._finish_checkpoint_outbox(
                     item["outbox_id"],
                     item["lease_token"],
@@ -1003,7 +997,7 @@ class Org03EventStore:
                     safe_error_code="CHECKPOINT_LEDGER_CONFLICT",
                 )
                 totals["conflict"] += 1
-            except (EventLogIntegrityError, AuthorityError):
+            except EventLogIntegrityError, AuthorityError:
                 self._finish_checkpoint_outbox(
                     item["outbox_id"],
                     item["lease_token"],
@@ -1246,7 +1240,10 @@ class Org03EventStore:
                     (alert_id,),
                 ).fetchone()
                 self._verify_checkpoint(
-                    alert_id, previous["sequence"], previous["event_hash"]
+                    alert_id,
+                    previous["sequence"],
+                    previous["event_hash"],
+                    connection=connection,
                 )
                 previous_hash = previous["event_hash"]
                 sequence = event["sequence"]
