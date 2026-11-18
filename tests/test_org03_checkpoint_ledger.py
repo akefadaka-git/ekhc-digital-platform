@@ -1,6 +1,7 @@
 """Contract tests for the synthetic ORG-03 checkpoint ledger adapter."""
 
 import multiprocessing
+from unittest.mock import Mock
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,7 @@ from pathlib import Path
 from scripts.org03_checkpoint_ledger import (
     GENESIS_HASH,
     Checkpoint,
+    AsymmetricCheckpointSigner,
     CheckpointAuthenticationError,
     CheckpointConflict,
     HMACCheckpointSigner,
@@ -98,6 +100,44 @@ class CheckpointLedgerTests(unittest.TestCase):
         self.advance(2, "a" * 64, "b" * 64)
         history = self.ledger.history("SYNTHETIC-ALERT-01", 1, 2)
         self.assertEqual([1, 2], [item.sequence for item in history])
+
+
+    def test_asymmetric_provider_adapter_keeps_signing_provider_side(self):
+        provider = Mock()
+        provider.sign.return_value = b"provider-signature"
+        provider.verify.return_value = True
+        signer = AsymmetricCheckpointSigner(
+            provider,
+            trusted_key_ids=frozenset({"kms-key-v1"}),
+            active_key_id="kms-key-v1",
+        )
+        checkpoint = make_checkpoint(1, GENESIS_HASH, "a" * 64)
+        key_id, signature = signer.sign(checkpoint.payload())
+        self.assertEqual("kms-key-v1", key_id)
+        self.assertTrue(signer.verify(key_id, checkpoint.payload(), signature))
+        provider.sign.assert_called_once()
+        provider.verify.assert_called_once_with(
+            "kms-key-v1",
+            canonical_json(checkpoint.payload()).encode("utf-8"),
+            b"provider-signature",
+        )
+
+    def test_asymmetric_provider_adapter_fails_closed_for_revoked_key(self):
+        provider = Mock()
+        signer = AsymmetricCheckpointSigner(
+            provider,
+            trusted_key_ids=frozenset({"kms-key-v1"}),
+            active_key_id="kms-key-v1",
+            revoked_key_ids=frozenset({"kms-key-v1"}),
+        )
+        checkpoint = make_checkpoint(1, GENESIS_HASH, "a" * 64)
+        with self.assertRaises(CheckpointAuthenticationError):
+            signer.sign(checkpoint.payload())
+        self.assertFalse(
+            signer.verify("kms-key-v1", checkpoint.payload(), "c2ln")
+        )
+        provider.sign.assert_not_called()
+        provider.verify.assert_not_called()
 
     def test_checkpoint_key_rotation_verifies_old_and_new_signatures(self):
         keys = {

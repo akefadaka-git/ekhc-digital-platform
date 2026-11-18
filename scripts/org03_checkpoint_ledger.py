@@ -8,6 +8,8 @@ independently administered ledger and protected asymmetric signer.
 
 from __future__ import annotations  # noqa: I001
 
+import base64
+import binascii
 import hashlib
 import hmac
 import json
@@ -52,6 +54,7 @@ class Checkpoint(NamedTuple):
 
 
 class CheckpointSigner(Protocol):
+    """Signing interface; production implementations must use protected asymmetric keys."""
     active_key_id: str
 
     def sign(self, payload: dict[str, object]) -> tuple[str, str]: ...
@@ -62,10 +65,78 @@ class CheckpointSigner(Protocol):
 
 
 class CheckpointLedger(Protocol):
+    """Production implementations must be independently administered and durable."""
     def head(self, alert_id: str) -> Checkpoint | None: ...
     def get(self, alert_id: str, sequence: int) -> Checkpoint | None: ...
     def history(self, alert_id: str, start: int, end: int) -> list[Checkpoint]: ...
     def compare_and_set(self, checkpoint: Checkpoint, signature: str) -> bool: ...
+
+
+
+class AsymmetricCheckpointProvider(Protocol):
+    """KMS/HSM adapter contract; private key material must remain provider-side."""
+
+    def sign(self, key_id: str, message: bytes) -> bytes: ...
+
+    def verify(self, key_id: str, message: bytes, signature: bytes) -> bool: ...
+
+
+class AsymmetricCheckpointSigner:
+    """Use an external asymmetric provider without exporting private key material."""
+
+    def __init__(
+        self,
+        provider: AsymmetricCheckpointProvider,
+        trusted_key_ids: frozenset[str] | set[str],
+        active_key_id: str,
+        revoked_key_ids: frozenset[str] = frozenset(),
+    ):
+        self._provider = provider
+        self._trusted_key_ids = frozenset(trusted_key_ids)
+        self.active_key_id = active_key_id
+        self.revoked_key_ids = frozenset(revoked_key_ids)
+        if active_key_id not in self._trusted_key_ids:
+            raise ValueError("active asymmetric checkpoint key is not trusted")
+
+    def sign(self, payload: dict[str, object]) -> tuple[str, str]:
+        if self.active_key_id in self.revoked_key_ids:
+            raise CheckpointAuthenticationError(
+                "active asymmetric checkpoint key is revoked"
+            )
+        try:
+            signature = self._provider.sign(
+                self.active_key_id, canonical_json(payload).encode("utf-8")
+            )
+        except Exception as exc:
+            raise CheckpointAuthenticationError(
+                "asymmetric checkpoint signing provider failed"
+            ) from exc
+        if not isinstance(signature, bytes) or not signature:
+            raise CheckpointAuthenticationError(
+                "asymmetric checkpoint provider returned an invalid signature"
+            )
+        return self.active_key_id, base64.urlsafe_b64encode(signature).decode("ascii")
+
+    def verify(
+        self, key_id: str, payload: dict[str, object], signature: str
+    ) -> bool:
+        if key_id not in self._trusted_key_ids or key_id in self.revoked_key_ids:
+            return False
+        try:
+            raw_signature = base64.urlsafe_b64decode(signature.encode("ascii"))
+            if not raw_signature:
+                return False
+            return bool(
+                self._provider.verify(
+                    key_id,
+                    canonical_json(payload).encode("utf-8"),
+                    raw_signature,
+                )
+            )
+        except (binascii.Error, UnicodeError, ValueError):
+            return False
+        except Exception:
+            return False
 
 
 class HMACCheckpointSigner:
