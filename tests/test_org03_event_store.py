@@ -536,6 +536,19 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         with self.assertRaises(CheckpointError):
             make_store(path)
 
+
+    def test_missing_outbox_record_fails_closed(self):
+        alert_id = "SYNTHETIC-MISSING-OUTBOX"
+        self.store.create_alert(alert_id, "HIGH", "2026-11-13T07:00:00Z")
+        with self.store._connection() as connection:
+            connection.execute(
+                "DELETE FROM org03_checkpoint_outbox "
+                "WHERE alert_id=? AND sequence=1",
+                (alert_id,),
+            )
+        with self.assertRaises(CheckpointError):
+            self.store.load_state(alert_id, authorized_responder_refs={})
+
     def test_ledger_ahead_of_database_fails_closed(self):
         alert_id = "SYNTHETIC-LEDGER-AHEAD"
         self.store.create_alert(alert_id, "HIGH", "2026-11-13T07:00:00Z")

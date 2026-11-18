@@ -609,7 +609,10 @@ class Org03EventStore:
                 if (
                     outbox_record["sequence"] != database_record["sequence"]
                     or outbox_record["event_hash"] != database_record["event_hash"]
-                    or outbox_record["previous_hash"] != database_record["previous_hash"]
+                    or (
+                        outbox_record["previous_hash"]
+                        != database_record["previous_hash"]
+                    )
                     or outbox_record["status"] in {"CONFLICT", "INVALID"}
                 ):
                     raise CheckpointError(
