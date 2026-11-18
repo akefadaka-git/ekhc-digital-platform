@@ -257,9 +257,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(3, head.sequence)
         self.assertEqual(
             "COMMITTED_CHECKPOINTED",
-            self.store.checkpoint_command_status(
-                "SYNTHETIC-ALERT-STORE-01", 3
-            ),
+            self.store.checkpoint_command_status("SYNTHETIC-ALERT-STORE-01", 3),
         )
 
     def test_initial_alert_checkpoint_instruction_is_transactional(self):
@@ -316,7 +314,6 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertNotEqual(item["lease_token"], reclaimed["lease_token"])
         self.assertEqual(2, reclaimed["attempt_count"])
 
-
     def test_injected_ledger_is_published_by_worker_not_inline(self):
         path = Path(self.temp.name) / "external-ledger-event-store.sqlite3"
         ledger_path = Path(self.temp.name) / "external-checkpoint-ledger.sqlite3"
@@ -351,9 +348,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
         self.assertEqual(
             "COMMITTED_CHECKPOINTED",
-            store.checkpoint_command_status(
-                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", 1
-            ),
+            store.checkpoint_command_status("SYNTHETIC-EXTERNAL-LEDGER-ALERT", 1),
         )
         store.append_event(
             "SYNTHETIC-EXTERNAL-LEDGER-ALERT",
@@ -372,9 +367,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
         self.assertEqual(
             "COMMITTED_CHECKPOINTED",
-            store.checkpoint_command_status(
-                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", 2
-            ),
+            store.checkpoint_command_status("SYNTHETIC-EXTERNAL-LEDGER-ALERT", 2),
         )
 
     def test_committed_events_survive_new_store_instance(self):
@@ -1142,8 +1135,7 @@ class Org03R1R3NegativeTests(unittest.TestCase):
         with sqlite3.connect(ledger_path) as connection:
             connection.execute("DROP TRIGGER org03_checkpoint_no_delete")
             connection.execute(
-                "DELETE FROM org03_checkpoint_records "
-                "WHERE alert_id=? AND sequence=3",
+                "DELETE FROM org03_checkpoint_records WHERE alert_id=? AND sequence=3",
                 ("SYNTHETIC-R1-ALERT",),
             )
         with self.assertRaises(CheckpointError):
