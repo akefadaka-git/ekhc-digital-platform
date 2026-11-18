@@ -462,6 +462,65 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             store.checkpoint_command_status("SYNTHETIC-CRASH-CAS-ALERT", 1),
         )
 
+
+    def test_existing_database_without_outbox_table_migrates_restart_safely(self):
+        path = Path(self.temp.name) / "missing-outbox-migration.sqlite3"
+        store = make_store(path)
+        store.create_alert(
+            "SYNTHETIC-OUTBOX-MIGRATION", "HIGH", "2026-11-13T07:00:00Z"
+        )
+        with store._connection() as connection:
+            connection.execute("DROP TABLE org03_checkpoint_outbox")
+
+        reopened = make_store(path)
+        with reopened._connection() as connection:
+            table = connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='org03_checkpoint_outbox'"
+            ).fetchone()
+        self.assertIsNotNone(table)
+        self.assertEqual(
+            "AWAITING_HUMAN_ACK",
+            reopened.load_state(
+                "SYNTHETIC-OUTBOX-MIGRATION", authorized_responder_refs={}
+            )["status"],
+        )
+        reopened.append_event(
+            "SYNTHETIC-OUTBOX-MIGRATION",
+            make_event(2, "DELIVERY_CONFIRMED"),
+            expected_version=1,
+            event_id="SYNTHETIC-OUTBOX-MIGRATION-EVENT-02",
+            idempotency_key="SYNTHETIC-OUTBOX-MIGRATION-IDEM-02",
+            authorized_responder_refs={},
+        )
+        restarted = make_store(path)
+        self.assertEqual(
+            "DELIVERY_CONFIRMED",
+            restarted.load_state(
+                "SYNTHETIC-OUTBOX-MIGRATION", authorized_responder_refs={}
+            )["status"],
+        )
+
+    def test_legacy_sidecar_is_not_promoted_to_checkpoint_authority(self):
+        path = Path(self.temp.name) / "legacy-sidecar-only.sqlite3"
+        alert_id = "SYNTHETIC-LEGACY-SIDECAR-ONLY"
+        store = make_store(path, auto_publish_checkpoints=False)
+        store.create_alert(alert_id, "HIGH", "2026-11-13T07:00:00Z")
+        with store._connection() as connection:
+            event_hash = connection.execute(
+                "SELECT event_hash FROM org03_events "
+                "WHERE alert_id=? AND sequence=1",
+                (alert_id,),
+            ).fetchone()["event_hash"]
+        store._write_checkpoint(alert_id, 1, event_hash)
+        ledger_path = Path(str(path) + ".org03-test-ledger.sqlite3")
+        for suffix in ("", "-wal", "-shm"):
+            Path(str(ledger_path) + suffix).unlink(missing_ok=True)
+
+        reopened = make_store(path)
+        with self.assertRaises(CheckpointError):
+            reopened.load_state(alert_id, authorized_responder_refs={})
+
     def test_committed_events_survive_new_store_instance(self):
         self.append_primary()
         reopened = make_store(self.path)
