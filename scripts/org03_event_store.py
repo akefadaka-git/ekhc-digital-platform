@@ -14,12 +14,20 @@ import os
 import sqlite3
 import tempfile
 import time
+import uuid
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from scripts.org03_events import TransitionError, apply_event, new_alert
+from scripts.org03_checkpoint_ledger import (
+    Checkpoint,
+    CheckpointAuthenticationError,
+    CheckpointConflict,
+    CheckpointLedger,
+    CheckpointSigner,
+)
 
 
 class EventStoreError(RuntimeError):
@@ -48,6 +56,10 @@ class IntegrityKeyError(EventLogIntegrityError):
 
 class CheckpointError(EventLogIntegrityError):
     """The independent authenticated checkpoint is invalid or stale."""
+
+
+class CheckpointPending(EventStoreError):
+    """A prior event is committed but its checkpoint is not yet published."""
 
 
 class AuthorityError(EventStoreError):
@@ -186,6 +198,30 @@ class Org03EventStore:
                     version INTEGER NOT NULL CHECK (version >= 1),
                     status TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS org03_checkpoint_outbox (
+                    outbox_id TEXT PRIMARY KEY,
+                    alert_id TEXT NOT NULL REFERENCES org03_aggregates(alert_id),
+                    sequence INTEGER NOT NULL CHECK (sequence >= 1),
+                    event_hash TEXT NOT NULL,
+                    previous_sequence INTEGER NOT NULL CHECK (previous_sequence >= 0),
+                    previous_hash TEXT NOT NULL,
+                    checkpoint_version INTEGER NOT NULL CHECK (checkpoint_version >= 1),
+                    created_at_utc TEXT NOT NULL,
+                    status TEXT NOT NULL CHECK (
+                        status IN ('PENDING', 'LEASED', 'PUBLISHED', 'CONFLICT', 'INVALID')
+                    ),
+                    attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+                    lease_owner TEXT,
+                    lease_token TEXT,
+                    lease_expires_at_utc TEXT,
+                    published_at_utc TEXT,
+                    safe_error_code TEXT,
+                    UNIQUE(alert_id, sequence)
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS
+                    org03_checkpoint_one_outstanding_per_alert
+                ON org03_checkpoint_outbox(alert_id)
+                WHERE status IN ('PENDING', 'LEASED', 'CONFLICT', 'INVALID');
                 CREATE TABLE IF NOT EXISTS org03_events (
                     event_id TEXT PRIMARY KEY,
                     alert_id TEXT NOT NULL REFERENCES org03_aggregates(alert_id),
@@ -622,6 +658,237 @@ class Org03EventStore:
         if latest_revocation and at_utc >= _utc_timestamp(latest_revocation):
             raise AuthorityError("event timestamp is at or after authority revocation")
 
+    def _enqueue_checkpoint(
+        self,
+        connection: sqlite3.Connection,
+        alert_id: str,
+        sequence: int,
+        event_hash: str,
+        previous_hash: str,
+    ) -> None:
+        """Persist publication intent in the same transaction as its event."""
+        connection.execute(
+            "INSERT INTO org03_checkpoint_outbox "
+            "(outbox_id, alert_id, sequence, event_hash, previous_sequence, "
+            "previous_hash, checkpoint_version, created_at_utc, status) "
+            "VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'PENDING')",
+            (
+                str(uuid.uuid4()),
+                alert_id,
+                sequence,
+                event_hash,
+                sequence - 1,
+                previous_hash,
+                datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            ),
+        )
+
+    def _claim_checkpoint_outbox(
+        self,
+        worker_id: str,
+        *,
+        lease_seconds: int,
+    ) -> dict | None:
+        if not worker_id or lease_seconds < 1:
+            raise ValueError("worker ID and positive lease duration are required")
+        now = datetime.now(UTC)
+        now_text = now.isoformat().replace("+00:00", "Z")
+        expiry = datetime.fromtimestamp(
+            now.timestamp() + lease_seconds, UTC
+        ).isoformat().replace("+00:00", "Z")
+        token = str(uuid.uuid4())
+        with self._connection() as connection:
+            self._begin_immediate(connection)
+            try:
+                row = connection.execute(
+                    "SELECT outbox_id FROM org03_checkpoint_outbox "
+                    "WHERE status='PENDING' OR "
+                    "(status='LEASED' AND lease_expires_at_utc <= ?) "
+                    "ORDER BY created_at_utc, outbox_id LIMIT 1",
+                    (now_text,),
+                ).fetchone()
+                if row is None:
+                    connection.commit()
+                    return None
+                cursor = connection.execute(
+                    "UPDATE org03_checkpoint_outbox SET status='LEASED', "
+                    "lease_owner=?, lease_token=?, lease_expires_at_utc=?, "
+                    "attempt_count=attempt_count+1 "
+                    "WHERE outbox_id=? AND (status='PENDING' OR "
+                    "(status='LEASED' AND lease_expires_at_utc <= ?))",
+                    (worker_id, token, expiry, row["outbox_id"], now_text),
+                )
+                if cursor.rowcount != 1:
+                    connection.rollback()
+                    return None
+                claimed = connection.execute(
+                    "SELECT * FROM org03_checkpoint_outbox WHERE outbox_id=?",
+                    (row["outbox_id"],),
+                ).fetchone()
+                connection.commit()
+                return dict(claimed)
+            except Exception:
+                connection.rollback()
+                raise
+
+    def _finish_checkpoint_outbox(
+        self,
+        outbox_id: str,
+        lease_token: str,
+        *,
+        status: str,
+        safe_error_code: str | None = None,
+    ) -> bool:
+        if status not in {"PUBLISHED", "CONFLICT", "INVALID"}:
+            raise ValueError("unsupported terminal outbox status")
+        published_at = (
+            datetime.now(UTC).isoformat().replace("+00:00", "Z")
+            if status == "PUBLISHED"
+            else None
+        )
+        with self._connection() as connection:
+            cursor = connection.execute(
+                "UPDATE org03_checkpoint_outbox SET status=?, "
+                "published_at_utc=?, safe_error_code=?, lease_owner=NULL, "
+                "lease_token=NULL, lease_expires_at_utc=NULL "
+                "WHERE outbox_id=? AND status='LEASED' AND lease_token=?",
+                (
+                    status,
+                    published_at,
+                    safe_error_code,
+                    outbox_id,
+                    lease_token,
+                ),
+            )
+            return cursor.rowcount == 1
+
+    def publish_checkpoint_outbox(
+        self,
+        ledger: CheckpointLedger,
+        signer: CheckpointSigner,
+        *,
+        worker_id: str,
+        limit: int = 10,
+        lease_seconds: int = 30,
+    ) -> dict[str, int]:
+        """Publish committed outbox rows using ledger CAS; safe to repeat."""
+        if limit < 1:
+            raise ValueError("limit must be positive")
+        totals = {"published": 0, "conflict": 0, "invalid": 0, "claimed": 0}
+        for _ in range(limit):
+            item = self._claim_checkpoint_outbox(
+                worker_id, lease_seconds=lease_seconds
+            )
+            if item is None:
+                break
+            totals["claimed"] += 1
+            try:
+                with self._connection() as connection:
+                    connection.execute("BEGIN")
+                    aggregate = connection.execute(
+                        "SELECT priority, version, status FROM org03_aggregates "
+                        "WHERE alert_id=?",
+                        (item["alert_id"],),
+                    ).fetchone()
+                    if aggregate is None:
+                        raise EventLogIntegrityError("outbox aggregate is missing")
+                    self._replay_in_transaction(
+                        connection, item["alert_id"], aggregate["priority"]
+                    )
+                    event = connection.execute(
+                        "SELECT sequence, event_hash, previous_hash "
+                        "FROM org03_events WHERE alert_id=? AND sequence=?",
+                        (item["alert_id"], item["sequence"]),
+                    ).fetchone()
+                    if (
+                        event is None
+                        or event["event_hash"] != item["event_hash"]
+                        or event["previous_hash"] != item["previous_hash"]
+                    ):
+                        raise EventLogIntegrityError(
+                            "outbox does not match authenticated event history"
+                        )
+                    connection.commit()
+
+                head = ledger.head(item["alert_id"])
+                head_sequence = head.sequence if head else 0
+                head_hash = head.event_hash if head else "0" * 64
+                target_sequence = item["sequence"]
+                if head_sequence >= target_sequence:
+                    existing = ledger.get(item["alert_id"], target_sequence)
+                    if (
+                        existing is None
+                        or existing.event_hash != item["event_hash"]
+                        or existing.previous_sequence != item["previous_sequence"]
+                        or existing.previous_hash != item["previous_hash"]
+                    ):
+                        raise CheckpointConflict(
+                            "ledger already contains a divergent sequence"
+                        )
+                    history = ledger.history(item["alert_id"], 1, head_sequence)
+                    if len(history) != head_sequence:
+                        raise CheckpointAuthenticationError(
+                            "ledger history is incomplete"
+                        )
+                else:
+                    if (
+                        head_sequence != item["previous_sequence"]
+                        or head_hash != item["previous_hash"]
+                    ):
+                        raise CheckpointConflict(
+                            "ledger head does not match outbox predecessor"
+                        )
+                    checkpoint = Checkpoint(
+                        alert_id=item["alert_id"],
+                        sequence=target_sequence,
+                        event_hash=item["event_hash"],
+                        previous_sequence=item["previous_sequence"],
+                        previous_hash=item["previous_hash"],
+                        checkpoint_version=item["checkpoint_version"],
+                        key_id="pending",
+                        published_at_utc=(
+                            datetime.now(UTC).isoformat().replace("+00:00", "Z")
+                        ),
+                    )
+                    key_id, signature = signer.sign(checkpoint.payload())
+                    checkpoint = checkpoint._replace(key_id=key_id)
+                    key_id, signature = signer.sign(checkpoint.payload())
+                    ledger.compare_and_set(checkpoint, signature)
+
+                completed = self._finish_checkpoint_outbox(
+                    item["outbox_id"], item["lease_token"], status="PUBLISHED"
+                )
+                if not completed:
+                    raise EventStoreBusy("outbox lease was lost before completion")
+                totals["published"] += 1
+            except (CheckpointConflict, CheckpointAuthenticationError):
+                self._finish_checkpoint_outbox(
+                    item["outbox_id"],
+                    item["lease_token"],
+                    status="CONFLICT",
+                    safe_error_code="CHECKPOINT_LEDGER_CONFLICT",
+                )
+                totals["conflict"] += 1
+            except EventLogIntegrityError:
+                self._finish_checkpoint_outbox(
+                    item["outbox_id"],
+                    item["lease_token"],
+                    status="INVALID",
+                    safe_error_code="EVENT_OUTBOX_INTEGRITY_FAILURE",
+                )
+                totals["invalid"] += 1
+        return totals
+
+    def checkpoint_outbox(self, alert_id: str) -> list[dict]:
+        """Return read-only outbox state for synthetic verification."""
+        with self._connection() as connection:
+            rows = connection.execute(
+                "SELECT * FROM org03_checkpoint_outbox "
+                "WHERE alert_id=? ORDER BY sequence",
+                (alert_id,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
     def create_alert(self, alert_id: str, priority: str, received_at_utc: str) -> dict:
         state = new_alert(alert_id, priority, received_at_utc)
         initial_event = state["history"][0]
@@ -683,6 +950,9 @@ class Org03EventStore:
                         key_id,
                         event_mac,
                     ),
+                )
+                self._enqueue_checkpoint(
+                    connection, alert_id, 1, event_hash, self.GENESIS_HASH
                 )
                 connection.commit()
             except Exception:
@@ -853,6 +1123,9 @@ class Org03EventStore:
                 )
                 if cursor.rowcount != 1:
                     raise StaleAggregateVersion("aggregate compare-and-update lost")
+                self._enqueue_checkpoint(
+                    connection, alert_id, sequence, event_hash, previous_hash
+                )
                 connection.commit()
                 self._write_checkpoint(alert_id, sequence, event_hash)
                 return updated
