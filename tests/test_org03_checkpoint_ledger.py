@@ -25,7 +25,9 @@ def make_checkpoint(sequence, previous_hash, event_hash, previous_sequence=None)
         alert_id="SYNTHETIC-ALERT-01",
         sequence=sequence,
         event_hash=event_hash,
-        previous_sequence=sequence - 1 if previous_sequence is None else previous_sequence,
+        previous_sequence=(
+            sequence - 1 if previous_sequence is None else previous_sequence
+        ),
         previous_hash=previous_hash,
         checkpoint_version=1,
         key_id="test-v1",
@@ -101,7 +103,9 @@ class CheckpointLedgerTests(unittest.TestCase):
         barrier = context.Barrier(2)
         queue = context.Queue()
         processes = [
-            context.Process(target=_advance_worker, args=(self.path, barrier, queue, value))
+            context.Process(
+                target=_advance_worker, args=(self.path, barrier, queue, value)
+            )
             for value in ("a" * 64, "b" * 64)
         ]
         for process in processes:

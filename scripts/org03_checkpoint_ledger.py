@@ -54,7 +54,10 @@ class Checkpoint:
 
 class CheckpointSigner(Protocol):
     def sign(self, payload: dict[str, object]) -> tuple[str, str]: ...
-    def verify(self, key_id: str, payload: dict[str, object], signature: str) -> bool: ...
+
+    def verify(
+        self, key_id: str, payload: dict[str, object], signature: str
+    ) -> bool: ...
 
 
 class CheckpointLedger(Protocol):
@@ -102,7 +105,7 @@ class HMACCheckpointSigner:
 
 
 class SQLiteCheckpointLedger:
-    """Independent-file ledger simulator for tests; not a production trust anchor."""
+    """Independent-file ledger simulator for tests, not a production trust anchor."""
 
     def __init__(self, path: str | Path, signer: CheckpointSigner, timeout: float = 10.0):
         self.path = str(path)
@@ -113,7 +116,9 @@ class SQLiteCheckpointLedger:
         self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.path, timeout=self.timeout, isolation_level=None)
+        connection = sqlite3.connect(
+            self.path, timeout=self.timeout, isolation_level=None
+        )
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA busy_timeout = 10000")
@@ -178,7 +183,9 @@ class SQLiteCheckpointLedger:
             return None
         record = self._record(row)
         if not self.signer.verify(record.key_id, record.payload(), row["signature"]):
-            raise CheckpointAuthenticationError("stored checkpoint authentication failed")
+            raise CheckpointAuthenticationError(
+                "stored checkpoint authentication failed"
+            )
         return record
 
     def head(self, alert_id: str) -> Checkpoint | None:
@@ -195,12 +202,14 @@ class SQLiteCheckpointLedger:
                 or record.previous_sequence != expected_sequence - 1
                 or record.previous_hash != previous_hash
             ):
-                raise CheckpointAuthenticationError("checkpoint history is not contiguous")
+                raise CheckpointAuthenticationError(
+                    "checkpoint history is not contiguous"
+                )
             previous_hash = record.event_hash
         return records[-1] if records else None
 
     def get(self, alert_id: str, sequence: int) -> Checkpoint | None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             row = connection.execute(
                 "SELECT * FROM org03_checkpoint_records WHERE alert_id=? AND sequence=?",
                 (alert_id, sequence),
@@ -210,7 +219,7 @@ class SQLiteCheckpointLedger:
     def history(self, alert_id: str, start: int, end: int) -> list[Checkpoint]:
         if start < 1 or end < start:
             raise ValueError("invalid checkpoint history range")
-        with self._connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute(
                 "SELECT * FROM org03_checkpoint_records WHERE alert_id=? "
                 "AND sequence BETWEEN ? AND ? ORDER BY sequence",
@@ -234,7 +243,7 @@ class SQLiteCheckpointLedger:
         return records
 
     def compare_and_set(self, checkpoint: Checkpoint, signature: str) -> bool:
-        """Advance exactly one sequence; return False for an exact idempotent repeat."""
+        """Advance one sequence; return False for an idempotent repeat."""
         try:
             timestamp = datetime.fromisoformat(checkpoint.published_at_utc.replace("Z", "+00:00"))
         except (TypeError, ValueError) as exc:
@@ -244,12 +253,14 @@ class SQLiteCheckpointLedger:
         if checkpoint.sequence < 1 or checkpoint.checkpoint_version < 1:
             raise CheckpointConflict("checkpoint sequence and version must be positive")
         if checkpoint.sequence != checkpoint.previous_sequence + 1:
-            raise CheckpointConflict("checkpoint must advance exactly one sequence")
+            raise CheckpointConflict(
+                "checkpoint must advance exactly one sequence"
+            )
         if checkpoint.previous_sequence == 0 and checkpoint.previous_hash != GENESIS_HASH:
             raise CheckpointConflict("genesis predecessor hash is invalid")
         if not self.signer.verify(checkpoint.key_id, checkpoint.payload(), signature):
             raise CheckpointAuthenticationError("checkpoint signature is invalid")
-        with self._connect() as connection:
+        with self._connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
             try:
                 row = connection.execute(
@@ -270,9 +281,12 @@ class SQLiteCheckpointLedger:
                 current_sequence = current.sequence if current else 0
                 current_hash = current.event_hash if current else GENESIS_HASH
                 if (current_sequence, current_hash) != (
-                    checkpoint.previous_sequence, checkpoint.previous_hash
+                    checkpoint.previous_sequence,
+                    checkpoint.previous_hash,
                 ):
-                    raise CheckpointConflict("checkpoint compare-and-set predecessor mismatch")
+                    raise CheckpointConflict(
+                        "checkpoint compare-and-set predecessor mismatch"
+                    )
                 connection.execute(
                     "INSERT INTO org03_checkpoint_records "
                     "(alert_id, sequence, event_hash, previous_sequence, previous_hash, "
