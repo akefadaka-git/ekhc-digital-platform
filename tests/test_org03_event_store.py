@@ -530,7 +530,6 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         with self.assertRaises(CheckpointError):
             reopened.load_state(alert_id, authorized_responder_refs={})
 
-
     def test_ledger_ahead_of_database_fails_closed(self):
         alert_id = "SYNTHETIC-LEDGER-AHEAD"
         self.store.create_alert(alert_id, "HIGH", "2026-11-13T07:00:00Z")

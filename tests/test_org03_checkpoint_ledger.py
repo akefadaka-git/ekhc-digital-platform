@@ -99,7 +99,6 @@ class CheckpointLedgerTests(unittest.TestCase):
         history = self.ledger.history("SYNTHETIC-ALERT-01", 1, 2)
         self.assertEqual([1, 2], [item.sequence for item in history])
 
-
     def test_checkpoint_key_rotation_verifies_old_and_new_signatures(self):
         keys = {
             "test-v1": KEYS["test-v1"],
