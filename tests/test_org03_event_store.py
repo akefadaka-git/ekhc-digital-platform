@@ -281,7 +281,8 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         with self.store._connection() as connection:
             connection.execute(
                 "UPDATE org03_checkpoint_outbox SET status='PENDING', "
-                "published_at_utc=NULL WHERE alert_id=? AND sequence=1",
+                "attempt_count=0, published_at_utc=NULL "
+                "WHERE alert_id=? AND sequence=1",
                 ("SYNTHETIC-ALERT-STORE-01",),
             )
         item = self.store._claim_checkpoint_outbox(
