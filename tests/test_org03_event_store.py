@@ -213,6 +213,12 @@ class Org03DurableEventStoreTests(unittest.TestCase):
 
         pending = self.store.checkpoint_outbox("SYNTHETIC-ALERT-STORE-01")[-1]
         self.assertEqual("PENDING", pending["status"])
+        self.assertEqual(
+            "COMMITTED_PENDING_CHECKPOINT",
+            self.store.checkpoint_command_status(
+                "SYNTHETIC-ALERT-STORE-01", 3
+            ),
+        )
         self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
 
         original_result = self.store.append_event(
@@ -247,6 +253,12 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
         head = self.store._checkpoint_ledger.head("SYNTHETIC-ALERT-STORE-01")
         self.assertEqual(3, head.sequence)
+        self.assertEqual(
+            "COMMITTED_CHECKPOINTED",
+            self.store.checkpoint_command_status(
+                "SYNTHETIC-ALERT-STORE-01", 3
+            ),
+        )
 
     def test_initial_alert_checkpoint_instruction_is_transactional(self):
         path = Path(self.temp.name) / "atomic-initial.sqlite3"

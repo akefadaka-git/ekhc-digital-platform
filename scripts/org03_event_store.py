@@ -915,7 +915,7 @@ class Org03EventStore:
                     safe_error_code="CHECKPOINT_LEDGER_CONFLICT",
                 )
                 totals["conflict"] += 1
-            except EventLogIntegrityError:
+            except (EventLogIntegrityError, AuthorityError):
                 self._finish_checkpoint_outbox(
                     item["outbox_id"],
                     item["lease_token"],
@@ -924,6 +924,24 @@ class Org03EventStore:
                 )
                 totals["invalid"] += 1
         return totals
+
+    def checkpoint_command_status(self, alert_id: str, sequence: int) -> str:
+        """Report durable transaction/checkpoint outcome independently."""
+        with self._connection() as connection:
+            row = connection.execute(
+                "SELECT status FROM org03_checkpoint_outbox "
+                "WHERE alert_id=? AND sequence=?",
+                (alert_id, sequence),
+            ).fetchone()
+        if row is None:
+            raise EventStoreError("checkpoint outbox instruction is missing")
+        return {
+            "PENDING": "COMMITTED_PENDING_CHECKPOINT",
+            "LEASED": "COMMITTED_PENDING_CHECKPOINT",
+            "PUBLISHED": "COMMITTED_CHECKPOINTED",
+            "CONFLICT": "COMMITTED_INTEGRITY_CONFLICT",
+            "INVALID": "COMMITTED_INTEGRITY_CONFLICT",
+        }[row["status"]]
 
     def checkpoint_outbox(self, alert_id: str) -> list[dict]:
         """Return read-only outbox state for synthetic verification."""
@@ -1005,16 +1023,12 @@ class Org03EventStore:
                 connection.rollback()
                 raise
         self._write_checkpoint(alert_id, 1, event_hash)
-        publication = self.publish_checkpoint_outbox(
+        self.publish_checkpoint_outbox(
             self._checkpoint_ledger,
             self._checkpoint_signer,
             worker_id=f"synthetic-inline-{os.getpid()}",
             limit=1,
         )
-        if publication["conflict"]:
-            raise CheckpointError("checkpoint ledger rejected the outbox publication")
-        if publication["invalid"]:
-            raise EventLogIntegrityError("checkpoint outbox failed event verification")
         return state
 
     def append_event(
@@ -1201,20 +1215,12 @@ class Org03EventStore:
                 )
                 connection.commit()
                 self._write_checkpoint(alert_id, sequence, event_hash)
-                publication = self.publish_checkpoint_outbox(
+                self.publish_checkpoint_outbox(
                     self._checkpoint_ledger,
                     self._checkpoint_signer,
                     worker_id=f"synthetic-inline-{os.getpid()}",
                     limit=1,
                 )
-                if publication["conflict"]:
-                    raise CheckpointError(
-                        "checkpoint ledger rejected the outbox publication"
-                    )
-                if publication["invalid"]:
-                    raise EventLogIntegrityError(
-                        "checkpoint outbox failed event verification"
-                    )
                 return updated
             except Exception:
                 connection.rollback()
