@@ -405,15 +405,27 @@ class Org03EventStore:
         return payload
 
     def _verify_checkpoint(
-        self, alert_id: str, sequence: int, event_hash: str
+        self,
+        alert_id: str,
+        sequence: int,
+        event_hash: str,
+        *,
+        connection: sqlite3.Connection | None = None,
     ) -> None:
-        """Verify the database head against the independent authenticated ledger."""
+        """Verify a database snapshot against the authenticated ledger prefix."""
         try:
             head = self._checkpoint_ledger.head(alert_id)
             if head is None:
                 raise CheckpointError("independent checkpoint ledger is empty")
             if head.sequence < sequence:
-                with self._connection() as connection:
+                if connection is None:
+                    with self._connection() as read_connection:
+                        pending = read_connection.execute(
+                            "SELECT 1 FROM org03_checkpoint_outbox "
+                            "WHERE alert_id=? AND status IN ('PENDING', 'LEASED')",
+                            (alert_id,),
+                        ).fetchone()
+                else:
                     pending = connection.execute(
                         "SELECT 1 FROM org03_checkpoint_outbox "
                         "WHERE alert_id=? AND status IN ('PENDING', 'LEASED')",
@@ -424,14 +436,18 @@ class Org03EventStore:
                         "committed event is awaiting checkpoint publication"
                     )
                 raise CheckpointError("independent ledger is behind database history")
-            if head.sequence > sequence or head.event_hash != event_hash:
-                raise CheckpointError(
-                    "database head differs from independent checkpoint ledger"
-                )
+
             ledger_history = self._checkpoint_ledger.history(
                 alert_id, 1, sequence
             )
-            with self._connection() as connection:
+            if connection is None:
+                with self._connection() as read_connection:
+                    database_history = read_connection.execute(
+                        "SELECT sequence, event_hash, previous_hash FROM org03_events "
+                        "WHERE alert_id=? ORDER BY sequence",
+                        (alert_id,),
+                    ).fetchall()
+            else:
                 database_history = connection.execute(
                     "SELECT sequence, event_hash, previous_hash FROM org03_events "
                     "WHERE alert_id=? ORDER BY sequence",
@@ -453,6 +469,33 @@ class Org03EventStore:
                     raise CheckpointError(
                         "database event history differs from independent ledger"
                     )
+            if ledger_history[-1].event_hash != event_hash:
+                raise CheckpointError(
+                    "database head differs from independent checkpoint ledger"
+                )
+            if head.sequence > sequence:
+                # A reader may hold a valid older SQLite snapshot while a newer
+                # transaction has already committed and checkpointed. Confirm
+                # that the latest database head still reaches the ledger head;
+                # a restored database behind the ledger fails closed.
+                with self._connection() as latest_connection:
+                    latest = latest_connection.execute(
+                        "SELECT sequence, event_hash FROM org03_events "
+                        "WHERE alert_id=? ORDER BY sequence DESC LIMIT 1",
+                        (alert_id,),
+                    ).fetchone()
+                if (
+                    latest is None
+                    or latest["sequence"] != head.sequence
+                    or latest["event_hash"] != head.event_hash
+                ):
+                    raise CheckpointError(
+                        "latest database head does not reach independent ledger"
+                    )
+            elif head.event_hash != event_hash:
+                raise CheckpointError(
+                    "database head differs from independent checkpoint ledger"
+                )
         except CheckpointLedgerError as exc:
             raise CheckpointError(
                 "independent checkpoint ledger could not be authenticated"
@@ -1123,7 +1166,10 @@ class Org03EventStore:
                     ).fetchone()
                     if pending is None:
                         self._verify_checkpoint(
-                            alert_id, last_event["sequence"], last_event["event_hash"]
+                            alert_id,
+                            last_event["sequence"],
+                            last_event["event_hash"],
+                            connection=connection,
                         )
                     if (
                         aggregate["version"] != replayed["next_sequence"] - 1
@@ -1377,6 +1423,7 @@ class Org03EventStore:
                     alert_id,
                     last_event["sequence"],
                     last_event["event_hash"],
+                    connection=connection,
                 )
                 if aggregate["version"] != state["next_sequence"] - 1:
                     raise EventLogIntegrityError(

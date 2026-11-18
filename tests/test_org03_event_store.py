@@ -200,7 +200,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             AUTH["primary"],
             disposition="ACCEPTED",
         )
-        with self.assertRaisesRegex(OSError, "synthetic sidecar failure"):
+        with self.assertRaisesRegex(OSError, "synthetic publisher failure"):
             self.store.append_event(
                 "SYNTHETIC-ALERT-STORE-01",
                 event,
