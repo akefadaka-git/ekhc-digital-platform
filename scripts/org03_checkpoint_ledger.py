@@ -39,6 +39,10 @@ class CheckpointAuthenticationError(CheckpointLedgerError):
     """A checkpoint signature or stored record is invalid."""
 
 
+class CheckpointProviderUnavailable(CheckpointLedgerError):
+    """A remote signing or verification provider is temporarily unavailable."""
+
+
 class Checkpoint(NamedTuple):
     alert_id: str
     sequence: int
@@ -60,7 +64,9 @@ class CheckpointSigner(Protocol):
 
     def sign(self, payload: dict[str, object]) -> tuple[str, str]: ...
 
-    def verify(self, key_id: str, payload: dict[str, object], signature: str) -> bool: ...
+    def verify(
+        self, key_id: str, payload: dict[str, object], signature: str
+    ) -> bool: ...
 
 
 class CheckpointLedger(Protocol):
@@ -108,8 +114,8 @@ class AsymmetricCheckpointSigner:
                 self.active_key_id, canonical_json(payload).encode("utf-8")
             )
         except Exception as exc:
-            raise CheckpointAuthenticationError(
-                "asymmetric checkpoint signing provider failed"
+            raise CheckpointProviderUnavailable(
+                "asymmetric checkpoint signing provider is unavailable"
             ) from exc
         if not isinstance(signature, bytes) or not signature:
             raise CheckpointAuthenticationError(
@@ -124,8 +130,11 @@ class AsymmetricCheckpointSigner:
             return False
         try:
             raw_signature = base64.urlsafe_b64decode(signature.encode("ascii"))
-            if not raw_signature:
-                return False
+        except binascii.Error, UnicodeError, ValueError:
+            return False
+        if not raw_signature:
+            return False
+        try:
             return bool(
                 self._provider.verify(
                     key_id,
@@ -133,10 +142,10 @@ class AsymmetricCheckpointSigner:
                     raw_signature,
                 )
             )
-        except binascii.Error, UnicodeError, ValueError:
-            return False
-        except Exception:
-            return False
+        except Exception as exc:
+            raise CheckpointProviderUnavailable(
+                "asymmetric checkpoint verification provider is unavailable"
+            ) from exc
 
 
 class HMACCheckpointSigner:

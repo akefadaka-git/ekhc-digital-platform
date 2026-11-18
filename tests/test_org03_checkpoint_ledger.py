@@ -12,6 +12,7 @@ from scripts.org03_checkpoint_ledger import (
     Checkpoint,
     CheckpointAuthenticationError,
     CheckpointConflict,
+    CheckpointProviderUnavailable,
     HMACCheckpointSigner,
     SQLiteCheckpointLedger,
     canonical_json,
@@ -137,6 +138,22 @@ class CheckpointLedgerTests(unittest.TestCase):
         self.assertFalse(signer.verify("kms-key-v1", checkpoint.payload(), "c2ln"))
         provider.sign.assert_not_called()
         provider.verify.assert_not_called()
+
+
+    def test_asymmetric_provider_outage_is_retriable_not_authentication_failure(self):
+        provider = Mock()
+        provider.sign.side_effect = TimeoutError("synthetic KMS timeout")
+        provider.verify.side_effect = TimeoutError("synthetic KMS timeout")
+        signer = AsymmetricCheckpointSigner(
+            provider,
+            trusted_key_ids=frozenset({"kms-key-v1"}),
+            active_key_id="kms-key-v1",
+        )
+        checkpoint = make_checkpoint(1, GENESIS_HASH, "a" * 64)
+        with self.assertRaises(CheckpointProviderUnavailable):
+            signer.sign(checkpoint.payload())
+        with self.assertRaises(CheckpointProviderUnavailable):
+            signer.verify("kms-key-v1", checkpoint.payload(), "c2ln")
 
     def test_checkpoint_key_rotation_verifies_old_and_new_signatures(self):
         keys = {
