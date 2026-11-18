@@ -495,7 +495,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         )
         restarted = make_store(path)
         self.assertEqual(
-            "DELIVERY_CONFIRMED",
+            "AWAITING_HUMAN_ACK",
             restarted.load_state(
                 "SYNTHETIC-OUTBOX-MIGRATION", authorized_responder_refs={}
             )["status"],
