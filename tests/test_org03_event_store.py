@@ -94,7 +94,6 @@ def _crash_with_uncommitted_event(path):
     os._exit(17)
 
 
-
 def _crash_after_alert_commit(path):
     store = make_store(path, auto_publish_checkpoints=False)
     store.create_alert("SYNTHETIC-CRASH-ALERT", "HIGH", "2026-11-13T07:00:00Z")
