@@ -5,7 +5,7 @@ filesystem failure domain with an event store and MUST NOT be represented as
 the production independent checkpoint authority. Production must inject an
 independently administered ledger and protected asymmetric signer.
 """
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import hashlib
 import hmac

@@ -5,7 +5,7 @@ provide synthetic responder references. SQLite files should be temporary test
 artifacts; this module does not configure production storage.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import hashlib
 import hmac
@@ -124,6 +124,7 @@ class Org03EventStore:
         checkpoint_dir: str | Path | None = None,
         checkpoint_ledger: CheckpointLedger | None = None,
         checkpoint_signer: CheckpointSigner | None = None,
+        auto_publish_checkpoints: bool | None = None,
     ):
         self.path = str(path)
         if timeout_seconds <= 0:
@@ -149,6 +150,11 @@ class Org03EventStore:
         # Production must inject an independently administered ledger and signer.
         self._checkpoint_signer = checkpoint_signer or HMACCheckpointSigner(
             self._integrity_keys, active_key_id, self.revoked_key_ids
+        )
+        self._auto_publish_checkpoints = (
+            checkpoint_ledger is None
+            if auto_publish_checkpoints is None
+            else auto_publish_checkpoints
         )
         self._checkpoint_ledger = checkpoint_ledger or SQLiteCheckpointLedger(
             self.path + ".org03-test-ledger.sqlite3",
@@ -1104,12 +1110,13 @@ class Org03EventStore:
             except Exception:
                 connection.rollback()
                 raise
-        self.publish_checkpoint_outbox(
-            self._checkpoint_ledger,
-            self._checkpoint_signer,
-            worker_id=f"synthetic-inline-{os.getpid()}",
-            limit=1,
-        )
+        if self._auto_publish_checkpoints:
+            self.publish_checkpoint_outbox(
+                self._checkpoint_ledger,
+                self._checkpoint_signer,
+                worker_id=f"synthetic-inline-{os.getpid()}",
+                limit=1,
+            )
         return state
 
     def append_event(
@@ -1298,12 +1305,13 @@ class Org03EventStore:
                     connection, alert_id, sequence, event_hash, previous_hash
                 )
                 connection.commit()
-                self.publish_checkpoint_outbox(
-                    self._checkpoint_ledger,
-                    self._checkpoint_signer,
-                    worker_id=f"synthetic-inline-{os.getpid()}",
-                    limit=1,
-                )
+                if self._auto_publish_checkpoints:
+                    self.publish_checkpoint_outbox(
+                        self._checkpoint_ledger,
+                        self._checkpoint_signer,
+                        worker_id=f"synthetic-inline-{os.getpid()}",
+                        limit=1,
+                    )
                 return updated
             except Exception:
                 connection.rollback()

@@ -11,6 +11,10 @@ import time
 import unittest
 from pathlib import Path
 
+from scripts.org03_checkpoint_ledger import (
+    HMACCheckpointSigner,
+    SQLiteCheckpointLedger,
+)
 from scripts.org03_event_store import (
     AuthorityError,
     CheckpointError,
@@ -313,6 +317,73 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(item["outbox_id"], reclaimed["outbox_id"])
         self.assertNotEqual(item["lease_token"], reclaimed["lease_token"])
         self.assertEqual(2, reclaimed["attempt_count"])
+
+
+    def test_injected_ledger_is_published_by_worker_not_inline(self):
+        path = Path(self.temp.name) / "external-ledger-event-store.sqlite3"
+        ledger_path = Path(self.temp.name) / "external-checkpoint-ledger.sqlite3"
+        signer = HMACCheckpointSigner(
+            TEST_INTEGRITY_KEYS, "synthetic-test-v1"
+        )
+        ledger = SQLiteCheckpointLedger(ledger_path, signer)
+        store = make_store(
+            path,
+            checkpoint_ledger=ledger,
+            checkpoint_signer=signer,
+        )
+        store.create_alert(
+            "SYNTHETIC-EXTERNAL-LEDGER-ALERT",
+            "HIGH",
+            "2026-11-13T07:00:00Z",
+        )
+        self.assertEqual(
+            "COMMITTED_PENDING_CHECKPOINT",
+            store.checkpoint_command_status(
+                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", 1
+            ),
+        )
+        with self.assertRaises(CheckpointPending):
+            store.append_event(
+                "SYNTHETIC-EXTERNAL-LEDGER-ALERT",
+                make_event(2, "DELIVERY_CONFIRMED"),
+                expected_version=1,
+                event_id="SYNTHETIC-EXTERNAL-EVENT-02",
+                idempotency_key="SYNTHETIC-EXTERNAL-IDEM-02",
+                authorized_responder_refs={},
+            )
+
+        store.publish_checkpoint_outbox(
+            ledger, signer, worker_id="synthetic-external-ledger-worker"
+        )
+        self.assertEqual(
+            "COMMITTED_CHECKPOINTED",
+            store.checkpoint_command_status(
+                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", 1
+            ),
+        )
+        store.append_event(
+            "SYNTHETIC-EXTERNAL-LEDGER-ALERT",
+            make_event(2, "DELIVERY_CONFIRMED"),
+            expected_version=1,
+            event_id="SYNTHETIC-EXTERNAL-EVENT-02",
+            idempotency_key="SYNTHETIC-EXTERNAL-IDEM-02",
+            authorized_responder_refs={},
+        )
+        self.assertEqual(
+            "COMMITTED_PENDING_CHECKPOINT",
+            store.checkpoint_command_status(
+                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", 2
+            ),
+        )
+        store.publish_checkpoint_outbox(
+            ledger, signer, worker_id="synthetic-external-ledger-worker"
+        )
+        self.assertEqual(
+            "COMMITTED_CHECKPOINTED",
+            store.checkpoint_command_status(
+                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", 2
+            ),
+        )
 
     def test_committed_events_survive_new_store_instance(self):
         self.append_primary()
@@ -1160,7 +1231,8 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             )
 
     def test_checkpoint_mac_tampering_fails_closed(self):
-        with sqlite3.connect(str(self.path) + ".org03-test-ledger.sqlite3") as connection:
+        ledger_path = str(self.path) + ".org03-test-ledger.sqlite3"
+        with sqlite3.connect(ledger_path) as connection:
             connection.execute("DROP TRIGGER org03_checkpoint_no_update")
             connection.execute(
                 "UPDATE org03_checkpoint_records SET signature='invalid' "
