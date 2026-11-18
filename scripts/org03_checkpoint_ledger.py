@@ -54,7 +54,7 @@ class Checkpoint(NamedTuple):
 
 
 class CheckpointSigner(Protocol):
-    """Signing interface; production implementations must use protected asymmetric keys."""
+    """Signing interface for protected production asymmetric keys."""
     active_key_id: str
 
     def sign(self, payload: dict[str, object]) -> tuple[str, str]: ...

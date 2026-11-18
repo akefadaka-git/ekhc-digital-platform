@@ -1,15 +1,15 @@
 """Contract tests for the synthetic ORG-03 checkpoint ledger adapter."""
 
 import multiprocessing
-from unittest.mock import Mock
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock
 
 from scripts.org03_checkpoint_ledger import (
     GENESIS_HASH,
-    Checkpoint,
     AsymmetricCheckpointSigner,
+    Checkpoint,
     CheckpointAuthenticationError,
     CheckpointConflict,
     HMACCheckpointSigner,
