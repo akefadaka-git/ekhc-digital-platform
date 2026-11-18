@@ -165,6 +165,11 @@ class Org03EventStore:
         try:
             connection.row_factory = sqlite3.Row
             connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("PRAGMA synchronous = FULL")
+            if connection.execute("PRAGMA synchronous").fetchone()[0] != 2:
+                raise EventStoreError(
+                    "event store requires synchronous=FULL for the test profile"
+                )
             busy_timeout_ms = int(min(self.timeout_seconds, 0.1) * 1000)
             connection.execute(f"PRAGMA busy_timeout = {busy_timeout_ms}")
             return connection
