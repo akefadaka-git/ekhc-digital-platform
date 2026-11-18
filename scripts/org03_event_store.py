@@ -215,6 +215,10 @@ class Org03EventStore:
 
     def _initialize(self) -> None:
         with self._connection() as connection:
+            outbox_existed_before = connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='org03_checkpoint_outbox'"
+            ).fetchone() is not None
             connection.execute("PRAGMA journal_mode = WAL")
             connection.executescript(
                 """
@@ -245,6 +249,11 @@ class Org03EventStore:
                     published_at_utc TEXT,
                     safe_error_code TEXT,
                     UNIQUE(alert_id, sequence)
+                );
+                CREATE TABLE IF NOT EXISTS org03_checkpoint_outbox_migrations (
+                    migration_key TEXT PRIMARY KEY,
+                    status TEXT NOT NULL CHECK (status IN ('PENDING', 'COMPLETE')),
+                    updated_at_utc TEXT NOT NULL
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS
                     org03_checkpoint_one_outstanding_per_alert
@@ -306,6 +315,113 @@ class Org03EventStore:
                 connection.execute(
                     "ALTER TABLE org03_authority_versions "
                     "ADD COLUMN scope_ref TEXT NOT NULL DEFAULT 'UNSCOPED'"
+                )
+            if outbox_existed_before:
+                initial_status = "COMPLETE"
+            else:
+                initial_status = "PENDING"
+            migration = connection.execute(
+                "SELECT status FROM org03_checkpoint_outbox_migrations "
+                "WHERE migration_key='legacy-v1'"
+            ).fetchone()
+            now_text = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+            if migration is None:
+                connection.execute(
+                    "INSERT INTO org03_checkpoint_outbox_migrations "
+                    "(migration_key, status, updated_at_utc) "
+                    "VALUES ('legacy-v1', ?, ?)",
+                    (initial_status, now_text),
+                )
+                migration_status = initial_status
+            elif not outbox_existed_before and migration["status"] == "COMPLETE":
+                connection.execute(
+                    "UPDATE org03_checkpoint_outbox_migrations "
+                    "SET status='PENDING', updated_at_utc=? "
+                    "WHERE migration_key='legacy-v1'",
+                    (now_text,),
+                )
+                migration_status = "PENDING"
+            else:
+                migration_status = migration["status"]
+
+            if migration_status == "PENDING":
+                self._begin_immediate(connection)
+                try:
+                    self._migrate_legacy_checkpoint_outbox(connection)
+                    connection.execute(
+                        "UPDATE org03_checkpoint_outbox_migrations "
+                        "SET status='COMPLETE', updated_at_utc=? "
+                        "WHERE migration_key='legacy-v1'",
+                        (datetime.now(UTC).isoformat().replace("+00:00", "Z"),),
+                    )
+                    connection.commit()
+                except Exception:
+                    connection.rollback()
+                    raise
+
+
+    def _migrate_legacy_checkpoint_outbox(
+        self, connection: sqlite3.Connection
+    ) -> None:
+        """Backfill only history already authenticated by the independent ledger."""
+        alerts = connection.execute(
+            "SELECT alert_id, priority FROM org03_aggregates ORDER BY alert_id"
+        ).fetchall()
+        now_text = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        for aggregate in alerts:
+            alert_id = aggregate["alert_id"]
+            self._replay_in_transaction(
+                connection, alert_id, aggregate["priority"]
+            )
+            events = connection.execute(
+                "SELECT sequence, event_hash, previous_hash FROM org03_events "
+                "WHERE alert_id=? ORDER BY sequence",
+                (alert_id,),
+            ).fetchall()
+            if not events:
+                raise CheckpointError(
+                    "legacy aggregate has no authenticated event history"
+                )
+            try:
+                head = self._checkpoint_ledger.head(alert_id)
+                if head is None or head.sequence != len(events):
+                    raise CheckpointError(
+                        "legacy event history lacks a matching independent ledger"
+                    )
+                history = self._checkpoint_ledger.history(
+                    alert_id, 1, len(events)
+                )
+            except CheckpointLedgerError as exc:
+                raise CheckpointError(
+                    "legacy checkpoint ledger could not be authenticated"
+                ) from exc
+            if len(history) != len(events):
+                raise CheckpointError("legacy checkpoint history is incomplete")
+            for record, event in zip(history, events, strict=True):
+                if (
+                    record.sequence != event["sequence"]
+                    or record.event_hash != event["event_hash"]
+                    or record.previous_hash != event["previous_hash"]
+                ):
+                    raise CheckpointError(
+                        "legacy event history differs from independent ledger"
+                    )
+                connection.execute(
+                    "INSERT INTO org03_checkpoint_outbox "
+                    "(outbox_id, alert_id, sequence, event_hash, "
+                    "previous_sequence, previous_hash, checkpoint_version, "
+                    "created_at_utc, status, published_at_utc) "
+                    "VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'PUBLISHED', ?)",
+                    (
+                        str(uuid.uuid4()),
+                        alert_id,
+                        event["sequence"],
+                        event["event_hash"],
+                        event["sequence"] - 1,
+                        event["previous_hash"],
+                        now_text,
+                        now_text,
+                    ),
                 )
 
     def _key(self, key_id: str) -> bytes:
@@ -427,17 +543,17 @@ class Org03EventStore:
                 if connection is None:
                     with self._connection() as read_connection:
                         pending = read_connection.execute(
-                            "SELECT 1 FROM org03_checkpoint_outbox "
-                            "WHERE alert_id=? AND status IN ('PENDING', 'LEASED')",
-                            (alert_id,),
+                            "SELECT status FROM org03_checkpoint_outbox "
+                            "WHERE alert_id=? AND sequence=?",
+                            (alert_id, sequence),
                         ).fetchone()
                 else:
                     pending = connection.execute(
-                        "SELECT 1 FROM org03_checkpoint_outbox "
-                        "WHERE alert_id=? AND status IN ('PENDING', 'LEASED')",
-                        (alert_id,),
+                        "SELECT status FROM org03_checkpoint_outbox "
+                        "WHERE alert_id=? AND sequence=?",
+                        (alert_id, sequence),
                     ).fetchone()
-                if pending is not None:
+                if pending is not None and pending["status"] in {"PENDING", "LEASED"}:
                     raise CheckpointPending(
                         "committed event is awaiting checkpoint publication"
                     )
@@ -469,6 +585,35 @@ class Org03EventStore:
                 ):
                     raise CheckpointError(
                         "database event history differs from independent ledger"
+                    )
+            if connection is None:
+                with self._connection() as read_connection:
+                    outbox_history = read_connection.execute(
+                        "SELECT sequence, event_hash, previous_hash, status "
+                        "FROM org03_checkpoint_outbox WHERE alert_id=? "
+                        "AND sequence<=? ORDER BY sequence",
+                        (alert_id, sequence),
+                    ).fetchall()
+            else:
+                outbox_history = connection.execute(
+                    "SELECT sequence, event_hash, previous_hash, status "
+                    "FROM org03_checkpoint_outbox WHERE alert_id=? "
+                    "AND sequence<=? ORDER BY sequence",
+                    (alert_id, sequence),
+                ).fetchall()
+            if len(outbox_history) != sequence:
+                raise CheckpointError("checkpoint outbox history is incomplete")
+            for outbox_record, database_record in zip(
+                outbox_history, database_history, strict=True
+            ):
+                if (
+                    outbox_record["sequence"] != database_record["sequence"]
+                    or outbox_record["event_hash"] != database_record["event_hash"]
+                    or outbox_record["previous_hash"] != database_record["previous_hash"]
+                    or outbox_record["status"] in {"CONFLICT", "INVALID"}
+                ):
+                    raise CheckpointError(
+                        "checkpoint outbox differs from authenticated event history"
                     )
             if ledger_history[-1].event_hash != event_hash:
                 raise CheckpointError(

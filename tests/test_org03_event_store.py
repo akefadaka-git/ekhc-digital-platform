@@ -489,6 +489,11 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                 "AND name='org03_checkpoint_outbox'"
             ).fetchone()
         self.assertIsNotNone(table)
+        migrated_outbox = reopened.checkpoint_outbox(
+            "SYNTHETIC-OUTBOX-MIGRATION"
+        )
+        self.assertEqual([1], [row["sequence"] for row in migrated_outbox])
+        self.assertEqual("PUBLISHED", migrated_outbox[0]["status"])
         self.assertEqual(
             "RECEIVED",
             reopened.load_state(
@@ -522,13 +527,14 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                 (alert_id,),
             ).fetchone()["event_hash"]
         store._write_checkpoint(alert_id, 1, event_hash)
+        with store._connection() as connection:
+            connection.execute("DROP TABLE org03_checkpoint_outbox")
         ledger_path = Path(str(path) + ".org03-test-ledger.sqlite3")
         for suffix in ("", "-wal", "-shm"):
             Path(str(ledger_path) + suffix).unlink(missing_ok=True)
 
-        reopened = make_store(path)
         with self.assertRaises(CheckpointError):
-            reopened.load_state(alert_id, authorized_responder_refs={})
+            make_store(path)
 
     def test_ledger_ahead_of_database_fails_closed(self):
         alert_id = "SYNTHETIC-LEDGER-AHEAD"
