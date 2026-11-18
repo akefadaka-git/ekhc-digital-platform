@@ -369,6 +369,10 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             store.checkpoint_command_status("SYNTHETIC-EXTERNAL-LEDGER-ALERT", 1),
         )
         with self.assertRaises(CheckpointPending):
+            store.load_state(
+                "SYNTHETIC-EXTERNAL-LEDGER-ALERT", authorized_responder_refs={}
+            )
+        with self.assertRaises(CheckpointPending):
             store.append_event(
                 "SYNTHETIC-EXTERNAL-LEDGER-ALERT",
                 make_event(2, "DELIVERY_CONFIRMED"),

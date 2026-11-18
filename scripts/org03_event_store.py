@@ -535,6 +535,23 @@ class Org03EventStore:
         try:
             head = self._checkpoint_ledger.head(alert_id)
             if head is None:
+                if connection is None:
+                    with self._connection() as read_connection:
+                        pending = read_connection.execute(
+                            "SELECT status FROM org03_checkpoint_outbox "
+                            "WHERE alert_id=? AND sequence=?",
+                            (alert_id, sequence),
+                        ).fetchone()
+                else:
+                    pending = connection.execute(
+                        "SELECT status FROM org03_checkpoint_outbox "
+                        "WHERE alert_id=? AND sequence=?",
+                        (alert_id, sequence),
+                    ).fetchone()
+                if pending is not None and pending["status"] in {"PENDING", "LEASED"}:
+                    raise CheckpointPending(
+                        "initial checkpoint is awaiting publication"
+                    )
                 raise CheckpointError("independent checkpoint ledger is empty")
             if head.sequence < sequence:
                 if connection is None:
