@@ -94,6 +94,34 @@ def _crash_with_uncommitted_event(path):
     os._exit(17)
 
 
+
+def _crash_after_alert_commit(path):
+    store = make_store(path, auto_publish_checkpoints=False)
+    store.create_alert(
+        "SYNTHETIC-CRASH-ALERT", "HIGH", "2026-11-13T07:00:00Z"
+    )
+    os._exit(23)
+
+
+def _crash_after_checkpoint_cas(path, ledger_path):
+    signer = HMACCheckpointSigner(
+        TEST_INTEGRITY_KEYS, "synthetic-test-v1"
+    )
+    ledger = SQLiteCheckpointLedger(ledger_path, signer)
+    store = make_store(
+        path, checkpoint_ledger=ledger, checkpoint_signer=signer
+    )
+
+    def terminate_before_outbox_completion(*args, **kwargs):
+        os._exit(29)
+
+    store._finish_checkpoint_outbox = terminate_before_outbox_completion
+    store.publish_checkpoint_outbox(
+        ledger, signer, worker_id="synthetic-crashing-worker"
+    )
+    os._exit(30)
+
+
 class Org03DurableEventStoreTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -367,6 +395,81 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(
             "COMMITTED_CHECKPOINTED",
             store.checkpoint_command_status("SYNTHETIC-EXTERNAL-LEDGER-ALERT", 2),
+        )
+
+
+    def test_process_crash_after_commit_before_worker_claim_recovers(self):
+        path = Path(self.temp.name) / "crash-before-claim.sqlite3"
+        context = multiprocessing.get_context("fork")
+        process = context.Process(
+            target=_crash_after_alert_commit, args=(str(path),)
+        )
+        process.start()
+        process.join(timeout=20)
+        self.assertFalse(process.is_alive())
+        self.assertEqual(23, process.exitcode)
+
+        reopened = make_store(path)
+        self.assertEqual(
+            "PENDING",
+            reopened.checkpoint_outbox("SYNTHETIC-CRASH-ALERT")[0]["status"],
+        )
+        recovered = reopened.publish_checkpoint_outbox(
+            reopened._checkpoint_ledger,
+            reopened._checkpoint_signer,
+            worker_id="synthetic-restart-worker",
+        )
+        self.assertEqual(1, recovered["published"])
+        self.assertEqual(
+            "COMMITTED_CHECKPOINTED",
+            reopened.checkpoint_command_status("SYNTHETIC-CRASH-ALERT", 1),
+        )
+
+    def test_process_crash_after_ledger_cas_reconciles_exact_checkpoint(self):
+        path = Path(self.temp.name) / "crash-after-cas-event.sqlite3"
+        ledger_path = Path(self.temp.name) / "crash-after-cas-ledger.sqlite3"
+        signer = HMACCheckpointSigner(
+            TEST_INTEGRITY_KEYS, "synthetic-test-v1"
+        )
+        ledger = SQLiteCheckpointLedger(ledger_path, signer)
+        store = make_store(
+            path,
+            checkpoint_ledger=ledger,
+            checkpoint_signer=signer,
+        )
+        store.create_alert(
+            "SYNTHETIC-CRASH-CAS-ALERT",
+            "HIGH",
+            "2026-11-13T07:00:00Z",
+        )
+        context = multiprocessing.get_context("fork")
+        process = context.Process(
+            target=_crash_after_checkpoint_cas,
+            args=(str(path), str(ledger_path)),
+        )
+        process.start()
+        process.join(timeout=20)
+        self.assertFalse(process.is_alive())
+        self.assertEqual(29, process.exitcode)
+        self.assertEqual(1, ledger.head("SYNTHETIC-CRASH-CAS-ALERT").sequence)
+        self.assertEqual(
+            "LEASED",
+            store.checkpoint_outbox("SYNTHETIC-CRASH-CAS-ALERT")[0]["status"],
+        )
+
+        with store._connection() as connection:
+            connection.execute(
+                "UPDATE org03_checkpoint_outbox SET lease_expires_at_utc=? "
+                "WHERE alert_id=?",
+                ("2000-01-01T00:00:00Z", "SYNTHETIC-CRASH-CAS-ALERT"),
+            )
+        recovered = store.publish_checkpoint_outbox(
+            ledger, signer, worker_id="synthetic-reconciliation-worker"
+        )
+        self.assertEqual(1, recovered["published"])
+        self.assertEqual(
+            "COMMITTED_CHECKPOINTED",
+            store.checkpoint_command_status("SYNTHETIC-CRASH-CAS-ALERT", 1),
         )
 
     def test_committed_events_survive_new_store_instance(self):
