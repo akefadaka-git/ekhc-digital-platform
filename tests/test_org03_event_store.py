@@ -391,7 +391,6 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             store.checkpoint_command_status("SYNTHETIC-EXTERNAL-LEDGER-ALERT", 2),
         )
 
-
     def test_process_crash_after_commit_before_worker_claim_recovers(self):
         path = Path(self.temp.name) / "crash-before-claim.sqlite3"
         context = multiprocessing.get_context("fork")
@@ -462,13 +461,10 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             store.checkpoint_command_status("SYNTHETIC-CRASH-CAS-ALERT", 1),
         )
 
-
     def test_existing_database_without_outbox_table_migrates_restart_safely(self):
         path = Path(self.temp.name) / "missing-outbox-migration.sqlite3"
         store = make_store(path)
-        store.create_alert(
-            "SYNTHETIC-OUTBOX-MIGRATION", "HIGH", "2026-11-13T07:00:00Z"
-        )
+        store.create_alert("SYNTHETIC-OUTBOX-MIGRATION", "HIGH", "2026-11-13T07:00:00Z")
         with store._connection() as connection:
             connection.execute("DROP TABLE org03_checkpoint_outbox")
 
@@ -508,8 +504,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         store.create_alert(alert_id, "HIGH", "2026-11-13T07:00:00Z")
         with store._connection() as connection:
             event_hash = connection.execute(
-                "SELECT event_hash FROM org03_events "
-                "WHERE alert_id=? AND sequence=1",
+                "SELECT event_hash FROM org03_events WHERE alert_id=? AND sequence=1",
                 (alert_id,),
             ).fetchone()["event_hash"]
         store._write_checkpoint(alert_id, 1, event_hash)
