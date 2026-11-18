@@ -99,6 +99,61 @@ class CheckpointLedgerTests(unittest.TestCase):
         history = self.ledger.history("SYNTHETIC-ALERT-01", 1, 2)
         self.assertEqual([1, 2], [item.sequence for item in history])
 
+
+    def test_checkpoint_key_rotation_verifies_old_and_new_signatures(self):
+        keys = {
+            "test-v1": KEYS["test-v1"],
+            "test-v2": b"ORG03-SECOND-SYNTHETIC-KEY-MATERIAL-32-BYTES",
+        }
+        signer_v1 = HMACCheckpointSigner(keys, "test-v1")
+        ledger_v1 = SQLiteCheckpointLedger(self.path, signer_v1)
+        first = make_checkpoint(1, GENESIS_HASH, "a" * 64)
+        _, first_signature = signer_v1.sign(first.payload())
+        ledger_v1.compare_and_set(first, first_signature)
+
+        signer_v2 = HMACCheckpointSigner(keys, "test-v2")
+        ledger_v2 = SQLiteCheckpointLedger(self.path, signer_v2)
+        self.assertEqual("test-v1", ledger_v2.head(first.alert_id).key_id)
+        second = Checkpoint(
+            alert_id=first.alert_id,
+            sequence=2,
+            event_hash="b" * 64,
+            previous_sequence=1,
+            previous_hash="a" * 64,
+            checkpoint_version=1,
+            key_id="test-v2",
+            published_at_utc="2026-11-18T10:00:02Z",
+        )
+        _, second_signature = signer_v2.sign(second.payload())
+        ledger_v2.compare_and_set(second, second_signature)
+        history = ledger_v2.history(first.alert_id, 1, 2)
+        self.assertEqual(["test-v1", "test-v2"], [item.key_id for item in history])
+
+    def test_revoked_checkpoint_signing_key_cannot_advance_ledger(self):
+        signer = HMACCheckpointSigner(
+            KEYS, "test-v1", revoked_key_ids=frozenset({"test-v1"})
+        )
+        ledger = SQLiteCheckpointLedger(self.path, signer)
+        checkpoint = make_checkpoint(1, GENESIS_HASH, "a" * 64)
+        with self.assertRaises(CheckpointAuthenticationError):
+            signer.sign(checkpoint.payload())
+        self.assertIsNone(ledger.head(checkpoint.alert_id))
+
+    def test_missing_historical_checkpoint_key_fails_closed(self):
+        original = HMACCheckpointSigner(KEYS, "test-v1")
+        ledger = SQLiteCheckpointLedger(self.path, original)
+        checkpoint = make_checkpoint(1, GENESIS_HASH, "a" * 64)
+        _, signature = original.sign(checkpoint.payload())
+        ledger.compare_and_set(checkpoint, signature)
+
+        replacement = HMACCheckpointSigner(
+            {"test-v2": b"ORG03-SECOND-SYNTHETIC-KEY-MATERIAL-32-BYTES"},
+            "test-v2",
+        )
+        reopened = SQLiteCheckpointLedger(self.path, replacement)
+        with self.assertRaises(CheckpointAuthenticationError):
+            reopened.head(checkpoint.alert_id)
+
     def test_two_processes_cannot_publish_conflicting_genesis_heads(self):
         context = multiprocessing.get_context("fork")
         barrier = context.Barrier(2)

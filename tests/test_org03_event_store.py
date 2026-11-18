@@ -12,6 +12,7 @@ import unittest
 from pathlib import Path
 
 from scripts.org03_checkpoint_ledger import (
+    Checkpoint,
     HMACCheckpointSigner,
     SQLiteCheckpointLedger,
 )
@@ -333,6 +334,20 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(item["outbox_id"], reclaimed["outbox_id"])
         self.assertNotEqual(item["lease_token"], reclaimed["lease_token"])
         self.assertEqual(2, reclaimed["attempt_count"])
+        self.assertFalse(
+            self.store._finish_checkpoint_outbox(
+                item["outbox_id"],
+                item["lease_token"],
+                status="PUBLISHED",
+            )
+        )
+        self.assertTrue(
+            self.store._finish_checkpoint_outbox(
+                reclaimed["outbox_id"],
+                reclaimed["lease_token"],
+                status="PUBLISHED",
+            )
+        )
 
     def test_injected_ledger_is_published_by_worker_not_inline(self):
         path = Path(self.temp.name) / "external-ledger-event-store.sqlite3"
@@ -514,6 +529,62 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         reopened = make_store(path)
         with self.assertRaises(CheckpointError):
             reopened.load_state(alert_id, authorized_responder_refs={})
+
+
+    def test_ledger_ahead_of_database_fails_closed(self):
+        alert_id = "SYNTHETIC-LEDGER-AHEAD"
+        self.store.create_alert(alert_id, "HIGH", "2026-11-13T07:00:00Z")
+        previous = self.store._checkpoint_ledger.head(alert_id)
+        checkpoint = Checkpoint(
+            alert_id=alert_id,
+            sequence=2,
+            event_hash="f" * 64,
+            previous_sequence=1,
+            previous_hash=previous.event_hash,
+            checkpoint_version=1,
+            key_id=self.store._checkpoint_signer.active_key_id,
+            published_at_utc="2026-11-18T10:00:02Z",
+        )
+        _, signature = self.store._checkpoint_signer.sign(checkpoint.payload())
+        self.store._checkpoint_ledger.compare_and_set(checkpoint, signature)
+        with self.assertRaises(CheckpointError):
+            self.store.load_state(alert_id, authorized_responder_refs={})
+
+    def test_outbox_event_hash_tampering_is_terminal_and_blocks_commands(self):
+        path = Path(self.temp.name) / "tampered-outbox.sqlite3"
+        ledger_path = Path(self.temp.name) / "tampered-outbox-ledger.sqlite3"
+        signer = HMACCheckpointSigner(TEST_INTEGRITY_KEYS, "synthetic-test-v1")
+        ledger = SQLiteCheckpointLedger(ledger_path, signer)
+        store = make_store(
+            path,
+            checkpoint_ledger=ledger,
+            checkpoint_signer=signer,
+        )
+        alert_id = "SYNTHETIC-TAMPERED-OUTBOX"
+        store.create_alert(alert_id, "HIGH", "2026-11-13T07:00:00Z")
+        with store._connection() as connection:
+            connection.execute(
+                "UPDATE org03_checkpoint_outbox SET event_hash=? "
+                "WHERE alert_id=? AND sequence=1",
+                ("f" * 64, alert_id),
+            )
+        result = store.publish_checkpoint_outbox(
+            ledger, signer, worker_id="synthetic-tamper-detection-worker"
+        )
+        self.assertEqual(1, result["invalid"])
+        self.assertEqual(
+            "COMMITTED_INTEGRITY_CONFLICT",
+            store.checkpoint_command_status(alert_id, 1),
+        )
+        with self.assertRaises(CheckpointPending):
+            store.append_event(
+                alert_id,
+                make_event(2, "DELIVERY_CONFIRMED"),
+                expected_version=1,
+                event_id="SYNTHETIC-TAMPERED-OUTBOX-EVENT-02",
+                idempotency_key="SYNTHETIC-TAMPERED-OUTBOX-IDEM-02",
+                authorized_responder_refs={},
+            )
 
     def test_committed_events_survive_new_store_instance(self):
         self.append_primary()
