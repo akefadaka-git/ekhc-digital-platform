@@ -1076,7 +1076,8 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             idempotency_key="SYNTHETIC-R1-IDEM-03",
             authorized_responder_refs=AUTH,
         )
-        with sqlite3.connect(str(self.path) + ".org03-test-ledger.sqlite3") as connection:
+        ledger_path = str(self.path) + ".org03-test-ledger.sqlite3"
+        with sqlite3.connect(ledger_path) as connection:
             connection.execute("DROP TRIGGER org03_checkpoint_no_delete")
             connection.execute(
                 "DELETE FROM org03_checkpoint_records "
