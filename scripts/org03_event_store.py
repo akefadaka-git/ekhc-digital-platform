@@ -25,6 +25,7 @@ from scripts.org03_checkpoint_ledger import (
     CheckpointAuthenticationError,
     CheckpointConflict,
     CheckpointLedger,
+    CheckpointLedgerError,
     CheckpointSigner,
     HMACCheckpointSigner,
     SQLiteCheckpointLedger,
@@ -406,18 +407,56 @@ class Org03EventStore:
     def _verify_checkpoint(
         self, alert_id: str, sequence: int, event_hash: str, payload: dict | None = None
     ) -> None:
-        payload = payload or self._read_checkpoint(alert_id)
-        if (
-            payload.get("schema") != "ORG03-CHECKPOINT-V1"
-            or payload.get("algorithm") != "HMAC-SHA-256"
-            or payload.get("alert_id") != alert_id
-        ):
-            raise CheckpointError("checkpoint identity mismatch")
-        if (
-            payload.get("sequence") != sequence
-            or payload.get("event_hash") != event_hash
-        ):
-            raise CheckpointError("database head differs from independent checkpoint")
+        """Verify the database head against the independent authenticated ledger."""
+        try:
+            head = self._checkpoint_ledger.head(alert_id)
+            if head is None:
+                raise CheckpointError("independent checkpoint ledger is empty")
+            if head.sequence < sequence:
+                with self._connection() as connection:
+                    pending = connection.execute(
+                        "SELECT 1 FROM org03_checkpoint_outbox "
+                        "WHERE alert_id=? AND status IN ('PENDING', 'LEASED')",
+                        (alert_id,),
+                    ).fetchone()
+                if pending is not None:
+                    raise CheckpointPending(
+                        "committed event is awaiting checkpoint publication"
+                    )
+                raise CheckpointError("independent ledger is behind database history")
+            if head.sequence > sequence or head.event_hash != event_hash:
+                raise CheckpointError(
+                    "database head differs from independent checkpoint ledger"
+                )
+            ledger_history = self._checkpoint_ledger.history(
+                alert_id, 1, sequence
+            )
+            with self._connection() as connection:
+                database_history = connection.execute(
+                    "SELECT sequence, event_hash, previous_hash FROM org03_events "
+                    "WHERE alert_id=? ORDER BY sequence",
+                    (alert_id,),
+                ).fetchall()
+            if (
+                len(ledger_history) != sequence
+                or len(database_history) != sequence
+            ):
+                raise CheckpointError("database or ledger history is incomplete")
+            for ledger_record, database_record in zip(
+                ledger_history, database_history, strict=True
+            ):
+                if (
+                    ledger_record.sequence != database_record["sequence"]
+                    or ledger_record.event_hash != database_record["event_hash"]
+                    or ledger_record.previous_hash != database_record["previous_hash"]
+                ):
+                    raise CheckpointError(
+                        "database event history differs from independent ledger"
+                    )
+        except CheckpointLedgerError as exc:
+            raise CheckpointError(
+                "independent checkpoint ledger could not be authenticated"
+            ) from exc
 
     def _responder_refs_for_event(self, event: dict) -> dict[str, str]:
         role_slots = {
@@ -1022,7 +1061,6 @@ class Org03EventStore:
             except Exception:
                 connection.rollback()
                 raise
-        self._write_checkpoint(alert_id, 1, event_hash)
         self.publish_checkpoint_outbox(
             self._checkpoint_ledger,
             self._checkpoint_signer,
@@ -1214,7 +1252,6 @@ class Org03EventStore:
                     connection, alert_id, sequence, event_hash, previous_hash
                 )
                 connection.commit()
-                self._write_checkpoint(alert_id, sequence, event_hash)
                 self.publish_checkpoint_outbox(
                     self._checkpoint_ledger,
                     self._checkpoint_signer,

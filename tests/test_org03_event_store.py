@@ -187,12 +187,12 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(rows[1]["previous_hash"], rows[0]["event_hash"])
 
     def test_post_commit_checkpoint_failure_is_recoverable_from_outbox(self):
-        original_write = self.store._write_checkpoint
+        original_publish = self.store.publish_checkpoint_outbox
 
-        def fail_sidecar(*args, **kwargs):
-            raise OSError("synthetic sidecar failure after database commit")
+        def fail_publisher(*args, **kwargs):
+            raise OSError("synthetic publisher failure after database commit")
 
-        self.store._write_checkpoint = fail_sidecar
+        self.store.publish_checkpoint_outbox = fail_publisher
         event = make_event(
             3,
             "HUMAN_ACKNOWLEDGED",
@@ -209,7 +209,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                 idempotency_key="SYNTHETIC-RECOVERY-IDEM-03",
                 authorized_responder_refs=AUTH,
             )
-        self.store._write_checkpoint = original_write
+        self.store.publish_checkpoint_outbox = original_publish
 
         pending = self.store.checkpoint_outbox("SYNTHETIC-ALERT-STORE-01")[-1]
         self.assertEqual("PENDING", pending["status"])
@@ -455,17 +455,17 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual("AWAITING_HUMAN_ACK", state["status"])
 
     def test_checkpoint_failure_after_database_commit_leaves_stale_sidecar(self):
-        original_write_checkpoint = self.store._write_checkpoint
+        original_publish = self.store.publish_checkpoint_outbox
 
-        def fail_checkpoint_write(*args, **kwargs):
-            raise OSError("synthetic checkpoint replacement failure")
+        def fail_publisher(*args, **kwargs):
+            raise OSError("synthetic checkpoint publication failure")
 
-        self.store._write_checkpoint = fail_checkpoint_write
+        self.store.publish_checkpoint_outbox = fail_publisher
         try:
             with self.assertRaisesRegex(OSError, "synthetic checkpoint"):
                 self.append_primary()
         finally:
-            self.store._write_checkpoint = original_write_checkpoint
+            self.store.publish_checkpoint_outbox = original_publish
 
         self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
         with self.store._connection() as connection:
@@ -476,16 +476,19 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(3, aggregate["version"])
         self.assertEqual("ACKNOWLEDGED", aggregate["status"])
 
-        checkpoint = self.store._read_checkpoint("SYNTHETIC-ALERT-STORE-01")
-        self.assertEqual(2, checkpoint["sequence"])
-
-        with self.assertRaises(CheckpointError):
+        with self.assertRaises(CheckpointPending):
             self.store.load_state(
                 "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
             )
 
         retried = self.append_primary()
         self.assertEqual("ACKNOWLEDGED", retried["status"])
+        self.assertEqual(
+            "COMMITTED_PENDING_CHECKPOINT",
+            self.store.checkpoint_command_status(
+                "SYNTHETIC-ALERT-STORE-01", 3
+            ),
+        )
         self.assertEqual(
             "PENDING",
             self.store.checkpoint_outbox("SYNTHETIC-ALERT-STORE-01")[-1]["status"],
@@ -779,13 +782,14 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             )
 
     def test_checkpoint_rollback_is_detected(self):
-        import shutil
-
-        checkpoint = self.store._checkpoint_path("SYNTHETIC-ALERT-STORE-01")
-        old_checkpoint = Path(self.temp.name) / "checkpoint-before-append.json"
-        shutil.copyfile(checkpoint, old_checkpoint)
         self.append_primary()
-        shutil.copyfile(old_checkpoint, checkpoint)
+        with sqlite3.connect(str(self.path) + ".org03-test-ledger.sqlite3") as connection:
+            connection.execute("DROP TRIGGER org03_checkpoint_no_delete")
+            connection.execute(
+                "DELETE FROM org03_checkpoint_records "
+                "WHERE alert_id=? AND sequence=3",
+                ("SYNTHETIC-ALERT-STORE-01",),
+            )
         with self.assertRaises(CheckpointError):
             self.store.load_state(
                 "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
@@ -1063,8 +1067,6 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             revoked.load_state("SYNTHETIC-R1-ALERT", authorized_responder_refs=AUTH)
 
     def test_checkpoint_rollback_is_detected(self):
-        path = self.store._checkpoint_path("SYNTHETIC-R1-ALERT")
-        old = path.read_text(encoding="utf-8")
         self.store.append_event(
             "SYNTHETIC-R1-ALERT",
             make_event(3, "PRIMARY_ACK_DEADLINE_MISSED"),
@@ -1073,7 +1075,13 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             idempotency_key="SYNTHETIC-R1-IDEM-03",
             authorized_responder_refs=AUTH,
         )
-        path.write_text(old, encoding="utf-8")
+        with sqlite3.connect(str(self.path) + ".org03-test-ledger.sqlite3") as connection:
+            connection.execute("DROP TRIGGER org03_checkpoint_no_delete")
+            connection.execute(
+                "DELETE FROM org03_checkpoint_records "
+                "WHERE alert_id=? AND sequence=3",
+                ("SYNTHETIC-R1-ALERT",),
+            )
         with self.assertRaises(CheckpointError):
             self.load()
 
@@ -1150,13 +1158,13 @@ class Org03R1R3NegativeTests(unittest.TestCase):
             )
 
     def test_checkpoint_mac_tampering_fails_closed(self):
-        checkpoint = self.store._checkpoint_path("SYNTHETIC-R1-ALERT")
-        record = json.loads(checkpoint.read_text(encoding="utf-8"))
-        record["event_hash"] = "f" * 64
-        checkpoint.write_text(
-            json.dumps(record, sort_keys=True, separators=(",", ":")),
-            encoding="utf-8",
-        )
+        with sqlite3.connect(str(self.path) + ".org03-test-ledger.sqlite3") as connection:
+            connection.execute("DROP TRIGGER org03_checkpoint_no_update")
+            connection.execute(
+                "UPDATE org03_checkpoint_records SET signature='invalid' "
+                "WHERE alert_id=? AND sequence=2",
+                ("SYNTHETIC-R1-ALERT",),
+            )
         with self.assertRaises(CheckpointError):
             self.load()
 
