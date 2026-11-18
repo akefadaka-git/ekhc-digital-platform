@@ -66,8 +66,8 @@ def _process_append(
             authorized_responder_refs=AUTH,
         )
         queue.put(("committed", state["status"]))
-    except StaleAggregateVersion:
-        queue.put(("stale", None))
+    except (StaleAggregateVersion, CheckpointPending):
+        queue.put(("blocked", None))
 
 
 def _crash_with_uncommitted_event(path):
@@ -153,8 +153,8 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                     authorized_responder_refs=AUTH,
                 )
                 return ("committed", result["status"])
-            except StaleAggregateVersion:
-                return ("stale", None)
+            except (StaleAggregateVersion, CheckpointPending):
+                return ("blocked", None)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             outcomes = list(
@@ -175,7 +175,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                 )
             )
         self.assertEqual(1, sum(item[0] == "committed" for item in outcomes))
-        self.assertEqual(1, sum(item[0] == "stale" for item in outcomes))
+        self.assertEqual(1, sum(item[0] == "blocked" for item in outcomes))
         return outcomes
 
 
@@ -471,8 +471,12 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                 "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
             )
 
-        with self.assertRaises(CheckpointPending):
-            self.append_primary()
+        retried = self.append_primary()
+        self.assertEqual("ACKNOWLEDGED", retried["status"])
+        self.assertEqual(
+            "PENDING",
+            self.store.checkpoint_outbox("SYNTHETIC-ALERT-STORE-01")[-1]["status"],
+        )
 
     def test_corrupted_event_hash_fails_closed(self):
         with self.store._connect() as connection:
@@ -523,7 +527,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             self.assertEqual(0, process.exitcode)
         outcomes = [queue.get(timeout=5), queue.get(timeout=5)]
         self.assertEqual(1, sum(item[0] == "committed" for item in outcomes))
-        self.assertEqual(1, sum(item[0] == "stale" for item in outcomes))
+        self.assertEqual(1, sum(item[0] == "blocked" for item in outcomes))
         self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
 
     def test_separate_processes_arbitrate_backup_ack_vs_backup_deadline(self):
@@ -571,7 +575,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             self.assertEqual(0, process.exitcode)
         outcomes = [queue.get(timeout=5), queue.get(timeout=5)]
         self.assertEqual(1, sum(item[0] == "committed" for item in outcomes))
-        self.assertEqual(1, sum(item[0] == "stale" for item in outcomes))
+        self.assertEqual(1, sum(item[0] == "blocked" for item in outcomes))
 
         state = self.store.load_state(
             "SYNTHETIC-ALERT-STORE-01", authorized_responder_refs=AUTH
