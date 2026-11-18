@@ -182,7 +182,6 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(1, sum(item[0] == "blocked" for item in outcomes))
         return outcomes
 
-
     def test_event_and_checkpoint_outbox_commit_atomically(self):
         rows = self.store.checkpoint_outbox("SYNTHETIC-ALERT-STORE-01")
         self.assertEqual([1, 2], [row["sequence"] for row in rows])
@@ -541,9 +540,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual("ACKNOWLEDGED", retried["status"])
         self.assertEqual(
             "COMMITTED_PENDING_CHECKPOINT",
-            self.store.checkpoint_command_status(
-                "SYNTHETIC-ALERT-STORE-01", 3
-            ),
+            self.store.checkpoint_command_status("SYNTHETIC-ALERT-STORE-01", 3),
         )
         self.assertEqual(
             "PENDING",
