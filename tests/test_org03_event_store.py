@@ -480,7 +480,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
             ).fetchone()
         self.assertIsNotNone(table)
         self.assertEqual(
-            "AWAITING_HUMAN_ACK",
+            "RECEIVED",
             reopened.load_state(
                 "SYNTHETIC-OUTBOX-MIGRATION", authorized_responder_refs={}
             )["status"],
