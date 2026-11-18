@@ -55,17 +55,17 @@ class Checkpoint(NamedTuple):
 
 class CheckpointSigner(Protocol):
     """Signing interface for protected production asymmetric keys."""
+
     active_key_id: str
 
     def sign(self, payload: dict[str, object]) -> tuple[str, str]: ...
 
-    def verify(
-        self, key_id: str, payload: dict[str, object], signature: str
-    ) -> bool: ...
+    def verify(self, key_id: str, payload: dict[str, object], signature: str) -> bool: ...
 
 
 class CheckpointLedger(Protocol):
     """Production implementations must be independently administered and durable."""
+
     def head(self, alert_id: str) -> Checkpoint | None: ...
     def get(self, alert_id: str, sequence: int) -> Checkpoint | None: ...
     def history(self, alert_id: str, start: int, end: int) -> list[Checkpoint]: ...
@@ -133,7 +133,7 @@ class AsymmetricCheckpointSigner:
                     raw_signature,
                 )
             )
-        except (binascii.Error, UnicodeError, ValueError):
+        except binascii.Error, UnicodeError, ValueError:
             return False
         except Exception:
             return False

@@ -134,9 +134,7 @@ class CheckpointLedgerTests(unittest.TestCase):
         checkpoint = make_checkpoint(1, GENESIS_HASH, "a" * 64)
         with self.assertRaises(CheckpointAuthenticationError):
             signer.sign(checkpoint.payload())
-        self.assertFalse(
-            signer.verify("kms-key-v1", checkpoint.payload(), "c2ln")
-        )
+        self.assertFalse(signer.verify("kms-key-v1", checkpoint.payload(), "c2ln"))
         provider.sign.assert_not_called()
         provider.verify.assert_not_called()
 
