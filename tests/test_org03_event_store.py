@@ -97,20 +97,14 @@ def _crash_with_uncommitted_event(path):
 
 def _crash_after_alert_commit(path):
     store = make_store(path, auto_publish_checkpoints=False)
-    store.create_alert(
-        "SYNTHETIC-CRASH-ALERT", "HIGH", "2026-11-13T07:00:00Z"
-    )
+    store.create_alert("SYNTHETIC-CRASH-ALERT", "HIGH", "2026-11-13T07:00:00Z")
     os._exit(23)
 
 
 def _crash_after_checkpoint_cas(path, ledger_path):
-    signer = HMACCheckpointSigner(
-        TEST_INTEGRITY_KEYS, "synthetic-test-v1"
-    )
+    signer = HMACCheckpointSigner(TEST_INTEGRITY_KEYS, "synthetic-test-v1")
     ledger = SQLiteCheckpointLedger(ledger_path, signer)
-    store = make_store(
-        path, checkpoint_ledger=ledger, checkpoint_signer=signer
-    )
+    store = make_store(path, checkpoint_ledger=ledger, checkpoint_signer=signer)
 
     def terminate_before_outbox_completion(*args, **kwargs):
         os._exit(29)
@@ -401,9 +395,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
     def test_process_crash_after_commit_before_worker_claim_recovers(self):
         path = Path(self.temp.name) / "crash-before-claim.sqlite3"
         context = multiprocessing.get_context("fork")
-        process = context.Process(
-            target=_crash_after_alert_commit, args=(str(path),)
-        )
+        process = context.Process(target=_crash_after_alert_commit, args=(str(path),))
         process.start()
         process.join(timeout=20)
         self.assertFalse(process.is_alive())
@@ -428,9 +420,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
     def test_process_crash_after_ledger_cas_reconciles_exact_checkpoint(self):
         path = Path(self.temp.name) / "crash-after-cas-event.sqlite3"
         ledger_path = Path(self.temp.name) / "crash-after-cas-ledger.sqlite3"
-        signer = HMACCheckpointSigner(
-            TEST_INTEGRITY_KEYS, "synthetic-test-v1"
-        )
+        signer = HMACCheckpointSigner(TEST_INTEGRITY_KEYS, "synthetic-test-v1")
         ledger = SQLiteCheckpointLedger(ledger_path, signer)
         store = make_store(
             path,
