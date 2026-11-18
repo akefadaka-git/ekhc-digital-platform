@@ -405,7 +405,7 @@ class Org03EventStore:
         return payload
 
     def _verify_checkpoint(
-        self, alert_id: str, sequence: int, event_hash: str, payload: dict | None = None
+        self, alert_id: str, sequence: int, event_hash: str
     ) -> None:
         """Verify the database head against the independent authenticated ledger."""
         try:
@@ -1353,7 +1353,6 @@ class Org03EventStore:
     def load_state(
         self, alert_id: str, *, authorized_responder_refs: dict[str, str]
     ) -> dict:
-        checkpoint_snapshot = self._read_checkpoint(alert_id)
         with self._connection() as connection:
             connection.execute("BEGIN")
             try:
@@ -1378,7 +1377,6 @@ class Org03EventStore:
                     alert_id,
                     last_event["sequence"],
                     last_event["event_hash"],
-                    checkpoint_snapshot,
                 )
                 if aggregate["version"] != state["next_sequence"] - 1:
                     raise EventLogIntegrityError(
