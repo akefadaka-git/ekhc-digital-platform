@@ -103,7 +103,6 @@ class CheckpointLedgerTests(unittest.TestCase):
         history = self.ledger.history("SYNTHETIC-ALERT-01", 1, 2)
         self.assertEqual([1, 2], [item.sequence for item in history])
 
-
     def test_asymmetric_provider_adapter_keeps_signing_provider_side(self):
         provider = Mock()
         provider.sign.return_value = b"provider-signature"
@@ -138,7 +137,6 @@ class CheckpointLedgerTests(unittest.TestCase):
         self.assertFalse(signer.verify("kms-key-v1", checkpoint.payload(), "c2ln"))
         provider.sign.assert_not_called()
         provider.verify.assert_not_called()
-
 
     def test_asymmetric_provider_outage_is_retriable_not_authentication_failure(self):
         provider = Mock()

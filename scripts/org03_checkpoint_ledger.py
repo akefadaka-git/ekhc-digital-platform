@@ -78,7 +78,6 @@ class CheckpointLedger(Protocol):
     def compare_and_set(self, checkpoint: Checkpoint, signature: str) -> bool: ...
 
 
-
 class AsymmetricCheckpointProvider(Protocol):
     """KMS/HSM adapter contract; private key material must remain provider-side."""
 
@@ -123,9 +122,7 @@ class AsymmetricCheckpointSigner:
             )
         return self.active_key_id, base64.urlsafe_b64encode(signature).decode("ascii")
 
-    def verify(
-        self, key_id: str, payload: dict[str, object], signature: str
-    ) -> bool:
+    def verify(self, key_id: str, payload: dict[str, object], signature: str) -> bool:
         if key_id not in self._trusted_key_ids or key_id in self.revoked_key_ids:
             return False
         try:
