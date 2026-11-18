@@ -14,6 +14,7 @@ from pathlib import Path
 from scripts.org03_event_store import (
     AuthorityError,
     CheckpointError,
+    CheckpointPending,
     EventLogIntegrityError,
     EventStoreBusy,
     IdempotencyConflict,
@@ -176,6 +177,123 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         self.assertEqual(1, sum(item[0] == "committed" for item in outcomes))
         self.assertEqual(1, sum(item[0] == "stale" for item in outcomes))
         return outcomes
+
+
+    def test_event_and_checkpoint_outbox_commit_atomically(self):
+        rows = self.store.checkpoint_outbox("SYNTHETIC-ALERT-STORE-01")
+        self.assertEqual([1, 2], [row["sequence"] for row in rows])
+        self.assertEqual(["PUBLISHED", "PUBLISHED"], [row["status"] for row in rows])
+        self.assertEqual(rows[1]["previous_sequence"], 1)
+        self.assertEqual(rows[1]["previous_hash"], rows[0]["event_hash"])
+
+    def test_post_commit_checkpoint_failure_is_recoverable_from_outbox(self):
+        original_write = self.store._write_checkpoint
+
+        def fail_sidecar(*args, **kwargs):
+            raise OSError("synthetic sidecar failure after database commit")
+
+        self.store._write_checkpoint = fail_sidecar
+        event = make_event(
+            3,
+            "HUMAN_ACKNOWLEDGED",
+            "PRIMARY_SECURITY_OPERATIONS",
+            AUTH["primary"],
+            disposition="ACCEPTED",
+        )
+        with self.assertRaisesRegex(OSError, "synthetic sidecar failure"):
+            self.store.append_event(
+                "SYNTHETIC-ALERT-STORE-01",
+                event,
+                expected_version=2,
+                event_id="SYNTHETIC-RECOVERY-EVENT-03",
+                idempotency_key="SYNTHETIC-RECOVERY-IDEM-03",
+                authorized_responder_refs=AUTH,
+            )
+        self.store._write_checkpoint = original_write
+
+        pending = self.store.checkpoint_outbox("SYNTHETIC-ALERT-STORE-01")[-1]
+        self.assertEqual("PENDING", pending["status"])
+        self.assertEqual(3, self.store.event_count("SYNTHETIC-ALERT-STORE-01"))
+
+        original_result = self.store.append_event(
+            "SYNTHETIC-ALERT-STORE-01",
+            event,
+            expected_version=2,
+            event_id="SYNTHETIC-RECOVERY-EVENT-03",
+            idempotency_key="SYNTHETIC-RECOVERY-IDEM-03",
+            authorized_responder_refs=AUTH,
+        )
+        self.assertEqual("ACKNOWLEDGED", original_result["status"])
+        with self.assertRaises(CheckpointPending):
+            self.store.append_event(
+                "SYNTHETIC-ALERT-STORE-01",
+                make_event(4, "BACKUP_ACK_DEADLINE_MISSED"),
+                expected_version=3,
+                event_id="SYNTHETIC-BLOCKED-EVENT-04",
+                idempotency_key="SYNTHETIC-BLOCKED-IDEM-04",
+                authorized_responder_refs=AUTH,
+            )
+
+        recovered = self.store.publish_checkpoint_outbox(
+            self.store._checkpoint_ledger,
+            self.store._checkpoint_signer,
+            worker_id="synthetic-recovery-worker",
+            limit=5,
+        )
+        self.assertEqual(1, recovered["published"])
+        self.assertEqual(
+            "PUBLISHED",
+            self.store.checkpoint_outbox("SYNTHETIC-ALERT-STORE-01")[-1]["status"],
+        )
+        head = self.store._checkpoint_ledger.head("SYNTHETIC-ALERT-STORE-01")
+        self.assertEqual(3, head.sequence)
+
+    def test_initial_alert_checkpoint_instruction_is_transactional(self):
+        path = Path(self.temp.name) / "atomic-initial.sqlite3"
+        store = make_store(path)
+        original_enqueue = store._enqueue_checkpoint
+
+        def fail_enqueue(*args, **kwargs):
+            raise RuntimeError("synthetic outbox insertion failure")
+
+        store._enqueue_checkpoint = fail_enqueue
+        with self.assertRaisesRegex(RuntimeError, "outbox insertion failure"):
+            store.create_alert(
+                "SYNTHETIC-ATOMIC-INITIAL", "HIGH", "2026-11-13T07:00:00Z"
+            )
+        store._enqueue_checkpoint = original_enqueue
+        with store._connection() as connection:
+            aggregate_count = connection.execute(
+                "SELECT COUNT(*) FROM org03_aggregates WHERE alert_id=?",
+                ("SYNTHETIC-ATOMIC-INITIAL",),
+            ).fetchone()[0]
+            event_count = connection.execute(
+                "SELECT COUNT(*) FROM org03_events WHERE alert_id=?",
+                ("SYNTHETIC-ATOMIC-INITIAL",),
+            ).fetchone()[0]
+            outbox_count = connection.execute(
+                "SELECT COUNT(*) FROM org03_checkpoint_outbox WHERE alert_id=?",
+                ("SYNTHETIC-ATOMIC-INITIAL",),
+            ).fetchone()[0]
+        self.assertEqual((0, 0, 0), (aggregate_count, event_count, outbox_count))
+
+    def test_expired_worker_lease_can_be_reclaimed(self):
+        item = self.store._claim_checkpoint_outbox(
+            "synthetic-worker-a", lease_seconds=60
+        )
+        self.assertIsNotNone(item)
+        with self.store._connection() as connection:
+            connection.execute(
+                "UPDATE org03_checkpoint_outbox SET lease_expires_at_utc=? "
+                "WHERE outbox_id=?",
+                ("2000-01-01T00:00:00Z", item["outbox_id"]),
+            )
+        reclaimed = self.store._claim_checkpoint_outbox(
+            "synthetic-worker-b", lease_seconds=60
+        )
+        self.assertEqual(item["outbox_id"], reclaimed["outbox_id"])
+        self.assertNotEqual(item["lease_token"], reclaimed["lease_token"])
+        self.assertEqual(2, reclaimed["attempt_count"])
 
     def test_committed_events_survive_new_store_instance(self):
         self.append_primary()

@@ -877,14 +877,16 @@ class Org03EventStore:
                         previous_sequence=item["previous_sequence"],
                         previous_hash=item["previous_hash"],
                         checkpoint_version=item["checkpoint_version"],
-                        key_id="pending",
+                        key_id=signer.active_key_id,
                         published_at_utc=(
                             datetime.now(UTC).isoformat().replace("+00:00", "Z")
                         ),
                     )
                     key_id, signature = signer.sign(checkpoint.payload())
-                    checkpoint = checkpoint._replace(key_id=key_id)
-                    _, signature = signer.sign(checkpoint.payload())
+                    if key_id != checkpoint.key_id:
+                        raise CheckpointAuthenticationError(
+                            "signer key ID changed during checkpoint creation"
+                        )
                     ledger.compare_and_set(checkpoint, signature)
 
                 completed = self._finish_checkpoint_outbox(

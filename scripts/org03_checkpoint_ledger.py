@@ -51,6 +51,8 @@ class Checkpoint(NamedTuple):
 
 
 class CheckpointSigner(Protocol):
+    active_key_id: str
+
     def sign(self, payload: dict[str, object]) -> tuple[str, str]: ...
 
     def verify(
