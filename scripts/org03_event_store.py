@@ -27,6 +27,8 @@ from scripts.org03_checkpoint_ledger import (
     CheckpointConflict,
     CheckpointLedger,
     CheckpointSigner,
+    HMACCheckpointSigner,
+    SQLiteCheckpointLedger,
 )
 
 
@@ -119,6 +121,8 @@ class Org03EventStore:
         active_key_id: str = "synthetic-test-v1",
         revoked_key_ids: frozenset[str] = frozenset(),
         checkpoint_dir: str | Path | None = None,
+        checkpoint_ledger: CheckpointLedger | None = None,
+        checkpoint_signer: CheckpointSigner | None = None,
     ):
         self.path = str(path)
         if timeout_seconds <= 0:
@@ -140,6 +144,16 @@ class Org03EventStore:
         if active_key_id not in self._integrity_keys:
             raise IntegrityKeyError("active integrity key is unavailable")
         self.checkpoint_dir = Path(checkpoint_dir or (self.path + ".org03-checkpoints"))
+        # The default ledger is an isolated synthetic adapter for this prototype.
+        # Production must inject an independently administered ledger and signer.
+        self._checkpoint_signer = checkpoint_signer or HMACCheckpointSigner(
+            self._integrity_keys, active_key_id, self.revoked_key_ids
+        )
+        self._checkpoint_ledger = checkpoint_ledger or SQLiteCheckpointLedger(
+            self.path + ".org03-test-ledger.sqlite3",
+            self._checkpoint_signer,
+            timeout=timeout_seconds,
+        )
         self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
@@ -826,10 +840,28 @@ class Org03EventStore:
                             "ledger already contains a divergent sequence"
                         )
                     history = ledger.history(item["alert_id"], 1, head_sequence)
-                    if len(history) != head_sequence:
+                    with self._connection() as connection:
+                        database_history = connection.execute(
+                            "SELECT sequence, event_hash, previous_hash "
+                            "FROM org03_events WHERE alert_id=? "
+                            "AND sequence<=? ORDER BY sequence",
+                            (item["alert_id"], head_sequence),
+                        ).fetchall()
+                    if len(history) != head_sequence or len(database_history) != head_sequence:
                         raise CheckpointAuthenticationError(
-                            "ledger history is incomplete"
+                            "ledger or database history is incomplete"
                         )
+                    for ledger_record, database_record in zip(
+                        history, database_history, strict=True
+                    ):
+                        if (
+                            ledger_record.sequence != database_record["sequence"]
+                            or ledger_record.event_hash != database_record["event_hash"]
+                            or ledger_record.previous_hash != database_record["previous_hash"]
+                        ):
+                            raise CheckpointConflict(
+                                "ledger and database event histories diverge"
+                            )
                 else:
                     if (
                         head_sequence != item["previous_sequence"]
@@ -852,7 +884,7 @@ class Org03EventStore:
                     )
                     key_id, signature = signer.sign(checkpoint.payload())
                     checkpoint = checkpoint._replace(key_id=key_id)
-                    key_id, signature = signer.sign(checkpoint.payload())
+                    _, signature = signer.sign(checkpoint.payload())
                     ledger.compare_and_set(checkpoint, signature)
 
                 completed = self._finish_checkpoint_outbox(
@@ -959,6 +991,12 @@ class Org03EventStore:
                 connection.rollback()
                 raise
         self._write_checkpoint(alert_id, 1, event_hash)
+        self.publish_checkpoint_outbox(
+            self._checkpoint_ledger,
+            self._checkpoint_signer,
+            worker_id=f"synthetic-inline-{os.getpid()}",
+            limit=1,
+        )
         return state
 
     def append_event(
@@ -1008,9 +1046,15 @@ class Org03EventStore:
                         "WHERE alert_id = ? ORDER BY sequence DESC LIMIT 1",
                         (alert_id,),
                     ).fetchone()
-                    self._verify_checkpoint(
-                        alert_id, last_event["sequence"], last_event["event_hash"]
-                    )
+                    pending = connection.execute(
+                        "SELECT 1 FROM org03_checkpoint_outbox "
+                        "WHERE alert_id=? AND status IN ('PENDING', 'LEASED')",
+                        (alert_id,),
+                    ).fetchone()
+                    if pending is None:
+                        self._verify_checkpoint(
+                            alert_id, last_event["sequence"], last_event["event_hash"]
+                        )
                     if (
                         aggregate["version"] != replayed["next_sequence"] - 1
                         or aggregate["status"] != replayed["status"]
@@ -1032,6 +1076,16 @@ class Org03EventStore:
                     original_result = json.loads(prior["result_json"])
                     connection.commit()
                     return original_result
+
+                pending = connection.execute(
+                    "SELECT 1 FROM org03_checkpoint_outbox "
+                    "WHERE alert_id=? AND status IN ('PENDING', 'LEASED', 'CONFLICT', 'INVALID')",
+                    (alert_id,),
+                ).fetchone()
+                if pending is not None:
+                    raise CheckpointPending(
+                        "previous committed event is awaiting checkpoint reconciliation"
+                    )
 
                 event = self._authority_for_event(connection, event, alert_id)
                 event_json = _canonical(event)
@@ -1128,6 +1182,12 @@ class Org03EventStore:
                 )
                 connection.commit()
                 self._write_checkpoint(alert_id, sequence, event_hash)
+                self.publish_checkpoint_outbox(
+                    self._checkpoint_ledger,
+                    self._checkpoint_signer,
+                    worker_id=f"synthetic-inline-{os.getpid()}",
+                    limit=1,
+                )
                 return updated
             except Exception:
                 connection.rollback()
