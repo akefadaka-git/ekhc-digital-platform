@@ -362,7 +362,6 @@ class Org03EventStore:
                     connection.rollback()
                     raise
 
-
     def _migrate_legacy_checkpoint_outbox(self, connection: sqlite3.Connection) -> None:
         """Backfill only history already authenticated by the independent ledger."""
         alerts = connection.execute(
