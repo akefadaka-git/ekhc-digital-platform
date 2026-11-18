@@ -14,6 +14,7 @@ from scripts.org03_checkpoint_ledger import (
     CheckpointConflict,
     HMACCheckpointSigner,
     SQLiteCheckpointLedger,
+    canonical_json,
 )
 
 KEYS = {"test-v1": b"ORG03-SYNTHETIC-CHECKPOINT-KEY-MATERIAL-32-BYTES"}
