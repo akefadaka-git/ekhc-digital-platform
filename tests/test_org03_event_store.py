@@ -489,9 +489,7 @@ class Org03DurableEventStoreTests(unittest.TestCase):
                 "AND name='org03_checkpoint_outbox'"
             ).fetchone()
         self.assertIsNotNone(table)
-        migrated_outbox = reopened.checkpoint_outbox(
-            "SYNTHETIC-OUTBOX-MIGRATION"
-        )
+        migrated_outbox = reopened.checkpoint_outbox("SYNTHETIC-OUTBOX-MIGRATION")
         self.assertEqual([1], [row["sequence"] for row in migrated_outbox])
         self.assertEqual("PUBLISHED", migrated_outbox[0]["status"])
         self.assertEqual(
@@ -536,14 +534,12 @@ class Org03DurableEventStoreTests(unittest.TestCase):
         with self.assertRaises(CheckpointError):
             make_store(path)
 
-
     def test_missing_outbox_record_fails_closed(self):
         alert_id = "SYNTHETIC-MISSING-OUTBOX"
         self.store.create_alert(alert_id, "HIGH", "2026-11-13T07:00:00Z")
         with self.store._connection() as connection:
             connection.execute(
-                "DELETE FROM org03_checkpoint_outbox "
-                "WHERE alert_id=? AND sequence=1",
+                "DELETE FROM org03_checkpoint_outbox WHERE alert_id=? AND sequence=1",
                 (alert_id,),
             )
         with self.assertRaises(CheckpointError):

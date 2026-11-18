@@ -215,10 +215,13 @@ class Org03EventStore:
 
     def _initialize(self) -> None:
         with self._connection() as connection:
-            outbox_existed_before = connection.execute(
-                "SELECT 1 FROM sqlite_master WHERE type='table' "
-                "AND name='org03_checkpoint_outbox'"
-            ).fetchone() is not None
+            outbox_existed_before = (
+                connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' "
+                    "AND name='org03_checkpoint_outbox'"
+                ).fetchone()
+                is not None
+            )
             connection.execute("PRAGMA journal_mode = WAL")
             connection.executescript(
                 """
@@ -360,9 +363,7 @@ class Org03EventStore:
                     raise
 
 
-    def _migrate_legacy_checkpoint_outbox(
-        self, connection: sqlite3.Connection
-    ) -> None:
+    def _migrate_legacy_checkpoint_outbox(self, connection: sqlite3.Connection) -> None:
         """Backfill only history already authenticated by the independent ledger."""
         alerts = connection.execute(
             "SELECT alert_id, priority FROM org03_aggregates ORDER BY alert_id"
@@ -370,9 +371,7 @@ class Org03EventStore:
         now_text = datetime.now(UTC).isoformat().replace("+00:00", "Z")
         for aggregate in alerts:
             alert_id = aggregate["alert_id"]
-            self._replay_in_transaction(
-                connection, alert_id, aggregate["priority"]
-            )
+            self._replay_in_transaction(connection, alert_id, aggregate["priority"])
             events = connection.execute(
                 "SELECT sequence, event_hash, previous_hash FROM org03_events "
                 "WHERE alert_id=? ORDER BY sequence",
@@ -388,9 +387,7 @@ class Org03EventStore:
                     raise CheckpointError(
                         "legacy event history lacks a matching independent ledger"
                     )
-                history = self._checkpoint_ledger.history(
-                    alert_id, 1, len(events)
-                )
+                history = self._checkpoint_ledger.history(alert_id, 1, len(events))
             except CheckpointLedgerError as exc:
                 raise CheckpointError(
                     "legacy checkpoint ledger could not be authenticated"
