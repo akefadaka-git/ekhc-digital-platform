@@ -67,3 +67,64 @@ Do not collect real member, financial, personnel, child, pastoral-care or other 
 ## 6. A1 guardrail
 
 This document is a discovery instrument only. It does not approve modules, permissions, workflows, data fields, reports, organizational hierarchy or application navigation. Those decisions remain subject to stakeholder validation, constitutional/source reconciliation and explicit Owner approval.
+
+
+## 7. Supplemental public-source and validation status — 2026-11-26
+
+The official public EKHC English and Amharic web properties were rechecked. Public pages continue to provide ministry/service-area labels and selected descriptions. These are candidate discovery topics only. No approved organizational chart, formal office mandate, authorized process-owner roster, or stakeholder-validated workflow was obtained from this public-source check.
+
+The historical sixth-revision bylaws transcription is not an authoritative process source. It must not be used to determine who currently owns, approves, performs, or reviews any workflow.
+
+## 8. Workflow validation record template
+
+Complete one record for each candidate workflow after an authorized stakeholder is identified. Do not fill unknown fields by inference.
+
+| Field | Required record |
+|---|---|
+| Workflow ID and title | Stable ID; exact Amharic title/wording where established |
+| Institutional source | Constitution/bylaw article, approved mandate, policy, form, register or manual; exact version and page |
+| Process owner | Authorized office/role and evidence of authority; avoid recording personal contact details in this public project record |
+| Participants | Roles that initiate, review, approve, execute, audit or receive the outcome |
+| Trigger and preconditions | Event, request, eligibility and required evidence |
+| Current-state steps | Ordered activities, handoffs, decisions, exceptions and actual systems/records used |
+| Decision and authority rules | Exact source for approval, delegation, quorum, thresholds, substitution and escalation |
+| Data and classification | Minimum fields, source of truth, sensitivity, purpose and access constraints |
+| Outputs and records | Official record created, custodian, signature/approval evidence and retention rule |
+| Timing | Effective dates, service windows, deadlines and exception handling |
+| Communications | Authorized audience, channel, consent/notice, delivery and failure handling |
+| Offline conditions | Whether work can safely proceed offline, local data required and conflict resolution |
+| Validation | Stakeholder role, validation date, evidence reviewed, unresolved disagreements and follow-up |
+| Acceptance criteria | Observable conditions approved for later requirements baseline |
+
+## 9. Validation status vocabulary
+
+- **DISCOVERY-ONLY:** identified from public descriptions or Owner-provided context; not stakeholder-confirmed.
+- **STAKEHOLDER-CONFIRMED:** current process described by an identified authorized role, but governing authority may still need documentary reconciliation.
+- **SOURCE-VERIFIED:** governing or approved institutional instrument supports the relevant rule, with exact citation recorded.
+- **CONFLICT:** stakeholder practice and documentary source disagree; preserve both accounts and escalate.
+- **OWNER-ACCEPTED:** the Owner explicitly accepts the reconciled requirement at the relevant gate.
+- **NOT ASSESSED:** no adequate evidence collected.
+
+Do not treat STAKEHOLDER-CONFIRMED as SOURCE-VERIFIED, or either as Owner approval. A workflow cannot be baselined while a material authority conflict remains unresolved.
+
+## 10. Current validation ledger
+
+| Candidate area | Discovery status | Authorized process owner | Governing / approved source | End-to-end validation |
+|---|---|---|---|---|
+| Organizational administration | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| People and membership | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Leadership and assignments | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Finance | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Human resources | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Property and logistics | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Missions and local ministry | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Theological education | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Discipleship and church education | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Women, youth and children services | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Social support and community services | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Communication and literature | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Meetings and decisions | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Reporting and accountability | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+| Member-facing services | DISCOVERY-ONLY | NOT IDENTIFIED | NOT VERIFIED | NOT ASSESSED |
+
+This ledger is intentionally conservative. It records the absence of validation evidence in this assessment; it does not assert that EKHC lacks process owners, policies or records.
