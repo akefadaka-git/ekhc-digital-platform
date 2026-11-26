@@ -34,11 +34,11 @@
 | Evidence ID | Evidence item | Source / owner | Status |
 |---|---|---|---|
 | EV-001 | Owner-confirmed product identity and terminology constraints | Prior Owner decisions, October–November 2026 | RECOVERED |
-| EV-002 | EKHC 7th-edition Constitution (Amharic authoritative edition) | Official EKHC source; complete copy and authenticity to verify | REQUIRED — NOT PROVIDED YET |
-| EV-003 | Current applicable bylaws / መተዳደሪያ ደንብ | Official EKHC source; edition and amendments to verify | REQUIRED |
-| EV-004 | Existing EKHC UI and related project artifacts | Historical project references plus current repository inspection | PARTIAL — exact files/branch not located on current main |
+| EV-002 | EKHC 7th-edition Constitution (Amharic authoritative edition) | Official EKHC source; complete copy and authenticity to verify | REQUIRED — NOT LOCATED IN ACCESSIBLE PUBLIC SOURCES |
+| EV-003 | Current applicable bylaws / መተዳደሪያ ደንብ | Official EKHC source; edition and amendments to verify | REQUIRED — HISTORICAL SIXTH-REVISION CANDIDATE LOCATED; CURRENT VERSION UNRESOLVED |
+| EV-004 | Existing EKHC UI and related project artifacts | Historical project references plus current repository inspection | PARTIAL — exact files/branch not located; original source repository/branch/commit unresolved |
 | EV-005 | Stakeholder workflow and role evidence | EKHC offices and authorized stakeholders | REQUIRED — not yet validated |
-| EV-006 | Public institutional/service-area evidence | Official EKHC public websites | CORROBORATIVE ONLY |
+| EV-006 | Public institutional/service-area evidence | Official EKHC public websites | CORROBORATIVE ONLY — refreshed 2026-11-26 |
 
 ## A1 work completed with currently available evidence
 
@@ -50,6 +50,7 @@
 6. Candidate architecture and security concerns documented without freezing technology or data models.
 7. Initial risk and dependency register created; ratings remain preliminary and unaccepted.
 8. Requirements-to-evidence traceability matrix created for all 12 functional and 8 non-functional requirements, with nine open elicitation gaps; all validation and test coverage remains outstanding.
+9. Supplemental public-source verification recorded in `docs/assessment/SOURCE-REGISTER.md`: a third-party sixth-revision (2012 E.C.) bylaws candidate was located but remains unauthenticated and cannot satisfy the current-bylaws requirement; official public ministry/service descriptions were refreshed; no seventh-edition Constitution, approved organogram/mandates, or exact original UI source provenance was established.
 
 ## Exit gate
 
