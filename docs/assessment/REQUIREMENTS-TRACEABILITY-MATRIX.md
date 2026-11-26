@@ -68,10 +68,10 @@ These gaps must be resolved before dependent requirements can be baselined.
 |---|---|---|---|
 | EV-001 | Recovered Owner decisions and constraints | Product identity, independence, language, calendar, offline/channel direction, terminology | Owner direction; not a substitute for institutional constitutional evidence |
 | EV-002 / SRC-001 | EKHC 7th-edition Constitution | Organizational structure, authority, governance and role boundaries | REQUIRED; not yet supplied or verified |
-| EV-003 / SRC-002 | Current bylaws | Operational rules, governance and delegated authority | REQUIRED; not yet supplied or verified |
-| EV-004 / SRC-005 | Existing EKHC UI and design artifacts | UX, localization, shell and design continuity | PARTIAL; historical paths were not found on current `main`; source repository/branch unresolved |
+| EV-003 / SRC-002 | Current bylaws | Operational rules, governance and delegated authority | A third-party sixth-revision (2012 E.C.) candidate was located; it is unauthenticated and does not establish the current version. Current authoritative bylaws remain REQUIRED / UNRESOLVED |
+| EV-004 / SRC-005 | Existing EKHC UI and design artifacts | UX, localization, shell and design continuity | PARTIAL; historical paths were not found on current `main`; original repository/branch/commit remains unidentified; recovery evidence checklist added to UI reconciliation register |
 | EV-005 | Authorized stakeholder and workflow evidence | Validated actors, processes, data and acceptance criteria | NOT YET PROVIDED |
-| EV-006 / PUB-001–004 | Official public EKHC websites/pages | Public-facing identity and ministry/service-area discovery | CORROBORATIVE ONLY; cannot prove constitutional hierarchy or authority |
+| EV-006 / PUB-001–006 | Official public EKHC websites/pages | Public-facing identity and ministry/service-area discovery | Public pages refreshed 2026-11-26; CORROBORATIVE ONLY; cannot prove constitutional hierarchy, approved mandates or authority |
 | R-001–R-014 | A1 risk and dependency register | Security, privacy, offline, continuity and delivery risk trace | Preliminary planning assessment; no accepted residual risks |
 | WF-01–WF-15 | Candidate workflow areas in stakeholder discovery | Candidate business processes for elicitation | Not validated by authorized process owners |
 
@@ -101,3 +101,19 @@ A requirement may move to **VALIDATED** only when:
 A requirement may move to **APPROVED/FROZEN** only through explicit Owner approval; inclusion in this matrix is not approval. Requirements affected by SRC-001 or SRC-002 remain blocked until those sources are verified.
 
 Implementation and test evidence must be added later without rewriting the historical A1 evidence record. Any changed requirement must retain its ID and have its revision, rationale, approver and affected trace links recorded.
+
+
+## 8. Supplemental traceability interpretation — 2026-11-26
+
+The evidence refresh changed the quality of the source leads, not the validation status of dependent requirements:
+
+- **FR-001 and FR-003 remain BLOCKED.** No authenticated seventh-edition Constitution, current bylaws, approved organogram or mandate instruments have been verified.
+- **FR-007 remains PARTIAL.** Public ministry/service descriptions can guide discovery only; they do not validate program workflows or safeguarding rules.
+- **FR-008 and FR-009 remain OWNER-DIRECTED.** The Amharic-first and Ethiopian-calendar-first directions remain Owner requirements; the detailed glossary, date/time behavior and acceptance tests are still open.
+- **FR-010 and FR-011 remain OWNER-DIRECTED.** Direction is recorded, but field constraints, offline eligibility, security controls and platform acceptance remain unvalidated.
+- **NFR-001 through NFR-008 remain unapproved and untested** at this A1 stage. Proposed controls and risk references are not test evidence.
+- The third-party historical bylaws candidate does not satisfy EV-003. The original UI recovery checklist does not satisfy EV-004 until an exact source and commit are verified.
+
+The existing 12/12 functional and 8/8 non-functional trace-reference coverage is unchanged. Validation remains 0/12 functional and measured/test evidence remains 0/8 non-functional. These are separate measures; no aggregate implementation percentage is inferred.
+
+No requirement was promoted to VALIDATED, APPROVED, FROZEN, IMPLEMENTED or TESTED by this evidence refresh.
