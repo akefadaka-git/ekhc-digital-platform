@@ -48,3 +48,51 @@ When the source location is established:
 ## 5. Closure criteria
 
 This register can be marked VERIFIED only when the authoritative source repository/branch and commit are identified, the relevant files are inspected, the complete inventory is recorded, and a read-only reconciliation report is reviewed. Until then, UI reconciliation remains PARTIAL / UNRESOLVED.
+
+
+## 6. Supplemental provenance findings — 2026-11-26
+
+The follow-up repository inventory did not identify an exact original UI repository, branch, or commit that can be tied to UI-001 through UI-005. The historical paths remain unverified. The current EKHC project repository is not presumed to be the original UI source merely because it is the active project repository.
+
+**Current status:** SRC-005 remains PARTIAL / UNRESOLVED. This is a provenance gap, not proof that the historical UI work is lost or never existed.
+
+## 7. Minimum evidence required to recover the original UI
+
+Accept one of the following as a starting lead, then independently verify provenance:
+
+1. Exact GitHub/GitLab repository URL and owner/organization.
+2. Exact branch name plus a commit SHA from the original implementation.
+3. A source archive that includes verifiable Git metadata, commit history, or a signed/reproducible provenance record.
+4. An existing deployment/source-control record that identifies the repository and immutable commit used for the deployed UI.
+
+A screenshot, exported design image, copied component, local folder name, or recollection of a branch label may help locate the work but does not by itself prove the original commit or source ownership.
+
+## 8. Read-only recovery checklist
+
+When a candidate source is supplied or located:
+
+- Verify repository identity and access scope.
+- Resolve the branch to its current commit SHA and record the timestamp of inspection.
+- Verify that the candidate commit contains the historical paths or clearly corresponding renamed artifacts.
+- Inspect commit history around the claimed UI-SHELL changes and record exact commit SHAs.
+- Inventory package manifests, framework/build versions, routes, shared shell components, design tokens, localization and calendar code, assets, tests and CI.
+- Compare the candidate source against the current project without copying or modifying either repository.
+- Record provenance confidence and unresolved ownership/licensing questions.
+- Produce a file-by-file preserve/reuse/conflict/missing/unknown matrix for Owner review.
+
+Do not install dependencies, execute untrusted build scripts, copy source files, change branches, open a PR, or implement a replacement as part of this read-only recovery.
+
+## 9. Source intake record
+
+| Required field | Value |
+|---|---|
+| Original repository URL / owner | NOT PROVIDED / NOT VERIFIED |
+| Original default branch | UNKNOWN |
+| Claimed UI branch | UNKNOWN |
+| Claimed implementation commit SHA | UNKNOWN |
+| Source archive / provenance record | NOT PROVIDED |
+| Historical UI-SHELL commit mapping | NOT VERIFIED |
+| Repository ownership / reuse permission | NOT VERIFIED |
+| Reconciliation disposition | BLOCKED — source provenance required |
+
+No UI replacement, redesign, route, component, package, backend endpoint or schema is approved by this register. Existing UI preservation remains the default.
