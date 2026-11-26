@@ -31,3 +31,23 @@
 ## A1 exit evidence
 
 Before A1 closure, each material risk must have an accountable owner, evidence-based likelihood and impact assessment, mitigation plan, residual rating, and explicit acceptance or treatment decision. Critical governance and privacy dependencies must not be waived by a schedule target.
+
+
+## 2. Supplemental evidence risks — 2026-11-26
+
+The following risks were added after the follow-up public-source and repository-provenance checks. They supplement, and do not close or replace, R-001 through R-014.
+
+| ID | Risk / dependency | Initial impact | Likelihood | Required treatment / evidence | Status |
+|---|---|---|---|---|---|
+| R-015 | A third-party copy of a historical bylaws revision may be mistaken for the current authenticated instrument | CRITICAL | MEDIUM | Label the copy as an unauthenticated historical candidate; obtain an institutionally authenticated current copy with adoption/amendment history; prohibit using the candidate to freeze authority, roles or workflows | CONTROL IN PLACE — SOURCE STILL REQUIRED |
+| R-016 | Public ministry/service descriptions may be mistaken for an approved organogram or formal mandates | HIGH | MEDIUM | Keep public labels in the corroborative source class; require approved structure, mandate instruments, reporting lines and delegated-authority evidence | CONTROL IN PLACE — VALIDATION OPEN |
+| R-017 | Historical UI notes may be mistaken for proof of a recoverable source repository or exact implementation | HIGH | MEDIUM | Preserve historical paths as leads only; require exact repository owner/name, branch, commit SHA and source-tree verification before UI reconciliation or replacement | OPEN |
+| R-018 | Documentation trace coverage may be misreported as requirement validation or implementation progress | HIGH | MEDIUM | Report reference coverage, stakeholder validation, implementation, tests and acceptance as separate measures; do not calculate a single completion percentage from linked requirements | CONTROL IN PLACE |
+
+## 3. Evidence-control update
+
+- The public sixth-revision 2012 E.C. bylaws transcription is a candidate only. Its provenance, completeness, authenticity and supersession status are unresolved.
+- Official website ministry/service-area pages are corroborative public information, not approved organizational instruments.
+- The original UI repository/branch/commit remains unidentified. A missing path on current `main` does not prove the historical artifact never existed.
+- No institutional contact has been made and no sensitive institutional records have been accessed.
+- No new risk is accepted or closed by this update. All initial likelihood/impact ratings remain preliminary and require review.
