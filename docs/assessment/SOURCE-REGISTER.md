@@ -66,3 +66,23 @@ The earlier UI work described an Amharic-first, Ethiopian-calendar-first, mobile
 - Existing UI work is acknowledged and protected; its exact current source location remains unresolved.
 - No hierarchy schema, authorization scope, database enum, API contract, or navigation tree is approved.
 - A1 remains OPEN. A2 read-only reconciliation cannot be declared complete until governing sources and existing artifacts are located and reconciled.
+
+## 7. Supplemental source verification — 2026-11-26
+
+This section records a follow-up public-source check. It does not change the governing-source requirements above.
+
+| Evidence ID | Candidate / observation | Verification result | Permitted use |
+|---|---|---|---|
+| SRC-002-CAND-001 | Third-party Scribd transcription titled `የቃለ ህይወት መተዳደሪያ ደንብ`, whose description identifies it as the EKHC bylaws revised for the sixth time in 2012 E.C. ([public transcription](https://www.scribd.com/document/943135783/የቃለ-ህይወት-መተዳደሪያ-ደንብ)) | PARTIAL — candidate located; not EKHC-hosted or independently authenticated; no evidence establishes that it is the current version or has not been superseded | Historical research lead only. Do not treat as operative bylaws or use to approve current roles, hierarchy, authority, or workflows. |
+| PUB-005 | Current public English-facing EKHC page ([ekhc.et](https://ekhc.et/)) | Public page currently lists ministry/service areas and gives short descriptions for selected ministry areas | Corroborative public-facing terminology only; not an approved organogram or mandate instrument |
+| PUB-006 | Current public Amharic-facing EKHC page ([ekhc.et/amh/](https://ekhc.et/amh/)) | Public page presents Amharic names for ministry/service areas and selected descriptions | Corroborative terminology only; preserve source wording and do not infer reporting lines or delegated authority |
+
+**Constitution status:** SRC-001 remains MISSING / NOT OBTAINED from accessible public sources. No authenticated seventh-edition text, adoption record, or effective-date record was located in this check. This is not a finding that such an edition does not exist.
+
+**Bylaws status:** SRC-002 remains REQUIRED / CURRENT VERSION UNRESOLVED. SRC-002-CAND-001 is a historical candidate only and does not satisfy the source requirement.
+
+**Organizational mandates:** SRC-003 and SRC-004 remain NOT VERIFIED. Public website ministry/service descriptions do not establish an approved organizational chart, formal mandates, reporting lines, or delegated authority.
+
+**UI provenance:** SRC-005 remains PARTIAL / UNRESOLVED. No exact original UI repository, branch, or commit was identified in the available repository inventory. The historical paths above remain unverified; do not reconstruct them from descriptions.
+
+**Verification boundary:** No institutional contact was made. No source was represented as institutionally authenticated. No organizational data, hierarchy, permissions, workflow, schema, or UI implementation is approved by this supplemental note.
